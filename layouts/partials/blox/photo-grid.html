@@ -1,0 +1,61 @@
+{{/* Project-only block: a photography portfolio grid for one year, made up
+     of one or more place groups. Uses a CSS-columns masonry layout so mixed
+     portrait/landscape photos keep their natural composition (no forced
+     cropping). Each thumbnail links to the full-resolution image. */}}
+
+{{ $page := .wcPage }}
+{{ $block := .wcBlock }}
+{{ $year := $block.content.year }}
+{{ $groups := $block.content.groups }}
+
+<div class="max-w-6xl mx-auto px-6 mt-16">
+
+  <h2 class="text-2xl font-bold mb-8 text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+    {{ $year }}
+  </h2>
+
+  {{ range $groups }}
+    {{ $place := .place }}
+    <div class="mb-10">
+      {{ with $place }}
+      <h3 class="text-sm font-semibold uppercase tracking-wider mb-3 text-gray-500 dark:text-gray-400">
+        {{ . }}
+      </h3>
+      {{ end }}
+
+      <div class="columns-2 md:columns-3 gap-3 [column-fill:_balance]">
+        {{ range .images }}
+          {{/* An image entry is either a plain filename, or a dict
+               {src: "...", scale: 0.4} for the rare photo (e.g. an
+               extreme-portrait shot) that needs to be rendered narrower
+               (full content preserved, no cropping) so its proportionally
+               shorter height doesn't tower over its neighbours in the
+               masonry grid. */}}
+          {{ $src := . }}
+          {{ $scale := 0.0 }}
+          {{ if reflect.IsMap . }}
+            {{ $src = .src }}
+            {{ $scale = .scale | default 0.0 }}
+          {{ end }}
+          {{ $res := $page.Resources.GetMatch $src }}
+          {{ with $res }}
+            {{/* High headroom over the ~380px column width so photos stay
+                 crisp on retina/high-DPI screens, and near-lossless quality
+                 since these are portfolio shots. */}}
+            {{ $thumb := .Fit "2400x2400 q95 webp" }}
+            <a href="{{ .RelPermalink }}" target="_blank" rel="noopener"
+               class="block break-inside-avoid mb-3 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800{{ if gt $scale 0.0 }} mx-auto{{ end }}"
+               {{ if gt $scale 0.0 }}style="width: {{ mul $scale 100.0 }}%;"{{ end }}>
+              <img src="{{ $thumb.RelPermalink }}"
+                   width="{{ $thumb.Width }}" height="{{ $thumb.Height }}"
+                   alt="{{ $place | default $year }}"
+                   loading="lazy"
+                   class="w-full h-auto transition-opacity duration-300 hover:opacity-85">
+            </a>
+          {{ end }}
+        {{ end }}
+      </div>
+    </div>
+  {{ end }}
+
+</div>

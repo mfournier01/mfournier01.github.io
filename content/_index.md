@@ -24,9 +24,13 @@ sections:
         color: black
         image:
           # Add your image background to `assets/media/`.
+          # Used as a fallback/poster while the video loads.
           filename: stacked-peaks.png
           filters:
             brightness: 1.0
+        video:
+          # Add your video background to `assets/media/`.
+          filename: hero-background.mp4
           size: cover
           position: center
           parallax: false

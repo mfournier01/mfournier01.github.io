@@ -74,7 +74,10 @@ sections:
         folders:
           - event
     design:
-      view: article-grid
+      # Higher-resolution variant of `article-grid` (see
+      # layouts/partials/views/article-grid-hires.html) — talk photos were
+      # looking compressed at the stock 960x540/q80 output.
+      view: article-grid-hires
       columns: 1
   - block: cta-card
     demo: true # Only display this section in the Hugo Blox Builder demo site

@@ -1,0 +1,21 @@
+{{/* Project override of Hugo Blox's `markdown` block: same thing, but with
+     a much wider max-width. Used for gallery/video entries where the stock
+     `max-w-prose` (~65ch) makes an embedded video look tiny. Text content
+     (e.g. the caption below the video) still reads fine at this width since
+     it's short. */}}
+
+{{/* Initialise */}}
+{{ $page := .wcPage }}
+{{ $block := .wcBlock }}
+{{ $title := $block.content.title | emojify | $page.RenderString }}
+{{ $text := $block.content.text | emojify | $page.RenderString | safeHTML }}
+
+<div class="flex flex-col items-center max-w-5xl mx-auto gap-3 justify-center px-6">
+
+  <div class="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+    {{ $title }}
+  </div>
+
+  {{/* We use DIV rather than P to support `prose` class and multiple paragraphs */}}
+  {{ with $text }}<div class="prose prose-slate lg:prose-xl dark:prose-invert max-w-none">{{ . }}</div>{{ end }}
+</div>

@@ -48,11 +48,12 @@ interests:
   - Multiphase Gas
 
 education:
-  - area: Postdoctoral Researcher
-    institution: Institut d'Astrophysique de Paris
-    date_start: 2026-07-01
-    date_end: ''
-    summary: ''
+  # Not started yet — re-enable once the position begins.
+  # - area: Postdoctoral Researcher
+  #   institution: Institut d'Astrophysique de Paris
+  #   date_start: 2026-07-01
+  #   date_end: ''
+  #   summary: ''
   - area: PhD in Astrophysics
     institution: Hamburg Universität
     date_start: 2023-07-24

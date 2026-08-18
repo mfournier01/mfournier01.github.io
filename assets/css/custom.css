@@ -1,0 +1,47 @@
+/* --- Larger, sharper homepage avatar (default theme caps it at 150x150) --- */
+.avatar-wrapper {
+  width: 220px;
+  height: 220px;
+}
+
+/* --- Glass boxes behind text sitting over the hero background video ---
+   Keeps text readable even when a bright frame (e.g. the shockwave) passes
+   behind it. Colors are fixed (not theme-variable) since this section is
+   forced into dark mode via `css_class: dark` in content/_index.md. */
+.glass-box {
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(200, 200, 210, 0.25);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.profile-glass {
+  margin-top: 1rem;
+}
+
+.bio-glass {
+  /* Override the Tailwind Typography `prose` block's own vertical rhythm
+     (its heading/paragraph margins were inflating the box well beyond the
+     text itself) so the box hugs the "About Me" content snugly, and add
+     breathing room below so it doesn't touch the Download CV button. */
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.bio-glass > .bio-text > :first-child {
+  margin-top: 0;
+}
+
+.bio-glass > .bio-text > :last-child {
+  margin-bottom: 0;
+}
+
+.info-glass {
+  padding: 1.25rem 1.5rem;
+  /* The grid row's default `align-items: stretch` was forcing the shorter
+     Interests box to match Education's height. Size each to its own content
+     instead. */
+  align-self: start;
+}

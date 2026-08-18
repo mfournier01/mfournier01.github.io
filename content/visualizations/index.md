@@ -1,5 +1,5 @@
 ---
-title: 'Gallery'
+title: 'Visualizations'
 date: 2026-08-18
 type: landing
 
@@ -9,13 +9,13 @@ design:
 # Page sections
 # Add one `markdown-wide` block per video/visualization — duplicate the
 # block below (title + text with a `{{</* youtube */>}}` shortcode + a short
-# description) to add more items to the gallery. `markdown-wide` is a
+# description) to add more items to this page. `markdown-wide` is a
 # project override (see layouts/partials/blox/markdown-wide.html) of the
 # stock `markdown` block, widened so embedded videos aren't tiny.
 sections:
   - block: markdown
     content:
-      title: 🎬 Gallery
+      title: 🎬 Visualizations
       text: |-
         Videos and visualizations from my simulations.
     design:

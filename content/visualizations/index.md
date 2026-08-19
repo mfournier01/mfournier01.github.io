@@ -3,6 +3,10 @@ title: 'Visualizations'
 date: 2026-08-18
 type: landing
 
+# Enables KaTeX for the LaTeX in the tracer-particles entry's description
+# (temperature isosurface at $10^8$ K).
+math: true
+
 design:
   spacing: '5rem'
 
@@ -58,6 +62,26 @@ sections:
         {{< figure src="CNDweb.png" alt="Circumnuclear disk with multiple misaligned rings" >}}
 
         A circumnuclear disk of roughly 100 pc in radius, obtained by increasing the resolution of the fiducial run from [Fournier et al. 2026](/publication/fournier-2026/) by 7 additional refinement levels. The image is a composite showing density projection (shades of orange) and velocity strength (shades of blue). At this resolution the disk resolves into several separated rings with various orientations, and is found to be highly magnetised.
+    design:
+      columns: '1'
+
+  - block: markdown-wide
+    content:
+      title: Tracing an AGN outburst
+      text: |-
+        {{< figure src="Tracersweb.png" alt="Magnetic field lines, temperature isosurface, and tracer particles during an AGN outburst" >}}
+
+        A snapshot from [Fournier et al. 2026](/publication/fournier-2026/). Lines show magnetic field lines colored by intensity. The yellow surface is a temperature isosurface at $10^8$ K, showing an AGN outburst propagating downward. Red and blue dots are tracer particles, color-coded by vorticity magnitude.
+    design:
+      columns: '1'
+
+  - block: markdown-wide
+    content:
+      title: A supersonic shock in a turbulent medium
+      text: |-
+        {{< figure src="Shockweb.png" alt="Density gradient slice of a supersonic shock in a turbulent interstellar medium" >}}
+
+        A slice from a hydrodynamical simulation of a supersonic shock propagating through a turbulent interstellar medium. Color indicates the strength of the density gradient.
     design:
       columns: '1'
 ---

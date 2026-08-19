@@ -3,8 +3,8 @@ title: "The XMAGNET exascale MHD simulations of SMBH feedback in galaxy groups a
 authors:
 - P. Grete
 - B. W. O'Shea
-- Forrest W. Glines
-- Deovrat Prasad
+- F. W. Glines
+- D. Prasad
 - B. D. Wibking
 - M. Fournier
 - M. Brüggen

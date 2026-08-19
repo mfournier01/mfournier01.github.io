@@ -1,18 +1,18 @@
 ---
 title: "BlackHoleWeather -- Spin-coupled chaotic cold accretion across the meso-scale: Morphology and thermodynamics"
 authors:
-- Olmo Piana
-- Massimo Gaspari
-- Filippo Barbani
-- Vieri Cammelli
-- Giovanni Stel
-- Davide M. Brustio
-- Valeria Olivares
-- Francesco Salvestrini
-- Ashkbiz Danehkar
-- Francesco Tombesi
-- Pasquale Temi
-- Filippo M. Maccagni
+- O. Piana
+- M. Gaspari
+- F. Barbani
+- V. Cammelli
+- G. Stel
+- D. M. Brustio
+- V. Olivares
+- F. Salvestrini
+- A. Danehkar
+- F. Tombesi
+- P. Temi
+- F. M. Maccagni
 - M. Fournier
 date: "2026-05-26"
 publishDate: "2026-05-26"
@@ -23,7 +23,7 @@ publication_types: ["article-journal"]
 doi: ""
 url_preprint: "https://arxiv.org/abs/2605.27502"
 
-publication: '*Submitted to Astronomy &amp; Astrophysics*'
+publication: '*Accepted for publication in Astronomy &amp; Astrophysics*'
 
 # Not first-author on this paper.
 first_author: false

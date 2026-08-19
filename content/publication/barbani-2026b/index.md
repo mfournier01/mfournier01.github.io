@@ -1,21 +1,21 @@
 ---
 title: "BlackHoleWeather -- Chaotic cold accretion across the meso-scale: Variability and kinematics"
 authors:
-- Filippo Barbani
-- Massimo Gaspari
-- Olmo Piana
-- Vieri Cammelli
-- Fred J. Jennings
-- Davide M. Brustio
-- Giovanni Stel
-- Valeria Olivares
-- Filippo M. Maccagni
+- F. Barbani
+- M. Gaspari
+- O. Piana
+- V. Cammelli
+- F. J. Jennings
+- D. M. Brustio
+- G. Stel
+- V. Olivares
+- F. M. Maccagni
 - M. Fournier
-- Francesco Tombesi
-- Pasquale Temi
-- Fabrizio Fiore
-- Roberto Serafinelli
-- Ashkbiz Danehkar
+- F. Tombesi
+- P. Temi
+- F. Fiore
+- R. Serafinelli
+- A. Danehkar
 date: "2026-05-26"
 publishDate: "2026-05-26"
 
@@ -25,7 +25,7 @@ publication_types: ["article-journal"]
 doi: ""
 url_preprint: "https://arxiv.org/abs/2605.27504"
 
-publication: '*Under review at Astronomy &amp; Astrophysics*'
+publication: '*Accepted for publication in Astronomy &amp; Astrophysics*'
 
 # Not first-author on this paper.
 first_author: false

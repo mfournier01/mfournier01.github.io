@@ -1,12 +1,12 @@
 ---
 title: "XMAGNET: Kinetic, Thermal and Magnetic AGN Feedback in Massive Galaxies at Halo Masses $\\sim 10^{13.5}$ M$_\\odot$"
 authors:
-- Deovrat Prasad
+- D. Prasad
 - P. Grete
 - B. W. O'Shea
-- Forrest Glines
+- F. W. Glines
 - G. M. Voit
-- Freeke van de Voort
+- F. van de Voort
 - M. Fournier
 - B. D. Wibking
 date: "2025-08-24"

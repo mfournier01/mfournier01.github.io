@@ -1,19 +1,19 @@
 ---
 title: "BlackHoleWeather -- Jet-regulated chaotic cold accretion across the meso scale: Morphology and thermodynamics"
 authors:
-- Vieri Cammelli
-- Massimo Gaspari
-- Olmo Piana
-- Filippo Barbani
-- Giovanni Stel
-- Davide M. Brustio
-- Valeria Olivares
-- Francesco Salvestrini
-- Ashkbiz Danehkar
-- Michael Reefe
-- Pasquale Temi
-- Filippo M. Maccagni
-- Francesco Tombesi
+- V. Cammelli
+- M. Gaspari
+- O. Piana
+- F. Barbani
+- G. Stel
+- D. M. Brustio
+- V. Olivares
+- F. Salvestrini
+- A. Danehkar
+- M. Reefe
+- P. Temi
+- F. M. Maccagni
+- F. Tombesi
 - M. Fournier
 date: "2026-05-26"
 publishDate: "2026-05-26"
@@ -24,7 +24,7 @@ publication_types: ["article-journal"]
 doi: ""
 url_preprint: "https://arxiv.org/abs/2605.27503"
 
-publication: '*Submitted to Astronomy &amp; Astrophysics*'
+publication: '*Accepted for publication in Astronomy &amp; Astrophysics*'
 
 # Not first-author on this paper.
 first_author: false

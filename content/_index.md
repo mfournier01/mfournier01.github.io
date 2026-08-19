@@ -4,6 +4,10 @@ title: ""
 date: 2022-10-24
 type: landing
 
+# Enables KaTeX so LaTeX in publication titles (e.g. the Prasad 2025 paper's
+# `$\sim 10^{13.5}$ M$_\odot$`) renders correctly in the Publications list.
+math: true
+
 design:
   # Default section spacing
   spacing: "6rem"
@@ -48,7 +52,7 @@ sections:
   - block: collection
     id: papers
     content:
-      title: Featured Publications
+      title: Projects
       filters:
         folders:
           - publication
@@ -56,16 +60,44 @@ sections:
     design:
       view: article-grid
       columns: 2
-  - block: collection
+  - block: markdown
     content:
-      title: Recent Publications
+      title: Publications List
       text: ""
+    design:
+      columns: '1'
+      spacing:
+        padding: ["3rem", "0", "1rem", "0"]
+  - block: collection
+    id: publications-first-author
+    content:
+      title: First-author
+      text: ""
+      count: 0
       filters:
         folders:
           - publication
-        exclude_featured: false
+        first_author: true
     design:
       view: citation
+      heading_size: sm
+      spacing:
+        padding: ["0", "0", "2rem", "0"]
+  - block: collection
+    id: publications-co-author
+    content:
+      title: Co-author
+      text: ""
+      count: 0
+      filters:
+        folders:
+          - publication
+        first_author: false
+    design:
+      view: citation
+      heading_size: sm
+      spacing:
+        padding: ["0", "0", "3rem", "0"]
   - block: collection
     id: talks
     content:

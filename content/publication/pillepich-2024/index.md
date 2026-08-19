@@ -17,11 +17,15 @@ publication_types:
 - article-journal
 publication: '*Monthly Notices of the Royal Astronomical Society*'
 doi: 10.1093/mnras/stae2165
+
+first_author: false
+
 tags:
 - Astrophysics - Astrophysics of Galaxies
-links:
-- name: URL
-  url: https://doi.org/10.1093/mnras/stae2165
+
+# Citation count (Semantic Scholar, Aug 2026 — update periodically).
+# Rendered only when > 0.
+citations: 115
 
 # Publication name and optional abbreviated publication name.
 abstract: We present the properties of Milky Way- and Andromeda-like (MW/M31-like) galaxies simulated within TNG50, the highest-resolution run of the IllustrisTNG suite of ΛCDM magneto-hydrodynamical simulations.

@@ -1,0 +1,63 @@
+{{/* Renders a page's author list, truncated to `.max` authors + "et al."
+     when there are more than that — while always keeping the site owner's
+     own name visible (and bold) even if they'd otherwise fall outside the
+     truncated group.
+
+     Note: this does NOT delegate to the stock `page_metadata_authors`
+     partial even for short lists. Author names in citations (e.g.
+     "M. Fournier") resolve to an auto-generated taxonomy term page, not
+     the real profile page at content/authors/admin, so `.Page.Params.*`
+     lookups used by the stock partial's bold-highlighting never resolve
+     — every author, including the site owner, always rendered unbolded.
+     We match by surname instead: fetch the site owner's `last_name` param
+     from their real profile (same technique site_head.html uses, via
+     `Params.superuser`) and find the author term whose name contains it. */}}
+
+{{ $item := .item }}
+{{ $max := .max | default 3 }}
+{{ $authors := $item.GetTerms "authors" }}
+{{ $total := len $authors }}
+
+{{ $owner_lastname := "" }}
+{{ range first 1 (where (where site.Pages "Section" "authors") "Params.superuser" true) }}
+  {{ $owner_lastname = .Params.last_name }}
+{{ end }}
+{{ $owner := "" }}
+{{ if $owner_lastname }}
+  {{ range $authors }}
+    {{ if strings.Contains .LinkTitle $owner_lastname }}{{ $owner = . }}{{ end }}
+  {{ end }}
+{{ end }}
+
+{{ $shown := $authors }}
+{{ $truncated := gt $total $max }}
+{{ if $truncated }}
+  {{ $shown = first $max $authors }}
+{{ end }}
+{{ $owner_shown := false }}
+{{ range $shown }}
+  {{ if and $owner (eq .RelPermalink $owner.RelPermalink) }}{{ $owner_shown = true }}{{ end }}
+{{ end }}
+
+{{ range $index, $value := $shown }}
+  {{- if gt $index 0 }}, {{ end -}}
+  <span {{ if and $owner (eq .RelPermalink $owner.RelPermalink) }}class="font-bold"{{ end }}>
+    {{- if .RelPermalink -}}
+      <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+    {{- else -}}
+      {{ .LinkTitle }}
+    {{- end -}}
+  </span>
+{{- end -}}
+
+{{- if and $truncated $owner (not $owner_shown) -}}
+  , <span class="font-bold">
+    {{- if $owner.RelPermalink -}}
+      <a href="{{ $owner.RelPermalink }}">{{ $owner.LinkTitle }}</a>
+    {{- else -}}
+      {{ $owner.LinkTitle }}
+    {{- end -}}
+  </span>
+{{- end -}}
+
+{{- if $truncated }}, et al.{{ end -}}

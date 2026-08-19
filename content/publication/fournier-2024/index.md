@@ -11,9 +11,8 @@ publication_types:
 - article-journal
 publication: '*Astronomy &amp; Astrophysics*'
 doi: 10.1051/0004-6361/202450017
-links:
-- name: URL
-  url: http://dx.doi.org/10.1051/0004-6361/202450017
+
+first_author: true
 
 # Publication name and optional abbreviated publication name.
 abstract: The presence of kiloparsec-sized bubble structures in both sides of the Galactic plan suggests active phases of Sgr A*,the central supermassive black hole of the Milky–Way in the last 1–6 Myr. The contribution of such event on the cosmic-ray flux measured in the solar neighborhood is investigated with numerical simulations. We evaluate whether the population of high–energy charged particles emitted by the Galactic Center could be sufficient to significantly impact the CR flux measured in the solar neighborhood.

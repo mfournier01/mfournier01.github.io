@@ -1,0 +1,20 @@
+{{/* assets/dist/font/Inter.var.woff2 has been swapped for EB Garamond
+     (Regular+Bold, variable weight 400-800) — it's a project override of
+     the theme's own file, declared upstream in site_head.html under the
+     font-family name "Inter var". That covers regular/bold via the weight
+     axis, but variable fonts always ship italic as a separate file, so we
+     add it here as a second @font-face under the same family name.
+     Browsers then pick this file automatically for italic text (e.g.
+     markdown *emphasis*) instead of the default synthesized/faux italic. */}}
+{{ $italic := resources.Get "media/fonts/EBGaramond-Italic.woff2" }}
+{{ with $italic }}
+<style>
+  @font-face {
+    font-family: 'Inter var';
+    font-style: italic;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('{{ .RelPermalink }}') format('woff2');
+  }
+</style>
+{{ end }}

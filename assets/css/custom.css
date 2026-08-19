@@ -1,3 +1,21 @@
+/* --- Compensate for the EB Garamond font swap ---
+   1. Garamond's x-height is noticeably smaller than Inter's at the same
+      font-size, so text reads smaller/harder to read — nudge the root
+      size up slightly.
+   2. Tailwind's `max-w-prose` utility is `65ch`, which is font-relative
+      (based on the width of the "0" glyph). Measured live: 65ch computed
+      to 655px under the old sans-serif fallback but only 499px under
+      Garamond — a ~24% narrower text column, which is what was forcing
+      short phrases like "Computational Astrophysics" to wrap. Pin it to
+      a fixed width close to the original so it's stable across fonts. */
+html {
+  font-size: 107%;
+}
+
+.max-w-prose {
+  max-width: 42rem;
+}
+
 /* --- Larger, sharper homepage avatar (default theme caps it at 150x150) --- */
 .avatar-wrapper {
   width: 220px;
@@ -44,4 +62,14 @@
      Interests box to match Education's height. Size each to its own content
      instead. */
   align-self: start;
+}
+
+/* --- "Citations: N" badge in Recent Publications ---
+   Plain CSS, not a Tailwind utility class: the site ships a pre-compiled
+   CSS bundle built from the theme's own source, so any Tailwind class
+   (e.g. `text-orange-600`) that never appeared in the theme's original
+   templates is silently absent from the shipped stylesheet and has no
+   effect — confirmed zero occurrences of `text-orange-*` in wc.min.css. */
+.pub-citation-count {
+  color: #d97757; /* Claude's brand orange */
 }

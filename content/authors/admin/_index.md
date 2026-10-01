@@ -67,7 +67,7 @@ education:
     summary: ''
 work:
   - position: Postdoctoral Researcher · Paris, France
-    company_name: "Institut d'Astrophysique de Paris (IAP)<br>CNRS & Sorbonne Université"
+    company_name: "Institut d'Astrophysique de Paris (IAP)"
     company_url: https://www.iap.fr/
     company_logo: ''
     date_start: 2026-10-01

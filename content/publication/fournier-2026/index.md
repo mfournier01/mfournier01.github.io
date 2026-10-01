@@ -15,6 +15,8 @@ url_preprint: "https://arxiv.org/abs/2605.00563"
 
 first_author: true
 
+citations: 1
+
 # Schedule page publish date (NOT publication's date).
 publishDate: "2026-04-30"
 

@@ -1,0 +1,16 @@
+{{/* Minimal page layout: just the site chrome (navbar/footer from
+     baseof.html) plus the page's raw `.Content` — no title, date, or
+     metadata. Used via `layout: blank` in front matter for a clean canvas
+     page. Set `full_width: true` to drop the centered `max-w-4xl` wrapper
+     for content (e.g. a wide plot) that should span the full page width. */}}
+{{ define "main" }}
+{{ if .Params.full_width }}
+<div class="min-h-[60vh] py-10">
+  {{ .Content }}
+</div>
+{{ else }}
+<div class="min-h-[60vh] max-w-4xl mx-auto px-6 py-10">
+  {{ .Content }}
+</div>
+{{ end }}
+{{ end }}

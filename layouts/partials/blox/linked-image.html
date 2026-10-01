@@ -1,0 +1,20 @@
+{{/* Project custom block: a small, centered image that links elsewhere
+     (e.g. an icon pointing to a dedicated sub-page) — unlike the other
+     image blocks on this site, it's deliberately NOT full-bleed or
+     banner-sized. */}}
+
+{{ $page := .wcPage }}
+{{ $block := .wcBlock }}
+{{ $alt := $block.content.alt | default "" }}
+{{ $link := $block.content.link | default "#" }}
+{{ $width := $block.content.width | default "160px" }}
+{{ $res := $page.Resources.GetMatch $block.content.image }}
+
+{{ with $res }}
+  {{ $img := .Resize "400x webp q90" }}
+  <div class="flex justify-center px-6">
+    <a href="{{ $link }}" class="inline-block transition-transform hover:scale-105">
+      <img src="{{ $img.RelPermalink }}" alt="{{ $alt }}" style="width: {{ $width }};" class="h-auto">
+    </a>
+  </div>
+{{ end }}

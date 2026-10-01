@@ -1,0 +1,2325 @@
+<!--
+  Interactive JWST/NIRSpec emission-line explorer — the bubble hierarchy
+  below the plot is three generations, each tier connecting only to the
+  one immediately adjacent so it reads top-to-bottom without doubling
+  back: line dots sit right under the plot, directly below their own
+  stem (a short, purely-vertical leader up to the data point); below
+  those, ionization-state bubbles (e.g. "Mg II", "[O III]"); and at the
+  very bottom, the largest bubbles are the physical elements/species (H,
+  Fe, Mg, ... plus a "Molecules" group for H2/PAH/H2O). Clicking any tier
+  highlights it and everything it contains (an element highlights all
+  its ions and lines; an ion highlights all its lines); clicking a
+  single line highlights just that line plus its ion and element
+  ancestors. Hard wavelength limit is 0.5-10 um. Chunks 1-2 (redshift,
+  zoom/pan, click-to-select) unchanged.
+-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+
+<div class="nspl-wrap">
+  <div class="nspl-panel">
+  <div class="nspl-controls">
+    <label class="nspl-z-label" for="nspl-z-slider">
+      Redshift <span class="nspl-z-value" id="nspl-z-value">0.00</span>
+    </label>
+    <input type="range" id="nspl-z-slider" class="nspl-z-slider" min="0" max="20" step="0.01" value="0">
+    <span class="nspl-zoom-group">
+      <button type="button" class="nspl-icon-btn nspl-zoom-out-btn" aria-label="Zoom out">−</button>
+      <button type="button" class="nspl-icon-btn nspl-zoom-in-btn" aria-label="Zoom in">+</button>
+    </span>
+    <button type="button" class="nspl-reset-btn" id="nspl-reset-btn">Reset view</button>
+  </div>
+
+  <div class="nspl-main-legend" id="nspl-main-legend"></div>
+
+  <svg class="nspl" viewBox="0 0 1800 840" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Interactive plot of emission lines observable with JWST NIRSpec as a function of redshift, with an element/ion/line bubble hierarchy below">
+    <g id="nspl-coverage"></g>
+    <g id="nspl-grid"></g>
+    <line class="nspl-axis" id="nspl-axis-top" />
+    <line class="nspl-axis" id="nspl-axis-bottom" />
+    <text class="nspl-axis-title" id="nspl-title-bottom" text-anchor="middle">Observed wavelength (µm)</text>
+    <text class="nspl-axis-title" id="nspl-title-top" text-anchor="middle">Frequency (THz)</text>
+    <text class="nspl-axis-title nspl-axis-title--hoverable" id="nspl-title-left" text-anchor="middle">Relative line strength (arb. units)</text>
+    <rect class="nspl-axis-title-hit" id="nspl-title-left-hit" fill="transparent" />
+    <g id="nspl-ticks-bottom"></g>
+    <g id="nspl-ticks-top"></g>
+    <g id="nspl-lines"></g>
+    <line class="nspl-axis nspl-axis--left" id="nspl-axis-left" />
+    <!-- All connector lines are grouped before (i.e. under) every bubble
+         group below, so a bubble always paints on top of every line
+         touching it — never the reverse. -->
+    <g id="nspl-bubble-leaders"></g>
+    <g id="nspl-bubble-ion-stems"></g>
+    <g id="nspl-bubble-elem-stems"></g>
+    <g id="nspl-bubble-line-dots"></g>
+    <g id="nspl-bubble-ions"></g>
+    <g id="nspl-bubble-elements"></g>
+  </svg>
+
+  <div class="nspl-tooltip" id="nspl-strength-tooltip">
+    <strong>Relative line strength</strong> here is illustrative (0 to 1), not a calibrated prediction. A real recombination line's luminosity is set by density, volume and the atomic physics of the transition:
+    <div class="nspl-eq-block nspl-eq-block--small" data-tex="L_{\text{line}} = n_e\,n_p\,\alpha_{\text{eff}}\,h\nu\,V"></div>
+    One well-tested ratio this predicts, the Balmer decrement:
+    <div class="nspl-eq-block nspl-eq-block--small" data-tex="\dfrac{F_{\text{H}\alpha}}{F_{\text{H}\beta}} \approx 2.86 \quad (\text{Case B})"></div>
+  </div>
+
+  <div class="nspl-info" id="nspl-info">
+    <span class="nspl-info-hint">Click a line (or a bubble) to identify it.</span>
+  </div>
+
+  <div class="nspl-species-detail" id="nspl-species-detail">
+
+    <div class="nspl-species-panel" data-element="H">
+      <h3 class="nspl-sd-title">Hydrogen (H I): the energy levels behind these lines</h3>
+
+      <div class="nspl-species-diagram-wrap">
+        <svg class="nspl-species-diagram" id="nspl-sd-diagram-H" viewBox="0 150 860 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hydrogen energy-level diagram, with every Lyman, Balmer, Paschen and Brackett transition in this catalog shown as a clickable arrow">
+          <defs>
+            <!-- Every arrow in this diagram is perfectly vertical (top
+                 level down to a lower one), so the marker is drawn
+                 already pointing down and fixed at orient="0" rather
+                 than "auto": auto-orient assumes a marker drawn pointing
+                 right and rotates from there, which over-rotates a
+                 shape that's already pointing the right way. -->
+            <marker id="nspl-arr-lyman" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="5.5" markerHeight="5.5" orient="0"><path d="M0,0 L10,0 L5,10 Z" fill="#a78bfa" /></marker>
+            <marker id="nspl-arr-balmer" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="5.5" markerHeight="5.5" orient="0"><path d="M0,0 L10,0 L5,10 Z" fill="#38bdf8" /></marker>
+            <marker id="nspl-arr-paschen" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="5.5" markerHeight="5.5" orient="0"><path d="M0,0 L10,0 L5,10 Z" fill="#34d399" /></marker>
+            <marker id="nspl-arr-brackett" viewBox="0 0 10 10" refX="5" refY="9" markerWidth="5.5" markerHeight="5.5" orient="0"><path d="M0,0 L10,0 L5,10 Z" fill="#fbbf24" /></marker>
+          </defs>
+          <!-- populated by buildHydrogenDiagram(): level ladder + one clickable arrow per catalog line -->
+        </svg>
+        <div class="nspl-sd-caption">Click any transition to spotlight it here and on the plot above. Level spacing is schematic (even steps by n, not true energy); the equations below give the real numbers.</div>
+      </div>
+
+      <div class="nspl-sd-relevance" id="nspl-sd-relevance">
+        <h4 class="nspl-sd-relevance-title">What this line is used for</h4>
+        <p class="nspl-sd-relevance-text" id="nspl-sd-relevance-text">Click a transition in the diagram above to read what it is actually used for in practice.</p>
+      </div>
+
+      <div class="nspl-sd-theory">
+        <p>Every hydrogen line above comes from the same single electron, bound to one proton,
+        jumping between quantized energy levels. With only one electron, hydrogen's Schrödinger
+        equation solves exactly: the bound-state energies depend on nothing but the principal
+        quantum number <span class="nspl-eq" data-tex="n"></span>.</p>
+
+        <div class="nspl-eq-block" data-tex="E_n = -\dfrac{13.6\,\text{eV}}{n^2}"></div>
+
+        <p>A photon is absorbed or emitted when the electron jumps between levels
+        <span class="nspl-eq" data-tex="n_i"></span> and <span class="nspl-eq" data-tex="n_f"></span>,
+        carrying the energy difference between them:</p>
+
+        <div class="nspl-eq-block" data-tex="E_\gamma = E_{n_i}-E_{n_f} = 13.6\,\text{eV}\left(\dfrac{1}{n_f^2}-\dfrac{1}{n_i^2}\right)"></div>
+
+        <p>In wavelength form, this is the Rydberg formula, the equation that places every hydrogen line on the plot above:</p>
+
+        <div class="nspl-eq-block" data-tex="\dfrac{1}{\lambda} = R_H\left(\dfrac{1}{n_f^2}-\dfrac{1}{n_i^2}\right)"></div>
+        <div class="nspl-eq-block nspl-eq-block--small" data-tex="R_H \approx 1.097\times10^{7}\,\text{m}^{-1}"></div>
+
+        <p>It follows from the time-independent Schrödinger equation, compactly written with the Hamiltonian operator <span class="nspl-eq" data-tex="\hat{H}"></span>:</p>
+
+        <div class="nspl-eq-block" data-tex="\hat{H}\,\psi(\mathbf{r}) = E\,\psi(\mathbf{r}), \qquad \hat{H} = -\dfrac{\hbar^2}{2m_e}\nabla^2 - \dfrac{e^2}{4\pi\epsilon_0 r}"></div>
+
+        <p>whose bound states are labelled by three quantum numbers <span class="nspl-eq" data-tex="(n,\ell,m)"></span>;
+        energy depends only on <span class="nspl-eq" data-tex="n"></span>, while which jumps actually happen is
+        restricted by the electric-dipole selection rule <span class="nspl-eq" data-tex="\Delta \ell = \pm 1"></span>.</p>
+
+        <p class="nspl-sd-closing">What you'd actually <em>observe</em> is a separate question from where a line sits: relative line strength (hover that axis label above) depends on more than level energies. For Case-B recombination, the Balmer ratio Hα/Hβ ≈ 2.86 comes from the cascade of transition probabilities through every level, not just the bottom one.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nspl-legend-note">
+    Pinch or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + scroll to zoom, drag to pan, use the +/− buttons, or double-click to reset (hard limited to 0.5–6.4 µm). Plain scrolling always scrolls the page. Lines are grey until selected; dimmed ones currently fall outside NIRSpec's ~0.6–5.3 µm coverage. Below the plot sits an element → ion → line hierarchy: only the element bubbles ("H", "O", "Mg", ...) show by default, click one to bring its ionization states and lines into focus while the rest stay veiled. Rest-frame wavelengths are fixed; this view shows them redshifted to <strong>λ_obs = λ_rest × (1 + z)</strong>.
+  </div>
+  </div>
+</div>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=STIX+Two+Text:wght@400;700&display=swap');
+
+  .nspl-wrap {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .nspl-panel {
+    /* Plain pass-through wrapper — no card chrome, no width cap, just
+       the page's own black background showing through, full width.
+       Positioned only so the strength-axis tooltip (absolute) anchors
+       to it rather than to the page. */
+    width: 100%;
+    position: relative;
+  }
+
+  .nspl-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    max-width: 760px;
+    margin: 0 auto 1.1rem;
+  }
+
+  /* The key to every color in the plot and bubble hierarchy below: each
+     line's color now comes directly from this same four-way physical
+     classification (see categoryOfLine), so this is the one legend
+     that applies everywhere except Hydrogen's own detail diagram,
+     which uses a separate, finer series-based palette shown there. */
+  .nspl-main-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.2rem;
+    margin: 0 auto 1rem;
+    max-width: 760px;
+  }
+
+  .nspl-main-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+  }
+
+  .nspl-main-legend-swatch {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+  }
+
+  .nspl-z-label {
+    font-family: 'STIX Two Text', serif;
+    color: #e2e8f0;
+    font-size: 1rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .nspl-z-value {
+    font-variant-numeric: tabular-nums;
+    color: #fbbf24;
+    font-weight: 700;
+    min-width: 2.6em;
+  }
+
+  .nspl-z-slider {
+    flex: 1;
+    accent-color: #fbbf24;
+  }
+
+  .nspl-reset-btn {
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .nspl-reset-btn:hover {
+    color: #e2e8f0;
+    border-color: #94a3b8;
+  }
+
+  .nspl-zoom-group {
+    display: inline-flex;
+    gap: 0.35rem;
+  }
+
+  .nspl-icon-btn {
+    font-family: 'STIX Two Text', serif;
+    font-size: 1rem;
+    line-height: 1;
+    color: #94a3b8;
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 0.3rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .nspl-icon-btn:hover {
+    color: #e2e8f0;
+    border-color: #94a3b8;
+  }
+
+  .nspl-legend-note kbd {
+    font-family: inherit;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 0.25rem;
+    padding: 0.05rem 0.3rem;
+  }
+
+  .nspl {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    display: block;
+    cursor: grab;
+    /* Allow native vertical scrolling (page scroll) to pass through on
+       touch devices; only non-vertical single-finger gestures are left
+       for our own pointer-based pan handler. Wheel/trackpad zoom is
+       separately gated behind ctrlKey below, for the same reason: this
+       element must never trap an ordinary scroll gesture. */
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .nspl.nspl-dragging {
+    cursor: grabbing;
+  }
+
+  .nspl text {
+    font-family: 'STIX Two Text', serif;
+  }
+
+  .nspl-axis {
+    stroke: #94a3b8;
+    stroke-width: 1.5;
+  }
+
+  .nspl-axis--left {
+    /* Drawn last and brighter/thicker than the regular axis lines, since
+       otherwise it visually disappears into the dense cluster of UV
+       emission-line stems sitting right next to it near 0.1-0.3 µm. */
+    stroke: #e2e8f0;
+    stroke-width: 2.5;
+  }
+
+  .nspl-axis-title {
+    fill: #94a3b8;
+    font-size: 16px;
+  }
+
+  .nspl-grid-line {
+    stroke: rgba(148, 163, 184, 0.14);
+    stroke-width: 1;
+  }
+
+  .nspl-grid-label {
+    fill: #64748b;
+    font-size: 13px;
+  }
+
+  .nspl-tick {
+    stroke: #94a3b8;
+    stroke-width: 1.5;
+  }
+
+  .nspl-tick-label {
+    fill: #94a3b8;
+    font-size: 13px;
+  }
+
+  .nspl-coverage-band {
+    fill: rgba(100, 116, 139, 0.18);
+  }
+
+  .nspl-coverage-label {
+    fill: #64748b;
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .nspl-line {
+    cursor: pointer;
+  }
+
+  .nspl-line-hit {
+    fill: transparent;
+    stroke: none;
+  }
+
+  .nspl-line-stem {
+    stroke: #64748b;
+    stroke-width: 2.5;
+    transition: stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+  }
+
+  .nspl-line-tip {
+    fill: #64748b;
+    transition: fill 0.2s ease, r 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+  }
+
+  .nspl-line-group {
+    transition: transform 0.15s linear, opacity 0.2s ease;
+  }
+
+  .nspl-line:hover .nspl-line-stem {
+    stroke: #cbd5e1;
+  }
+
+  .nspl-line:hover .nspl-line-tip {
+    fill: #cbd5e1;
+    r: 5;
+  }
+
+  .nspl-line--selected .nspl-line-stem {
+    stroke-width: 4;
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+
+  .nspl-line--selected .nspl-line-tip {
+    r: 6;
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  .nspl-info {
+    max-width: 760px;
+    margin: 1.25rem auto 0;
+    padding: 0.85rem 1.25rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 0.5rem;
+    font-family: 'STIX Two Text', serif;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    min-height: 1.4em;
+  }
+
+  .nspl-info-hint {
+    color: #64748b;
+    font-style: italic;
+  }
+
+  .nspl-info-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .nspl-legend-note {
+    max-width: 760px;
+    margin: 0.75rem auto 0;
+    padding: 0 1.25rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    text-align: center;
+  }
+
+  .nspl-axis-title--hoverable {
+    transition: fill 0.15s ease;
+  }
+
+  .nspl-axis-title--hover-active {
+    fill: #e2e8f0;
+  }
+
+  .nspl-axis-title-hit {
+    cursor: help;
+    /* "all" hit-tests the rect's full geometry regardless of fill-paint
+       ambiguity around fill="transparent" — needed since this exists
+       purely as an invisible, generously-sized hover target. */
+    pointer-events: all;
+  }
+
+  .nspl-tooltip {
+    position: absolute;
+    z-index: 5;
+    width: 340px;
+    max-width: calc(100vw - 2.5rem);
+    padding: 0.85rem 1rem;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #cbd5e1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .nspl-tooltip--visible {
+    opacity: 1;
+  }
+
+  .nspl-tooltip strong {
+    color: #e2e8f0;
+  }
+
+  .nspl-species-detail {
+    display: none;
+    max-width: 960px;
+    margin: 1.25rem auto 0;
+    padding: 0 1.25rem;
+  }
+
+  .nspl-species-detail--visible {
+    display: block;
+  }
+
+  .nspl-species-panel {
+    padding: 1.25rem 1.5rem 1.4rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 0.75rem;
+    background: rgba(15, 23, 42, 0.4);
+  }
+
+  .nspl-sd-title {
+    margin: 0 0 0.35rem;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    text-align: center;
+  }
+
+  .nspl-species-panel p {
+    margin: 0.65rem 0;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+
+  /* Practical relevance: visually separated from the theory/equations
+     block below it, so "what it's used for" never reads as part of
+     the QM derivation. */
+  .nspl-sd-relevance {
+    max-width: 640px;
+    margin: 1.1rem auto 0;
+    padding: 0.7rem 1rem;
+    background: rgba(148, 163, 184, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 0.5rem;
+  }
+
+  .nspl-sd-relevance-title {
+    margin: 0 0 0.3rem;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+
+  .nspl-sd-relevance-text {
+    margin: 0;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #e2e8f0;
+  }
+
+  /* H2 ro-vibrational motion: two atoms on a spring, shown only while
+     an actual H2 line (not PAH/H2O) is selected in the Molecules panel.
+     The spring itself stays fixed; only the atoms and the outer group
+     animate, which is a fine approximation at this small amplitude. */
+  .nspl-h2-anim-wrap {
+    display: none;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    text-align: center;
+  }
+
+  .nspl-h2-anim-wrap--visible {
+    display: block;
+  }
+
+  .nspl-h2-anim {
+    width: 118px;
+    height: 56px;
+    display: block;
+    margin: 0 auto;
+    overflow: visible;
+  }
+
+  .nspl-h2-spring {
+    fill: none;
+    stroke: #94a3b8;
+    stroke-width: 1.5;
+  }
+
+  .nspl-h2-molecule {
+    transform-origin: 68px 35px;
+    animation: nspl-h2-rotate 7s linear infinite;
+  }
+
+  .nspl-h2-atom circle {
+    fill: #a78bfa;
+    stroke: #e2e8f0;
+    stroke-width: 1;
+  }
+
+  .nspl-h2-atom-a {
+    transform-origin: 38px 35px;
+    animation: nspl-h2-vibrate-a 1.1s ease-in-out infinite;
+  }
+
+  .nspl-h2-atom-b {
+    transform-origin: 98px 35px;
+    animation: nspl-h2-vibrate-b 1.1s ease-in-out infinite;
+  }
+
+  @keyframes nspl-h2-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes nspl-h2-vibrate-a {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(5px); }
+  }
+
+  @keyframes nspl-h2-vibrate-b {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-5px); }
+  }
+
+  .nspl-h2-anim-caption {
+    margin-top: 0.4rem;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.68rem;
+    font-style: italic;
+    color: #94a3b8;
+  }
+
+  .nspl-sd-theory {
+    max-width: 640px;
+    margin: 1.4rem auto 0;
+  }
+
+  .nspl-eq {
+    display: inline-block;
+    font-size: 0.95em;
+  }
+
+  .nspl-eq-block {
+    margin: 0.9rem 0;
+    padding: 0.3rem 0;
+    text-align: center;
+    font-size: 0.92em;
+    overflow-x: auto;
+  }
+
+  .nspl-eq-block--small {
+    margin-top: -0.4rem;
+    font-size: 0.78em;
+    color: #94a3b8;
+  }
+
+  /* The diagram is the centerpiece: full panel width, generous height,
+     and overflow left explicitly visible as a guard against clipping
+     even if a label ever sits right at the viewBox edge. */
+  .nspl-species-diagram-wrap {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .nspl-species-diagram {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  .nspl-sd-level {
+    stroke: #64748b;
+    stroke-width: 1.5;
+  }
+
+  .nspl-sd-level--ground {
+    stroke: #94a3b8;
+    stroke-width: 2.25;
+  }
+
+  .nspl-sd-ionline {
+    stroke: #475569;
+    stroke-width: 1.25;
+    stroke-dasharray: 4 4;
+  }
+
+  .nspl-sd-level-guide {
+    stroke: #475569;
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+    opacity: 0.55;
+  }
+
+  .nspl-sd-readout {
+    font-family: 'STIX Two Text', serif;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateX(-28px);
+    pointer-events: none;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .nspl-sd-readout--visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .nspl-sd-level-label {
+    fill: #94a3b8;
+    font-family: 'STIX Two Text', serif;
+    font-size: 13px;
+  }
+
+  .nspl-sd-group-label {
+    fill: #64748b;
+    font-family: 'STIX Two Text', serif;
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .nspl-sd-transition {
+    cursor: pointer;
+  }
+
+  .nspl-sd-arrow {
+    stroke-width: 2.25;
+    transition: stroke 0.2s ease, filter 0.2s ease;
+  }
+
+  .nspl-sd-tr-label {
+    fill: #94a3b8;
+    font-family: 'STIX Two Text', serif;
+    font-size: 12px;
+    font-style: italic;
+    transition: fill 0.2s ease, font-weight 0.2s ease;
+  }
+
+  .nspl-sd-transition:hover .nspl-sd-arrow {
+    filter: drop-shadow(0 0 3px currentColor);
+  }
+
+  .nspl-sd-transition--dim {
+    opacity: 0.32;
+    filter: blur(0.5px);
+  }
+
+  .nspl-sd-transition--dim .nspl-sd-arrow,
+  .nspl-sd-transition--dim .nspl-sd-tr-label {
+    transition: stroke 0.2s ease, fill 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  }
+
+  .nspl-sd-transition--selected .nspl-sd-arrow {
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+
+  .nspl-sd-caption {
+    margin-top: 0.6rem;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.72rem;
+    font-style: italic;
+    color: #64748b;
+    text-align: center;
+  }
+
+  .nspl-sd-cat-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  .nspl-sd-cat-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'STIX Two Text', serif;
+    font-size: 0.68rem;
+    color: #94a3b8;
+  }
+
+  .nspl-sd-cat-legend-swatch {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+  }
+
+  .nspl-sd-closing {
+    margin-top: 1rem !important;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.15);
+    font-size: 0.74rem !important;
+    color: #94a3b8 !important;
+  }
+
+  .nspl-line-label {
+    fill: #64748b;
+    font-size: 12px;
+    font-style: italic;
+    pointer-events: none;
+    transition: fill 0.2s ease, font-weight 0.2s ease, opacity 0.2s ease;
+  }
+
+  .nspl-bubble-leader {
+    stroke: #475569;
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+    fill: none;
+    transition: stroke 0.2s ease, opacity 0.2s ease;
+  }
+
+  .nspl-bubble-stem {
+    stroke: #475569;
+    stroke-width: 1.25;
+    fill: none;
+    transition: stroke 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* Shared styling for the three clickable bubble tiers (line dots,
+     ion bubbles, element bubbles) — tier-specific sizing (radius,
+     stroke width) is set per-element via attributes in JS. */
+  .nspl-hier-bubble {
+    cursor: pointer;
+  }
+
+  .nspl-hier-circle {
+    fill: #1e293b;
+    stroke: #64748b;
+    stroke-width: 1.75;
+    transition: stroke 0.2s ease, fill 0.2s ease, filter 0.2s ease;
+  }
+
+  .nspl-hier-dot {
+    fill: #64748b;
+    stroke: none;
+    transition: fill 0.2s ease, r 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+  }
+
+  .nspl-hier-label {
+    fill: #94a3b8;
+    font-size: 12px;
+    text-anchor: middle;
+    pointer-events: none;
+    transition: fill 0.2s ease, font-weight 0.2s ease;
+  }
+
+  .nspl-hier-bubble:hover .nspl-hier-circle {
+    stroke: #cbd5e1;
+  }
+
+  .nspl-hier-bubble:hover .nspl-hier-dot {
+    fill: #cbd5e1;
+  }
+
+  .nspl-hier-bubble--highlighted .nspl-hier-circle {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  .nspl-hier-bubble--highlighted .nspl-hier-dot {
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  .nspl-hier-bubble--highlighted .nspl-hier-label {
+    font-weight: 700;
+  }
+
+  /* The ion and line-dot tiers (and their connectors) default to this —
+     faint and softly blurred, just enough to hint there's more below
+     each element — until that element is selected. Non-interactive
+     while veiled, so a stray click can't land on an unreadable bubble;
+     the element bubble above it is the only way in. */
+  .nspl-hier-veiled {
+    opacity: 0.1;
+    filter: blur(1.1px);
+    pointer-events: none;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+  }
+</style>
+
+<script>
+(function () {
+  // ---- Catalog: name, species (grouping key for the future bubble
+  // layer), rest-frame wavelength in µm, broad category, ionization
+  // state. Rest wavelengths are never mutated; observed wavelength is
+  // always recomputed from redshift. ----
+  var H = 'H I';
+  var CATALOG = [
+    { name: 'Lyγ', species: H, wl: 0.09725, cat: 'uv', ion: 'I' },
+    { name: 'Lyβ', species: H, wl: 0.10257, cat: 'uv', ion: 'I' },
+    { name: 'O VI', species: 'O VI', wl: 0.1032, cat: 'uv', ion: 'VI' },
+    { name: 'O VI', species: 'O VI', wl: 0.1038, cat: 'uv', ion: 'VI' },
+    { name: 'Lyα', species: H, wl: 0.12157, cat: 'uv', ion: 'I' },
+    { name: 'N V', species: 'N V', wl: 0.1239, cat: 'uv', ion: 'V' },
+    { name: 'Si II', species: 'Si II', wl: 0.1260, cat: 'uv', ion: 'II' },
+    { name: 'O I + Si II', species: 'O I', wl: 0.1305, cat: 'uv', ion: 'I' },
+    { name: 'C II', species: 'C II', wl: 0.1335, cat: 'uv', ion: 'II' },
+    { name: 'Si IV', species: 'Si IV', wl: 0.1394, cat: 'uv', ion: 'IV' },
+    { name: 'Si IV', species: 'Si IV', wl: 0.1403, cat: 'uv', ion: 'IV' },
+    { name: 'N IV]', species: '[N IV]', wl: 0.1486, cat: 'uv', ion: 'IV' },
+    { name: 'Si II', species: 'Si II', wl: 0.1527, cat: 'uv', ion: 'II' },
+    { name: 'C IV', species: 'C IV', wl: 0.1549, cat: 'uv', ion: 'IV' },
+    { name: 'He II', species: 'He II', wl: 0.1640, cat: 'uv', ion: 'II' },
+    { name: 'O III]', species: '[O III]', wl: 0.1661, cat: 'uv', ion: 'III' },
+    { name: 'O III]', species: '[O III]', wl: 0.1666, cat: 'uv', ion: 'III' },
+    { name: 'N III]', species: '[N III]', wl: 0.1750, cat: 'uv', ion: 'III' },
+    { name: 'Al III', species: 'Al III', wl: 0.1857, cat: 'uv', ion: 'III' },
+    { name: 'Si III]', species: '[Si III]', wl: 0.1883, cat: 'uv', ion: 'III' },
+    { name: 'Si III]', species: '[Si III]', wl: 0.1892, cat: 'uv', ion: 'III' },
+    { name: 'C III]', species: '[C III]', wl: 0.1907, cat: 'uv', ion: 'III' },
+    { name: 'C III]', species: '[C III]', wl: 0.1909, cat: 'uv', ion: 'III' },
+    { name: 'C II]', species: '[C II]', wl: 0.2326, cat: 'uv', ion: 'II' },
+    { name: '[Ne IV]', species: '[Ne IV]', wl: 0.2422, cat: 'uv', ion: 'IV' },
+    { name: '[O II]', species: '[O II]', wl: 0.2470, cat: 'uv', ion: 'II' },
+    { name: 'Mg II', species: 'Mg II', wl: 0.2796, cat: 'uv', ion: 'II' },
+    { name: 'Mg II', species: 'Mg II', wl: 0.2803, cat: 'uv', ion: 'II' },
+    { name: '[Ne V]', species: '[Ne V]', wl: 0.3346, cat: 'uv', ion: 'V' },
+    { name: '[Ne V]', species: '[Ne V]', wl: 0.3426, cat: 'uv', ion: 'V' },
+
+    { name: '[O II]', species: '[O II]', wl: 0.3727, cat: 'optical', ion: 'II' },
+    { name: '[Ne III]', species: '[Ne III]', wl: 0.3869, cat: 'optical', ion: 'III' },
+    { name: '[Ne III]', species: '[Ne III]', wl: 0.3967, cat: 'optical', ion: 'III' },
+    { name: '[S II]', species: '[S II]', wl: 0.4068, cat: 'optical', ion: 'II' },
+    { name: '[S II]', species: '[S II]', wl: 0.4076, cat: 'optical', ion: 'II' },
+    { name: 'Hδ', species: H, wl: 0.4102, cat: 'optical', ion: 'I' },
+    { name: 'Hγ', species: H, wl: 0.4340, cat: 'optical', ion: 'I' },
+    { name: '[O III]', species: '[O III]', wl: 0.4363, cat: 'optical', ion: 'III' },
+    { name: 'He I', species: 'He I', wl: 0.4471, cat: 'optical', ion: 'I' },
+    { name: 'He II', species: 'He II', wl: 0.4686, cat: 'optical', ion: 'II' },
+    { name: '[Ar IV]', species: '[Ar IV]', wl: 0.4711, cat: 'optical', ion: 'IV' },
+    { name: '[Ar IV]', species: '[Ar IV]', wl: 0.4740, cat: 'optical', ion: 'IV' },
+    { name: 'Hβ', species: H, wl: 0.4861, cat: 'optical', ion: 'I' },
+    { name: '[O III]', species: '[O III]', wl: 0.4959, cat: 'optical', ion: 'III' },
+    { name: '[O III]', species: '[O III]', wl: 0.5007, cat: 'optical', ion: 'III' },
+    { name: '[Fe VII]', species: '[Fe VII]', wl: 0.5159, cat: 'optical', ion: 'VII' },
+    { name: '[N I]', species: '[N I]', wl: 0.5199, cat: 'optical', ion: 'I' },
+    { name: '[Fe XIV]', species: '[Fe XIV]', wl: 0.5303, cat: 'optical', ion: 'XIV' },
+    { name: '[Cl III]', species: '[Cl III]', wl: 0.5518, cat: 'optical', ion: 'III' },
+    { name: '[O I]', species: '[O I]', wl: 0.5577, cat: 'optical', ion: 'I' },
+    { name: '[N II]', species: '[N II]', wl: 0.5755, cat: 'optical', ion: 'II' },
+    { name: 'He I', species: 'He I', wl: 0.5876, cat: 'optical', ion: 'I' },
+    { name: '[O I]', species: '[O I]', wl: 0.6300, cat: 'optical', ion: 'I' },
+    { name: '[S III]', species: '[S III]', wl: 0.6312, cat: 'optical', ion: 'III' },
+    { name: '[O I]', species: '[O I]', wl: 0.6364, cat: 'optical', ion: 'I' },
+    { name: '[Fe X]', species: '[Fe X]', wl: 0.6374, cat: 'optical', ion: 'X' },
+    { name: '[N II]', species: '[N II]', wl: 0.6548, cat: 'optical', ion: 'II' },
+    { name: 'Hα', species: H, wl: 0.6563, cat: 'optical', ion: 'I' },
+    { name: '[N II]', species: '[N II]', wl: 0.6583, cat: 'optical', ion: 'II' },
+    { name: 'He I', species: 'He I', wl: 0.6678, cat: 'optical', ion: 'I' },
+    { name: '[S II]', species: '[S II]', wl: 0.6716, cat: 'optical', ion: 'II' },
+    { name: '[S II]', species: '[S II]', wl: 0.6731, cat: 'optical', ion: 'II' },
+    { name: '[Ar III]', species: '[Ar III]', wl: 0.7136, cat: 'optical', ion: 'III' },
+    { name: '[O II]', species: '[O II]', wl: 0.7319, cat: 'optical', ion: 'II' },
+    { name: '[O II]', species: '[O II]', wl: 0.7330, cat: 'optical', ion: 'II' },
+    { name: '[Ar III]', species: '[Ar III]', wl: 0.7751, cat: 'optical', ion: 'III' },
+    { name: 'O I', species: 'O I', wl: 0.8446, cat: 'optical', ion: 'I' },
+
+    { name: '[S III]', species: '[S III]', wl: 0.9069, cat: 'nir', ion: 'III' },
+    { name: '[S III]', species: '[S III]', wl: 0.9531, cat: 'nir', ion: 'III' },
+    { name: 'Paδ', species: H, wl: 1.0052, cat: 'nir', ion: 'I' },
+    { name: 'He I', species: 'He I', wl: 1.0830, cat: 'nir', ion: 'I' },
+    { name: 'Paγ', species: H, wl: 1.0938, cat: 'nir', ion: 'I' },
+    { name: '[P II]', species: '[P II]', wl: 1.1471, cat: 'nir', ion: 'II' },
+    { name: '[P II]', species: '[P II]', wl: 1.1886, cat: 'nir', ion: 'II' },
+    { name: '[Fe II]', species: '[Fe II]', wl: 1.2570, cat: 'nir', ion: 'II' },
+    { name: 'Paβ', species: H, wl: 1.2822, cat: 'nir', ion: 'I' },
+    { name: '[Fe II]', species: '[Fe II]', wl: 1.3209, cat: 'nir', ion: 'II' },
+    { name: '[Fe II]', species: '[Fe II]', wl: 1.5339, cat: 'nir', ion: 'II' },
+    { name: '[Fe II]', species: '[Fe II]', wl: 1.6440, cat: 'nir', ion: 'II' },
+    { name: 'Br 12', species: H, wl: 1.6412, cat: 'nir', ion: 'I' },
+    { name: 'Br 11', species: H, wl: 1.6811, cat: 'nir', ion: 'I' },
+    { name: 'Br 10', species: H, wl: 1.7367, cat: 'nir', ion: 'I' },
+    { name: 'Paα', species: H, wl: 1.8756, cat: 'nir', ion: 'I' },
+    { name: 'Brδ', species: H, wl: 1.9451, cat: 'nir', ion: 'I' },
+    { name: 'Brγ', species: H, wl: 2.1661, cat: 'nir', ion: 'I' },
+
+    { name: '[Si VI]', species: '[Si VI]', wl: 1.9634, cat: 'coronal', ion: 'VI' },
+    { name: '[Si X]', species: '[Si X]', wl: 1.4300, cat: 'coronal', ion: 'X' },
+    { name: '[Si XI]', species: '[Si XI]', wl: 1.9320, cat: 'coronal', ion: 'XI' },
+    { name: '[S VIII]', species: '[S VIII]', wl: 0.9913, cat: 'coronal', ion: 'VIII' },
+    { name: '[S IX]', species: '[S IX]', wl: 1.2523, cat: 'coronal', ion: 'IX' },
+    { name: 'H₂ 1-0 S(1)', species: 'H₂', wl: 2.1218, cat: 'molecular', ion: '' },
+    { name: 'H₂ 1-0 S(0)', species: 'H₂', wl: 2.2235, cat: 'molecular', ion: '' },
+    { name: 'H₂ 2-1 S(1)', species: 'H₂', wl: 2.2477, cat: 'molecular', ion: '' },
+    { name: '[Ca VIII]', species: '[Ca VIII]', wl: 2.3210, cat: 'coronal', ion: 'VIII' },
+    { name: '[Si VII]', species: '[Si VII]', wl: 2.4833, cat: 'coronal', ion: 'VII' },
+    { name: '[Si IX]', species: '[Si IX]', wl: 2.5840, cat: 'coronal', ion: 'IX' },
+    { name: '[Mg VIII]', species: '[Mg VIII]', wl: 3.0280, cat: 'coronal', ion: 'VIII' },
+    { name: '[Al VI]', species: '[Al VI]', wl: 3.6590, cat: 'coronal', ion: 'VI' },
+    { name: '[Ar VI]', species: '[Ar VI]', wl: 4.5290, cat: 'coronal', ion: 'VI' },
+
+    // PAH emission bands and illustrative hot-water features — broad
+    // molecular bands rather than sharp lines, included at representative
+    // central wavelengths for this qualitative explorer.
+    { name: 'PAH 3.3 µm', species: 'PAH', wl: 3.3000, cat: 'molecular', ion: '' },
+    { name: 'PAH 3.4 µm', species: 'PAH', wl: 3.4000, cat: 'molecular', ion: '' },
+    { name: 'H₂O (hot band)', species: 'H₂O', wl: 2.7000, cat: 'molecular', ion: '' },
+    { name: 'H₂O (ro-vib.)', species: 'H₂O', wl: 6.0000, cat: 'molecular', ion: '' }
+  ];
+
+  function hashString(str) {
+    var h = 0;
+    for (var i = 0; i < str.length; i++) {
+      h = (h * 31 + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(h);
+  }
+
+  // ---- Every line's color is now systematic rather than an arbitrary
+  // per-species hash: it encodes the one physical property shared by
+  // every line of its kind, how its transition is governed by quantum
+  // selection rules. The legend drawn directly on the main plot (see
+  // buildCategoryLegend) is this same four-color key. Hydrogen's own
+  // detail diagram still uses its own finer-grained series colors
+  // (Lyman/Balmer/Paschen/Brackett), which is a separate, richer
+  // breakdown shown only there. ----
+  var CATEGORY_COLOR = { forbidden: '#38bdf8', semiforbidden: '#34d399', permitted: '#fbbf24', molecular: '#a78bfa' };
+  var CATEGORY_LABEL = { forbidden: 'forbidden', semiforbidden: 'semi-forbidden', permitted: 'permitted', molecular: 'molecular' };
+
+  function categoryOfLine(line) {
+    if (line.species === 'PAH' || line.species === 'H₂' || line.species === 'H₂O') return 'molecular';
+    var nm = line.name.trim();
+    if (/^\[.*\]$/.test(nm)) return 'forbidden';
+    if (/\]$/.test(nm)) return 'semiforbidden';
+    return 'permitted';
+  }
+
+  CATALOG.forEach(function (line) {
+    line.category = categoryOfLine(line);
+    line.color = CATEGORY_COLOR[line.category];
+  });
+
+  // ---- Qualitative, illustrative "relative strength" (0-1, arb. units)
+  // — NOT a calibrated flux prediction, just a rough sense of which
+  // lines are typically strong vs. faint, so the plot isn't flat. A few
+  // well-known strong/faint lines are pinned explicitly; everything else
+  // falls back to a per-category baseline with a little per-line jitter
+  // (seeded from the line's name, so it's stable across redraws). ----
+  var STRENGTH_OVERRIDES = {
+    'Lyα|0.1216': 1.00, 'C IV|0.1549': 0.45, 'C III]|0.1907': 0.30, 'Mg II|0.2796': 0.32,
+    '[O II]|0.3727': 0.55, 'Hδ|0.4102': 0.13, 'Hγ|0.4340': 0.22, 'Hβ|0.4861': 0.45,
+    '[O III]|0.4959': 0.28, '[O III]|0.5007': 0.85, '[N II]|0.6548': 0.10, 'Hα|0.6563': 0.95,
+    '[N II]|0.6583': 0.30, '[S II]|0.6716': 0.20, '[S II]|0.6731': 0.18, '[O I]|0.6300': 0.12,
+    'Paα|1.8756': 0.55, 'Paβ|1.2822': 0.32, 'Paγ|1.0938': 0.20, 'Paδ|1.0052': 0.13,
+    'Brγ|2.1661': 0.18, 'Brδ|1.9451': 0.12, 'He I|1.0830': 0.25,
+    'PAH 3.3 µm|3.3000': 0.45, 'PAH 3.4 µm|3.4000': 0.25,
+    'H₂O (hot band)|2.7000': 0.20, 'H₂O (ro-vib.)|6.0000': 0.16
+  };
+  var CATEGORY_BASELINE = { uv: 0.22, optical: 0.18, nir: 0.14, coronal: 0.08, molecular: 0.15 };
+  CATALOG.forEach(function (line) {
+    var key = line.name + '|' + line.wl.toFixed(4);
+    if (STRENGTH_OVERRIDES.hasOwnProperty(key)) {
+      line.str = STRENGTH_OVERRIDES[key];
+    } else {
+      var base = CATEGORY_BASELINE[line.cat] || 0.15;
+      var jitter = (hashString(line.name + line.wl.toFixed(4)) % 100) / 100 * 0.1 - 0.05;
+      line.str = Math.max(0.06, Math.min(0.95, base + jitter));
+    }
+  });
+
+  // ---- Hard wavelength limit the user can never zoom/pan past. Chosen
+  // so the grey "outside coverage" margin reads as symmetric on a log
+  // axis: DOMAIN_MAX sits the same *ratio* above COVERAGE_MAX that
+  // DOMAIN_MIN sits below COVERAGE_MIN (equal ratio = equal pixel width
+  // on a log scale, unlike equal linear difference). ----
+  var COVERAGE_MIN = 0.6, COVERAGE_MAX = 5.3;
+  var DOMAIN_MIN = 0.5;
+  var DOMAIN_MAX = COVERAGE_MAX * (COVERAGE_MIN / DOMAIN_MIN);
+  var LN_MIN_HARD = Math.log(DOMAIN_MIN), LN_MAX_HARD = Math.log(DOMAIN_MAX);
+  var FULL_RANGE = LN_MAX_HARD - LN_MIN_HARD;
+  var MIN_RANGE = Math.log(1.03); // deepest zoom: ~3% of a decade in view
+
+  var PLOT_LEFT = 110, PLOT_WIDTH = 1580, TOP_Y = 110, BASE_Y = 540;
+  var RIGHT_EDGE = PLOT_LEFT + PLOT_WIDTH;
+  var STEM_LEN = BASE_Y - TOP_Y - 30;
+
+  // ---- Element -> ion -> line bubble hierarchy, in the strip below the
+  // plot. Three tiers, top to bottom, each connecting only to its
+  // immediate neighbor: LINE_Y dots sit directly under their own stem
+  // (short vertical leader, no crossing), ION_Y bubbles group them by
+  // ionization state (e.g. "Mg II"), and ELEMENT_Y bubbles — the
+  // largest — group ions by physical element (e.g. "Mg") at the very
+  // bottom. ----
+  // LINE_Y leaves enough headroom above it for each line-dot's own
+  // oblique name label (angled up-and-to-the-right from the dot).
+  var LINE_Y = BASE_Y + 100;
+  var ION_Y = LINE_Y + 55;
+  var ELEMENT_Y = ION_Y + 70;
+  var MIN_BUBBLE_GAP = 4;
+
+  function ionRadius(n) {
+    // Floor raised from the original 6 so a short two-line label (e.g.
+    // "Mg"/"II") has room to sit inside even a single-line ion's bubble.
+    return Math.min(19, 13 + Math.min(n, 10) * 0.6);
+  }
+  function elementRadius(n) {
+    return Math.min(26, 10 + Math.min(n, 16) * 1.0);
+  }
+
+  // An ion's species string is always "<Element symbol(s)> <ionization
+  // numeral>" (e.g. "Mg II", "[O III]" with brackets); a molecule (ion
+  // === '') has no ionization state, so it's grouped under a shared
+  // "Molecules" element instead of being parsed.
+  function elementOfIon(ionKey, sampleIon) {
+    if (!sampleIon) return 'Molecules';
+    var stripped = ionKey.replace(/[\[\]]/g, '').trim();
+    var parts = stripped.split(' ');
+    parts.pop();
+    return parts.join(' ') || stripped;
+  }
+
+  // ---- Bubble labels live inside their circle now, always on one
+  // line: rather than wrapping or shrinking text to the point of being
+  // unreadable, the circle itself grows to fit its label. Molecule
+  // names have no natural ionization-numeral break and get a short
+  // abbreviation instead. A flat per-character width estimate (this
+  // label font isn't monospace, but it's close enough to size a circle
+  // by) avoids needing real text-metrics measurement.
+  var ELEMENT_SHORT_LABEL = { Molecules: 'Mol' };
+
+  function bubbleFontSize(text) {
+    if (text.length <= 3) return 12;
+    if (text.length <= 5) return 11;
+    if (text.length <= 7) return 10;
+    return 9;
+  }
+  function bubbleRadiusForLabel(text, minRadius) {
+    var fontSize = bubbleFontSize(text);
+    var estWidth = text.length * fontSize * 0.62;
+    return Math.max(minRadius, estWidth / 2 + 6);
+  }
+  function bubbleLabelText(className, x, y, text) {
+    var t = el('text', { class: className, x: x, y: y, dy: '0.35em', style: 'font-size:' + bubbleFontSize(text) + 'px' });
+    t.textContent = text;
+    return t;
+  }
+
+  // ---- Three tiers of "nice" wavelength tick candidates (1-2-5, then
+  // the other integer digits, then tenths within a decade). Which tiers
+  // actually render — and at what opacity — depends on how many decades
+  // are currently in view, so ticks progressively densify and fade in as
+  // the user zooms rather than popping in abruptly. ----
+  function decadeMultiples(mults) {
+    var vals = [];
+    for (var n = -1; n <= 1; n++) {
+      mults.forEach(function (m) {
+        var v = m * Math.pow(10, n);
+        if (v >= DOMAIN_MIN - 1e-9 && v <= DOMAIN_MAX + 1e-9) vals.push(parseFloat(v.toPrecision(6)));
+      });
+    }
+    return vals;
+  }
+  var MAJOR_TICKS = decadeMultiples([1, 2, 5]);
+  var MINOR_TICKS = decadeMultiples([3, 4, 6, 7, 8, 9]);
+  var FINE_TICKS = (function () {
+    var vals = [];
+    for (var n = -1; n <= 1; n++) {
+      for (var m = 11; m <= 99; m++) {
+        if (m % 10 === 0) continue;
+        var v = (m / 10) * Math.pow(10, n);
+        if (v >= DOMAIN_MIN - 1e-9 && v <= DOMAIN_MAX + 1e-9) vals.push(parseFloat(v.toPrecision(6)));
+      }
+    }
+    return vals;
+  })();
+
+  function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+  function formatWl(v) {
+    if (v < 1) return String(Math.round(v * 1000) / 1000);
+    if (v < 10) return String(Math.round(v * 10) / 10);
+    return String(Math.round(v));
+  }
+
+  function formatFreq(f) {
+    return f < 10 ? String(Math.round(f * 10) / 10) : String(Math.round(f));
+  }
+
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) { e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+
+  document.querySelectorAll('.nspl-wrap').forEach(function (wrap) {
+    var svg = wrap.querySelector('.nspl');
+    var slider = wrap.querySelector('.nspl-z-slider');
+    var zValueEl = wrap.querySelector('.nspl-z-value');
+    var infoEl = wrap.querySelector('.nspl-info');
+    var speciesDetailEl = wrap.querySelector('.nspl-species-detail');
+    var speciesPanels = Array.prototype.slice.call(wrap.querySelectorAll('.nspl-species-panel'));
+    var resetBtn = wrap.querySelector('.nspl-reset-btn');
+    var zoomInBtn = wrap.querySelector('.nspl-zoom-in-btn');
+    var zoomOutBtn = wrap.querySelector('.nspl-zoom-out-btn');
+
+    // The legend is static (every category always exists somewhere in
+    // the catalog), so it's built once here rather than on every render.
+    var mainLegendEl = wrap.querySelector('#nspl-main-legend');
+    if (mainLegendEl) {
+      ['forbidden', 'semiforbidden', 'permitted', 'molecular'].forEach(function (cat) {
+        var item = document.createElement('span');
+        item.className = 'nspl-main-legend-item';
+        var swatch = document.createElement('span');
+        swatch.className = 'nspl-main-legend-swatch';
+        swatch.style.background = CATEGORY_COLOR[cat];
+        item.appendChild(swatch);
+        item.appendChild(document.createTextNode(CATEGORY_LABEL[cat]));
+        mainLegendEl.appendChild(item);
+      });
+    }
+
+    // Current zoom/pan window, in natural-log wavelength space. Starts
+    // at the full hard-limited extent.
+    var viewLnMin = LN_MIN_HARD, viewLnMax = LN_MAX_HARD;
+
+    function xForWl(wl) {
+      var ln = Math.log(Math.max(wl, 1e-6));
+      return PLOT_LEFT + ((ln - viewLnMin) / (viewLnMax - viewLnMin)) * PLOT_WIDTH;
+    }
+
+    function lnForClientX(clientX) {
+      var rect = svg.getBoundingClientRect();
+      var scaleX = 1800 / rect.width;
+      var svgX = (clientX - rect.left) * scaleX;
+      return viewLnMin + ((svgX - PLOT_LEFT) / PLOT_WIDTH) * (viewLnMax - viewLnMin);
+    }
+
+    // Selecting a line from somewhere other than the plot itself (e.g.
+    // a transition in the hydrogen energy-level diagram) is only a
+    // visible highlight if that wavelength is actually within the
+    // plot's current zoom/pan window. Re-center the window on it
+    // (keeping the current zoom level) when it isn't, clamped to the
+    // hard limits — a wavelength below 0.5 um (like Lyman-alpha at
+    // z=0) still can't be shown, by the same hard limit as everywhere
+    // else on this plot.
+    function ensureWavelengthInView(wl) {
+      var ln = Math.log(Math.max(wl, 1e-6));
+      if (ln >= viewLnMin && ln <= viewLnMax) return;
+      var range = viewLnMax - viewLnMin;
+      var newMin = ln - range / 2;
+      var newMax = ln + range / 2;
+      if (newMin < LN_MIN_HARD) { newMax += (LN_MIN_HARD - newMin); newMin = LN_MIN_HARD; }
+      if (newMax > LN_MAX_HARD) { newMin -= (newMax - LN_MAX_HARD); newMax = LN_MAX_HARD; }
+      viewLnMin = Math.max(LN_MIN_HARD, newMin);
+      viewLnMax = Math.min(LN_MAX_HARD, newMax);
+    }
+
+    // Axes
+    svg.querySelector('#nspl-axis-top').setAttribute('x1', PLOT_LEFT);
+    svg.querySelector('#nspl-axis-top').setAttribute('y1', TOP_Y);
+    svg.querySelector('#nspl-axis-top').setAttribute('x2', RIGHT_EDGE);
+    svg.querySelector('#nspl-axis-top').setAttribute('y2', TOP_Y);
+    svg.querySelector('#nspl-axis-bottom').setAttribute('x1', PLOT_LEFT);
+    svg.querySelector('#nspl-axis-bottom').setAttribute('y1', BASE_Y);
+    svg.querySelector('#nspl-axis-bottom').setAttribute('x2', RIGHT_EDGE);
+    svg.querySelector('#nspl-axis-bottom').setAttribute('y2', BASE_Y);
+    svg.querySelector('#nspl-axis-left').setAttribute('x1', PLOT_LEFT);
+    svg.querySelector('#nspl-axis-left').setAttribute('y1', TOP_Y);
+    svg.querySelector('#nspl-axis-left').setAttribute('x2', PLOT_LEFT);
+    svg.querySelector('#nspl-axis-left').setAttribute('y2', BASE_Y);
+    svg.querySelector('#nspl-title-bottom').setAttribute('x', PLOT_LEFT + PLOT_WIDTH / 2);
+    svg.querySelector('#nspl-title-bottom').setAttribute('y', BASE_Y + 60);
+    svg.querySelector('#nspl-title-top').setAttribute('x', PLOT_LEFT + PLOT_WIDTH / 2);
+    svg.querySelector('#nspl-title-top').setAttribute('y', TOP_Y - 55);
+    var titleLeftY = TOP_Y + (BASE_Y - TOP_Y) / 2;
+    var titleLeft = svg.querySelector('#nspl-title-left');
+    titleLeft.setAttribute('x', 36);
+    titleLeft.setAttribute('y', titleLeftY);
+    titleLeft.setAttribute('transform', 'rotate(-90, 36, ' + titleLeftY + ')');
+
+    // A big, plain (unrotated) invisible rect over the whole left margin
+    // column, standing in as the actual hover target — simpler and far
+    // more robust than trying to match the rotated text's own tight
+    // glyph bounds, which are only a few px wide.
+    var titleLeftHit = svg.querySelector('#nspl-title-left-hit');
+    titleLeftHit.setAttribute('x', 0);
+    titleLeftHit.setAttribute('y', TOP_Y);
+    titleLeftHit.setAttribute('width', PLOT_LEFT);
+    titleLeftHit.setAttribute('height', BASE_Y - TOP_Y);
+
+    // Hover the "Relative line strength" axis title to explain where
+    // those numbers actually come from (they're illustrative, not a
+    // calibrated prediction — see the tooltip copy).
+    var strengthTooltip = wrap.querySelector('#nspl-strength-tooltip');
+    function positionStrengthTooltip() {
+      var panelRect = wrap.querySelector('.nspl-panel').getBoundingClientRect();
+      var titleRect = titleLeft.getBoundingClientRect();
+      strengthTooltip.style.left = (titleRect.right - panelRect.left + 12) + 'px';
+      strengthTooltip.style.top = Math.max(0, titleRect.top - panelRect.top - 20) + 'px';
+    }
+    titleLeftHit.addEventListener('mouseenter', function () {
+      positionStrengthTooltip();
+      strengthTooltip.classList.add('nspl-tooltip--visible');
+      titleLeft.classList.add('nspl-axis-title--hover-active');
+    });
+    titleLeftHit.addEventListener('mouseleave', function () {
+      strengthTooltip.classList.remove('nspl-tooltip--visible');
+      titleLeft.classList.remove('nspl-axis-title--hover-active');
+    });
+
+    // Qualitative strength gridlines (0.25 / 0.5 / 0.75 / 1.0 of the stem's
+    // maximum height), same role as the original static plot's y-axis.
+    var gridGroup = svg.querySelector('#nspl-grid');
+    [0.25, 0.5, 0.75, 1.0].forEach(function (g) {
+      var y = BASE_Y - g * STEM_LEN;
+      gridGroup.appendChild(el('line', { class: 'nspl-grid-line', x1: PLOT_LEFT, y1: y, x2: RIGHT_EDGE, y2: y }));
+      var lbl = el('text', { class: 'nspl-grid-label', x: PLOT_LEFT - 10, y: y + 4, 'text-anchor': 'end' });
+      lbl.textContent = g;
+      gridGroup.appendChild(lbl);
+    });
+
+    var covGroup = svg.querySelector('#nspl-coverage');
+    var ticksBottom = svg.querySelector('#nspl-ticks-bottom');
+    var ticksTop = svg.querySelector('#nspl-ticks-top');
+
+    // Coverage shading (outside NIRSpec's ~0.6-5.3 µm) — rebuilt on every
+    // zoom/pan since which part of the band (if any) is in view changes.
+    function buildCoverage() {
+      covGroup.innerHTML = '';
+      var viewMinWl = Math.exp(viewLnMin), viewMaxWl = Math.exp(viewLnMax);
+      var anyBand = false;
+      if (viewMinWl < COVERAGE_MIN) {
+        var segMaxWl = Math.min(COVERAGE_MIN, viewMaxWl);
+        var x2 = xForWl(segMaxWl);
+        if (x2 > PLOT_LEFT) {
+          covGroup.appendChild(el('rect', { class: 'nspl-coverage-band', x: PLOT_LEFT, y: TOP_Y, width: x2 - PLOT_LEFT, height: BASE_Y - TOP_Y }));
+          anyBand = true;
+        }
+      }
+      if (viewMaxWl > COVERAGE_MAX) {
+        var segMinWl = Math.max(COVERAGE_MAX, viewMinWl);
+        var x1 = xForWl(segMinWl);
+        if (x1 < RIGHT_EDGE) {
+          covGroup.appendChild(el('rect', { class: 'nspl-coverage-band', x: x1, y: TOP_Y, width: RIGHT_EDGE - x1, height: BASE_Y - TOP_Y }));
+          anyBand = true;
+        }
+      }
+      if (anyBand) {
+        covGroup.appendChild(el('text', { class: 'nspl-coverage-label', x: PLOT_LEFT + 6, y: TOP_Y + 18 })).textContent = 'outside NIRSpec coverage';
+      }
+    }
+
+    // Ticks (bottom = wavelength, top = derived frequency). Major ticks
+    // (1-2-5 per decade) always show; minor and fine ticks fade in as
+    // the view narrows (zooms in), per-tick, based on how many decades
+    // are currently visible.
+    function buildTicks() {
+      ticksBottom.innerHTML = '';
+      ticksTop.innerHTML = '';
+      var viewMinWl = Math.exp(viewLnMin), viewMaxWl = Math.exp(viewLnMax);
+      var decades = (viewLnMax - viewLnMin) / Math.LN10;
+      var minorOp = clamp01(1 - (decades - 0.35) / 0.5);
+      var fineOp = clamp01(1 - (decades - 0.12) / 0.18);
+
+      function addTick(wl, opacity) {
+        if (wl < viewMinWl || wl > viewMaxWl || opacity < 0.03) return;
+        var x = xForWl(wl);
+        var lineEl = el('line', { class: 'nspl-tick', x1: x, y1: BASE_Y, x2: x, y2: BASE_Y + 7 });
+        lineEl.style.opacity = opacity;
+        ticksBottom.appendChild(lineEl);
+        var topLine = el('line', { class: 'nspl-tick', x1: x, y1: TOP_Y - 7, x2: x, y2: TOP_Y });
+        topLine.style.opacity = opacity;
+        ticksTop.appendChild(topLine);
+        if (opacity > 0.4) {
+          var tb = el('text', { class: 'nspl-tick-label', x: x, y: BASE_Y + 24, 'text-anchor': 'middle' });
+          tb.style.opacity = opacity;
+          tb.textContent = formatWl(wl);
+          ticksBottom.appendChild(tb);
+
+          var tt = el('text', { class: 'nspl-tick-label', x: x, y: TOP_Y - 14, 'text-anchor': 'middle' });
+          tt.style.opacity = opacity;
+          tt.textContent = formatFreq(299.792458 / wl);
+          ticksTop.appendChild(tt);
+        }
+      }
+
+      MAJOR_TICKS.forEach(function (wl) { addTick(wl, 1); });
+      if (minorOp > 0.03) MINOR_TICKS.forEach(function (wl) { addTick(wl, minorOp); });
+      if (fineOp > 0.03) FINE_TICKS.forEach(function (wl) { addTick(wl, fineOp); });
+    }
+
+    // Lines
+    var linesGroup = svg.querySelector('#nspl-lines');
+    var selected = null;      // a single line entry
+    var selectedIon = null;   // an ion/species key, e.g. "Mg II"
+    var selectedElement = null; // an element key, e.g. "Mg", or "Molecules"
+    // Which species-detail panel (if any) is open. Deliberately separate
+    // from selectedElement: clicking a transition inside an open panel's
+    // own energy diagram calls selectLine() (so it also highlights on
+    // the main plot/hierarchy, clearing selectedElement in the process),
+    // but the panel the user is looking at should obviously stay open —
+    // it only closes via another click on its own element bubble.
+    var openSpeciesPanel = null;
+
+    function selectLine(entry) {
+      selected = (selected === entry) ? null : entry;
+      selectedIon = null;
+      selectedElement = null;
+      render();
+    }
+
+    function selectIon(ionKey) {
+      selectedIon = (selectedIon === ionKey) ? null : ionKey;
+      selected = null;
+      selectedElement = null;
+      render();
+    }
+
+    function selectElement(elemKey) {
+      var willClose = (selectedElement === elemKey) || (openSpeciesPanel === elemKey);
+      selected = null;
+      selectedIon = null;
+      selectedElement = willClose ? null : elemKey;
+      openSpeciesPanel = willClose ? null : elemKey;
+      render();
+    }
+
+    // With dozens of ion bubbles and ~90 line dots, showing all three
+    // tiers at once was unreadable. Now only the element tier (the
+    // "species list") is always legible; the ion and line-dot tiers
+    // stay veiled (faint + blurred, non-interactive) until the user
+    // clicks the element they belong to, at which point just that
+    // element's own ions/lines come into focus — a spotlight, not a
+    // wall of bubbles.
+    function isElementRevealed(elemKey) {
+      if (selected) return ionToElement[selected.line.species] === elemKey;
+      if (selectedIon) return ionToElement[selectedIon] === elemKey;
+      if (selectedElement) return selectedElement === elemKey;
+      return false;
+    }
+
+    var rendered = CATALOG.map(function (line, i) {
+      var tipY = BASE_Y - line.str * STEM_LEN;
+      var g = el('g', { class: 'nspl-line-group' });
+      var hit = el('rect', { class: 'nspl-line-hit', x: -12, y: TOP_Y, width: 24, height: BASE_Y - TOP_Y });
+      var stem = el('line', { class: 'nspl-line-stem', x1: 0, y1: BASE_Y, x2: 0, y2: tipY });
+      var tip = el('circle', { class: 'nspl-line-tip', cx: 0, cy: tipY, r: 3.5 });
+      var title = el('title', {});
+      title.textContent = line.name + ' (' + line.species + '), rest ' + line.wl.toFixed(4) + ' µm';
+      // Oblique name label, angled up-and-right from the stem's own tip
+      // point — fixed relative to the group (same x=0 origin the stem
+      // and tip use), so it only needs setting once here, not per
+      // render; the group's own transform carries it along with the
+      // stem as the redshift/zoom/pan change.
+      var labelY = tipY - 7;
+      var label = el('text', { class: 'nspl-line-label', x: 0, y: labelY, transform: 'rotate(-40, 0, ' + labelY + ')' });
+      label.textContent = line.name;
+      var holder = el('g', { class: 'nspl-line' });
+      holder.appendChild(hit);
+      holder.appendChild(stem);
+      holder.appendChild(tip);
+      holder.appendChild(label);
+      holder.appendChild(title);
+      g.appendChild(holder);
+      linesGroup.appendChild(g);
+
+      var entry = { line: line, g: g, holder: holder, stem: stem, tip: tip, label: label, tipY: tipY, index: i };
+      holder.addEventListener('click', function (e) {
+        if (dragMoved) return; // this click was the tail end of a pan drag, not a real selection
+        e.stopPropagation();
+        selectLine(entry);
+      });
+      return entry;
+    });
+
+    // Group entries by ion/species, then ions by element, once — the
+    // grouping itself is static; only positions/highlight state change
+    // per render.
+    var ionOrder = [];
+    var ionToEntries = {};
+    rendered.forEach(function (entry) {
+      var ionKey = entry.line.species;
+      if (!ionToEntries[ionKey]) { ionToEntries[ionKey] = []; ionOrder.push(ionKey); }
+      ionToEntries[ionKey].push(entry);
+    });
+    var elementOrder = [];
+    var elementToIons = {};
+    var ionToElement = {};
+    ionOrder.forEach(function (ionKey) {
+      var sampleIon = ionToEntries[ionKey][0].line.ion;
+      var elemKey = elementOfIon(ionKey, sampleIon);
+      ionToElement[ionKey] = elemKey;
+      if (!elementToIons[elemKey]) { elementToIons[elemKey] = []; elementOrder.push(elemKey); }
+      elementToIons[elemKey].push(ionKey);
+    });
+
+    // The species-detail panels (currently just Hydrogen) are static
+    // markup with the raw LaTeX source in each element's data-tex
+    // attribute, specifically so nothing here has to build TeX inside a
+    // JS string (backslash sequences like \frac or \nabla would collide
+    // with JS's own \f/\n escape codes). Render them all once, up front;
+    // the content itself never changes, only which panel is shown.
+    function renderSpeciesEquations(attempt) {
+      if (!window.katex) {
+        if (attempt > 20) return; // ~2s of retrying, then give up quietly
+        setTimeout(function () { renderSpeciesEquations((attempt || 0) + 1); }, 100);
+        return;
+      }
+      wrap.querySelectorAll('.nspl-eq[data-tex], .nspl-eq-block[data-tex]').forEach(function (el) {
+        try {
+          window.katex.render(el.getAttribute('data-tex'), el, {
+            throwOnError: false,
+            displayMode: el.classList.contains('nspl-eq-block')
+          });
+        } catch (err) { /* leave the element empty rather than break the page */ }
+      });
+    }
+    // ---- Generic species panels: every element/molecule group besides
+    // hydrogen (which keeps its own hand-built exact-physics panel)
+    // gets the same diagram + relevance + theory layout, generated here
+    // from the catalog rather than hand-authored per element. Each
+    // line's exact photon energy (E=hc/lambda) is always real; only the
+    // vertical placement of its level is schematic (ranked by energy,
+    // not to true atomic-term scale), exactly like the Hydrogen panel's
+    // own disclaimer.
+    var ELEMENT_FULL_NAME = {
+      N: 'Nitrogen', Si: 'Silicon', O: 'Oxygen', C: 'Carbon', He: 'Helium',
+      Al: 'Aluminium', Ne: 'Neon', Mg: 'Magnesium', Fe: 'Iron', Cl: 'Chlorine',
+      S: 'Sulfur', Ar: 'Argon', P: 'Phosphorus', Ca: 'Calcium'
+    };
+
+    var H_C_EV_UM = 1.23984198; // hc, in eV*um, so E(eV) = H_C_EV_UM / wavelength(um)
+
+    // CATEGORY_COLOR/CATEGORY_LABEL and the classifier itself now live
+    // at module scope (see categoryOfLine above) since every line's
+    // color is assigned from them up front; this just reuses that.
+    function lineCategoryOf(entry) {
+      return entry.line.category;
+    }
+
+    function elHTML(tag, attrs) {
+      var e = document.createElement(tag);
+      for (var k in attrs) { e.setAttribute(k, attrs[k]); }
+      return e;
+    }
+
+    // What each line (keyed by its catalog display name) is actually
+    // used for in practice. Lines sharing one name (e.g. the four
+    // [Fe II] transitions) share one entry, since they share the same
+    // astrophysical role.
+    var LINE_RELEVANCE = {
+      'O VI': 'The highest-ionization permitted UV resonance doublet in this catalog, formed only where photons exceed 114 eV; it traces the hottest gas phases, from stellar-wind-shocked bubbles to the hot circumgalactic medium and AGN accretion disks.',
+      'N V': 'High-ionization UV resonance doublet seen in quasar broad-line regions and in stellar-wind or interstellar absorption; it signals gas ionized by a very hard, extreme-UV continuum.',
+      'Si II': 'A UV resonance doublet of singly ionized silicon, commonly seen in stellar-wind P-Cygni profiles and in interstellar absorption troughs through star-forming galaxies.',
+      'O I + Si II': 'A blended UV feature combining neutral-oxygen fluorescence with a Si II transition, used mainly as a wavelength landmark rather than a clean diagnostic because the two species overlap.',
+      'C II': 'A UV resonance line of singly ionized carbon that traces warm, partially ionized gas and often appears in interstellar absorption against a galaxy’s own UV continuum.',
+      'Si IV': 'A high-ionization UV resonance doublet formed in hot stellar winds and AGN broad-line regions; its doublet ratio constrains how optically thick the absorbing or emitting gas is.',
+      'N IV]': 'An intercombination line of three-times-ionized nitrogen, seen in quasar broad-line regions and extreme high-ionization nebulae that can strip four electrons from nitrogen.',
+      'C IV': 'One of the brightest high-ionization UV lines in quasar spectra; the classic resonance doublet used for AGN black-hole mass reverberation mapping and to trace the hardest ionizing continua.',
+      'He I': 'A permitted recombination line of neutral helium, tracing the hottest O and early-B stars capable of ionizing helium’s first electron, and often used alongside hydrogen lines to constrain the hardness of the stellar ionizing spectrum.',
+      'He II': 'A recombination line of hydrogen-like, once-ionized helium. Since producing it needs photons above 54 eV, its presence cleanly signals a very hard ionizing source such as an AGN, Wolf-Rayet star, or shock.',
+      'O III]': 'An intercombination doublet of twice-ionized oxygen seen in high-ionization UV spectra, including some of the highest-redshift galaxies JWST has observed, where it joins C III] as an ionization and metallicity diagnostic.',
+      '[O III]': 'The brightest optical forbidden doublet in most ionized nebulae and a cornerstone AGN/star-formation diagnostic via the [O III]/Hβ ratio in the BPT diagram; its faint auroral 4363Å line pairs with the doublet to measure electron temperature directly.',
+      'N III]': 'A nitrogen intercombination line that, together with C III] and He II, helps characterize how hard the ionizing radiation field is in extreme emission-line galaxies and AGN.',
+      'Al III': 'A UV resonance doublet of twice-ionized aluminium, mainly used, like Mg II, as an interstellar or outflow absorption-line diagnostic in UV spectra of galaxies and quasars.',
+      'Si III]': 'An intercombination doublet of twice-ionized silicon almost always discussed alongside C III]; the Si III]/C III] ratio is a sensitive electron-density diagnostic in the high-ionization gas of reionization-era galaxies.',
+      'C III]': 'One of the strongest intercombination lines in high-redshift galaxy spectra, rivaling Lyα in some metal-poor systems; its strength constrains gas metallicity and ionization parameter in the early universe.',
+      'C II]': 'A carbon intercombination line that complements [C III] in tracing the state of partially ionized gas in UV spectra.',
+      '[Ne IV]': 'A forbidden line of three-times-ionized neon that needs a hard, high-ionization radiation field, usually associated with AGN narrow-line regions or very young, metal-poor starbursts.',
+      '[O II]': 'The classic low-ionization forbidden doublet of singly ionized oxygen; its 3727Å blend is a widely used star-formation-rate tracer, while its faint auroral lines pair with it to measure electron temperature.',
+      'Mg II': 'A UV resonance doublet of singly ionized magnesium tracing cool, partially ionized circumgalactic and interstellar gas, and one of the most prominent broad emission lines in quasar spectra.',
+      '[Ne V]': 'A very high-ionization forbidden line, needing photons above 97 eV to produce; it is one of the cleanest spectroscopic signatures of an active nucleus, since star formation alone rarely supplies photons that energetic.',
+      '[Ne III]': 'A forbidden line of twice-ionized neon used alongside [O III] as an ionization-parameter diagnostic, increasingly important in JWST spectra of highly ionized dwarf galaxies.',
+      '[Fe VII]': 'A moderately high-ionization forbidden iron line typically seen in AGN narrow-line regions, where the radiation field is harder than star formation alone can produce.',
+      '[N I]': 'A faint forbidden line of neutral nitrogen tracing mostly neutral gas at the edges of ionized regions, usually too weak to be a primary diagnostic on its own.',
+      '[Fe XIV]': 'A true coronal line: forbidden emission from thirteen-times-ionized iron that, in the Sun, forms only in the million-degree corona. In galaxies it signals extremely hard radiation or shock heating, often near an active nucleus.',
+      '[Cl III]': 'A forbidden chlorine doublet used, like [O II] and [S II], as a secondary electron-density diagnostic in ionized nebulae.',
+      '[O I]': 'Forbidden lines of neutral atomic oxygen; the 6300Å line traces partially neutral, shock-heated gas and the photodissociation regions at the boundary between ionized and neutral gas.',
+      '[N II]': 'Forbidden nitrogen lines flanking Hα; the bright doublet is a standard metallicity and AGN/star-formation diagnostic via the [N II]/Hα ratio in the BPT diagram, while the faint auroral line gives electron temperature.',
+      '[S III]': 'Forbidden sulfur lines whose auroral-to-nebular flux ratio gives an independent electron-temperature measurement, useful for cross-checking the oxygen-based temperature in ionized nebulae.',
+      '[S II]': 'The classic electron-density diagnostic doublet: its two components have similar excitation energy but different critical densities, so their flux ratio depends almost purely on local electron density.',
+      '[Ar III]': 'Forbidden argon lines used as a secondary abundance and ionization diagnostic; argon’s different nucleosynthetic origin from oxygen’s offers an independent check on chemical-enrichment history.',
+      '[Ar IV]': 'A higher-ionization forbidden argon doublet than [Ar III], seen in highly ionized, often metal-poor galaxies and AGN narrow-line regions; its ratio to [Ar III] tracks the ionization parameter of the gas.',
+      '[Fe X]': 'A classic optical coronal line from nine-times-ionized iron, requiring photons far harder than young stars produce; historically mapped in the solar corona, in galaxies it marks AGN narrow-line and coronal-line regions.',
+      'O I': 'A permitted oxygen line excited mainly by fluorescence with hydrogen Lyβ, tracing dense, partially ionized gas near the ionization front of H II regions.',
+      '[S VIII]': 'A high-ionization coronal forbidden sulfur line requiring a very hard ionizing continuum, seen almost exclusively near active galactic nuclei rather than normal star-forming regions.',
+      '[S IX]': 'An even higher-ionization coronal sulfur line than [S VIII], tracing gas exposed to extreme-UV to soft X-ray photons typical of an AGN’s innermost narrow-line region.',
+      '[P II]': 'Faint forbidden phosphorus lines, mainly useful for probing phosphorus abundance and dust depletion, since phosphorus is heavily depleted onto dust grains in the interstellar medium.',
+      '[Fe II]': 'Near-infrared forbidden iron lines that prominently trace shocked gas, supernova remnants, and protostellar jets, since shocks both release iron from dust grains and collisionally excite these transitions.',
+      '[Si VI]': 'A coronal forbidden silicon line requiring extreme-UV photons to produce five-times-ionized silicon, typically found only in AGN narrow-line and coronal-line regions.',
+      '[Si X]': 'A very high-ionization coronal silicon line, among the clearest near-infrared tracers of AGN activity because star formation cannot easily produce ions this highly stripped.',
+      '[Si XI]': 'One of the highest-ionization coronal lines in this catalog, forming only extremely close to an accreting supermassive black hole or in very hot shocked gas.',
+      'H₂ 1-0 S(1)': 'A ro-vibrational transition of molecular hydrogen tracing warm (roughly 1000–2000 K) shocked or UV-irradiated gas in photodissociation regions, protostellar outflows, and young stellar disks.',
+      'H₂ 1-0 S(0)': 'A fainter companion to H₂ 1-0 S(1); its ratio to the brighter line helps characterize the excitation mechanism (shocks versus UV fluorescence) of the warm molecular gas.',
+      'H₂ 2-1 S(1)': 'A higher-vibrational H₂ line whose ratio to the 1-0 lines distinguishes UV fluorescence (which populates high vibrational levels efficiently) from pure shock excitation.',
+      '[Ca VIII]': 'A coronal calcium line requiring seven-times-ionized calcium, another member of the near-infrared coronal-line family that singles out the hardest-irradiated gas near an active nucleus.',
+      '[Si VII]': 'A coronal silicon line intermediate in ionization between [Si VI] and [Si IX], used with its siblings to map the ionization structure of an AGN’s coronal-line region.',
+      '[Si IX]': 'A high-ionization coronal silicon line, part of the same AGN-tracing family as [Si VI], [Si VII], [Si X] and [Si XI].',
+      '[Mg VIII]': 'A coronal magnesium line from seven-times-ionized magnesium, another extreme-ionization AGN coronal-line tracer in the near-infrared.',
+      '[Al VI]': 'A coronal aluminium line, part of the family of high-ionization forbidden transitions that together trace the innermost, most highly ionized gas around active galactic nuclei.',
+      '[Ar VI]': 'A coronal argon line requiring very hard ionizing photons, again almost exclusively associated with AGN narrow-line and coronal-line regions.',
+      'PAH 3.3 µm': 'An infrared emission band from polycyclic aromatic hydrocarbon molecules: aromatic C-H bond vibrations excited by UV photons from nearby young stars, tracing photodissociation-region surfaces and widely used as a star-formation-rate indicator.',
+      'PAH 3.4 µm': 'A companion aliphatic C-H stretching band to the 3.3 µm PAH feature; its relative strength helps characterize the chemical structure of the emitting dust grains.',
+      'H₂O (hot band)': 'A rotational-vibrational transition of water vapor, prominent in warm protostellar envelopes and shocked outflows, tracing the volatile chemistry around forming stars and planets.',
+      'H₂O (ro-vib.)': 'A longer-wavelength ro-vibrational water transition that, together with other H₂O lines, maps the temperature and column density of warm water vapor in young stellar environments.'
+    };
+    var FALLBACK_RELEVANCE = 'A spectral line used for its diagnostic value in tracing the physical conditions, ionization state, or chemistry of the emitting gas.';
+
+    var THEORY_INTRO = {
+      permitted: 'Lines with no brackets are permitted transitions: electric-dipole-allowed jumps between atomic levels, produced either by recombination (an electron recapturing onto the ion and cascading down) or by resonant scattering of continuum photons. Being dipole-allowed, they proceed fast and shine in gas of almost any density.',
+      semiforbidden: 'Lines written with a single closing bracket, like C III], are intercombination (semi-forbidden) transitions: they need a spin flip that strict electric-dipole rules forbid, so they decay far more slowly than permitted lines, making them sensitive to moderately dense photoionized gas such as AGN narrow-line regions.',
+      forbidden: 'Lines in full brackets, like [O III], are forbidden transitions: dipole-forbidden, allowed only through much weaker magnetic-dipole or electric-quadrupole radiation. Their metastable upper levels survive long enough that a single collision usually de-excites them first unless the gas is more dilute than their critical density, making forbidden lines unique probes of low-density nebular gas.',
+      molecular: 'These features are not electronic transitions at all: PAH bands come from bending and stretching vibrations of carbon-hydrogen and carbon-carbon bonds in large aromatic molecules, while H₂ and H₂O lines are ro-vibrational transitions within the molecule’s ground electronic state. Molecular bonds are far weaker than electronic binding energies, so these transitions sit at much longer wavelengths, in the mid-infrared where JWST excels.'
+    };
+
+    var genericDiagramArrows = []; // { g, arrow, label, readout, entry, color, elemKey }
+    var genericRelevanceEls = {}; // elemKey -> { el, hint }
+
+    function buildGenericSpeciesPanel(elemKey) {
+      if (elemKey === 'H') return; // Hydrogen keeps its own hand-built exact-physics panel
+      var ionKeys = elementToIons[elemKey] || [];
+      var entries = [];
+      ionKeys.forEach(function (ik) { entries = entries.concat(ionToEntries[ik]); });
+      if (!entries.length) return;
+
+      var isMolecules = elemKey === 'Molecules';
+      var fullName = ELEMENT_FULL_NAME[elemKey] || elemKey;
+      var svgId = 'nspl-sd-diagram-' + elemKey.replace(/[^A-Za-z0-9]/g, '');
+      var cats = [];
+      entries.forEach(function (e) { var c = lineCategoryOf(e); if (cats.indexOf(c) === -1) cats.push(c); });
+
+      var panel = elHTML('div', { class: 'nspl-species-panel', 'data-element': elemKey });
+
+      var title = elHTML('h3', { class: 'nspl-sd-title' });
+      var ionList = [];
+      entries.forEach(function (e) { if (e.line.ion && ionList.indexOf(e.line.ion) === -1) ionList.push(e.line.ion); });
+      title.textContent = isMolecules
+        ? 'Molecules: PAH, H₂ and H₂O features'
+        : fullName + (ionList.length ? ' (' + ionList.map(function (i) { return elemKey + ' ' + i; }).join(', ') + ')' : '') + ': the lines behind these transitions';
+      panel.appendChild(title);
+
+      var diagWrap = elHTML('div', { class: 'nspl-species-diagram-wrap' });
+      var diagSvg = el('svg', {
+        class: 'nspl-species-diagram', id: svgId, viewBox: '0 150 860 400',
+        role: 'img', 'aria-label': fullName + ' emission-line diagram'
+      });
+      diagWrap.appendChild(diagSvg);
+      var caption = elHTML('div', { class: 'nspl-sd-caption' });
+      caption.textContent = 'Click any transition to spotlight it here and on the plot above. Levels are ranked by photon energy, not to true atomic scale; the readout by each arrow gives the real number.';
+      diagWrap.appendChild(caption);
+
+      var legend = elHTML('div', { class: 'nspl-sd-cat-legend' });
+      cats.forEach(function (cat) {
+        var item = elHTML('span', { class: 'nspl-sd-cat-legend-item' });
+        var swatch = elHTML('span', { class: 'nspl-sd-cat-legend-swatch', style: 'background:' + CATEGORY_COLOR[cat] });
+        item.appendChild(swatch);
+        item.appendChild(document.createTextNode(CATEGORY_LABEL[cat]));
+        legend.appendChild(item);
+      });
+      diagWrap.appendChild(legend);
+
+      panel.appendChild(diagWrap);
+
+      var relBox = elHTML('div', { class: 'nspl-sd-relevance' });
+      var relTitle = elHTML('h4', { class: 'nspl-sd-relevance-title' });
+      relTitle.textContent = 'What these lines are used for';
+      var relText = elHTML('p', { class: 'nspl-sd-relevance-text' });
+      var hint = 'Click a transition in the diagram above to read what it is actually used for in practice.';
+      relText.textContent = hint;
+      relBox.appendChild(relTitle);
+      relBox.appendChild(relText);
+
+      var h2Anim = null;
+      if (isMolecules) {
+        h2Anim = elHTML('div', { class: 'nspl-h2-anim-wrap', id: 'nspl-h2-anim' });
+        var h2Svg = el('svg', { class: 'nspl-h2-anim', viewBox: '0 0 148 70', 'aria-hidden': 'true' });
+        var h2Group = el('g', { class: 'nspl-h2-molecule' });
+        h2Group.appendChild(el('path', {
+          class: 'nspl-h2-spring',
+          d: 'M38,35 L48,21 L58,49 L68,21 L78,49 L88,21 L98,35'
+        }));
+        var atomA = el('g', { class: 'nspl-h2-atom nspl-h2-atom-a' });
+        atomA.appendChild(el('circle', { cx: 38, cy: 35, r: 11 }));
+        var atomB = el('g', { class: 'nspl-h2-atom nspl-h2-atom-b' });
+        atomB.appendChild(el('circle', { cx: 98, cy: 35, r: 11 }));
+        h2Group.appendChild(atomA);
+        h2Group.appendChild(atomB);
+        h2Svg.appendChild(h2Group);
+        h2Anim.appendChild(h2Svg);
+        var h2Caption = elHTML('div', { class: 'nspl-h2-anim-caption' });
+        h2Caption.textContent = 'Vibration: the H–H bond stretches and compresses. Rotation: the whole molecule tumbles end over end.';
+        h2Anim.appendChild(h2Caption);
+        relBox.appendChild(h2Anim);
+      }
+
+      panel.appendChild(relBox);
+
+      var theory = elHTML('div', { class: 'nspl-sd-theory' });
+      cats.forEach(function (cat, idx) {
+        var p = elHTML('p', {});
+        p.textContent = THEORY_INTRO[cat];
+        theory.appendChild(p);
+        if (idx === 0) {
+          var eq = elHTML('div', { class: 'nspl-eq-block nspl-eq-block--small', 'data-tex': 'E_\\gamma = \\dfrac{hc}{\\lambda}' });
+          theory.appendChild(eq);
+        }
+      });
+      panel.appendChild(theory);
+
+      speciesDetailEl.appendChild(panel);
+
+      // ---- diagram: one arrow per catalog line of this element, x and
+      // level height both ranked by photon energy (shortest wavelength
+      // first), arrows pointing down to a shared schematic ground line.
+      var sorted = entries.slice().sort(function (a, b) { return a.line.wl - b.line.wl; });
+      var n = sorted.length;
+      var topY = 190, groundY = 500, marginX = 70, rightMarginX = 70, width = 860;
+      var usableW = width - marginX - rightMarginX;
+
+      var defs = el('defs', {});
+      Object.keys(CATEGORY_COLOR).forEach(function (cat) {
+        // Fixed orient="0", not "auto": every arrow here is vertical and
+        // the triangle path is already drawn pointing down, so auto's
+        // assume-rightward-then-rotate behavior would over-rotate it.
+        var marker = el('marker', { id: 'nspl-arr-' + cat + '-' + svgId, viewBox: '0 0 10 10', refX: 5, refY: 9, markerWidth: 5.5, markerHeight: 5.5, orient: '0' });
+        marker.appendChild(el('path', { d: 'M0,0 L10,0 L5,10 Z', fill: CATEGORY_COLOR[cat] }));
+        defs.appendChild(marker);
+      });
+      diagSvg.appendChild(defs);
+
+      diagSvg.appendChild(el('line', { class: 'nspl-sd-level nspl-sd-level--ground', x1: marginX - 30, y1: groundY, x2: width - rightMarginX + 30, y2: groundY }));
+      var groundLbl = el('text', { class: 'nspl-sd-level-label', x: marginX - 36, y: groundY + 4, 'text-anchor': 'end' });
+      groundLbl.textContent = 'ground';
+      diagSvg.appendChild(groundLbl);
+
+      var nameCounts = {};
+      sorted.forEach(function (e) { nameCounts[e.line.name] = (nameCounts[e.line.name] || 0) + 1; });
+
+      sorted.forEach(function (entry) {
+        var frac = n > 1 ? sorted.indexOf(entry) / (n - 1) : 0.5;
+        var x = marginX + usableW * frac;
+        var levelY = topY + (groundY - 40 - topY) * frac;
+        var cat = lineCategoryOf(entry);
+        var color = CATEGORY_COLOR[cat];
+
+        diagSvg.appendChild(el('line', { class: 'nspl-sd-level', x1: x - 26, y1: levelY, x2: x + 26, y2: levelY }));
+
+        var g = el('g', { class: 'nspl-sd-transition' });
+        var hit = el('rect', { x: x - 14, y: levelY - 14, width: 28, height: (groundY - levelY) + 16, fill: 'transparent' });
+        var arrow = el('line', { class: 'nspl-sd-arrow', x1: x, y1: levelY, x2: x, y2: groundY - 2, stroke: color, 'marker-end': 'url(#nspl-arr-' + cat + '-' + svgId + ')' });
+        var displayName = entry.line.name + (nameCounts[entry.line.name] > 1 ? ' ' + entry.line.wl.toFixed(2) + 'µm' : '');
+        var label = el('text', {
+          class: 'nspl-sd-tr-label', x: x + 4, y: levelY - 6, 'text-anchor': 'start',
+          transform: 'rotate(-35, ' + (x + 4) + ', ' + (levelY - 6) + ')'
+        });
+        label.textContent = displayName;
+        var titleEl = el('title', {});
+        titleEl.textContent = displayName + ' (' + CATEGORY_LABEL[cat] + ')';
+        g.appendChild(hit); g.appendChild(arrow); g.appendChild(label); g.appendChild(titleEl);
+        g.addEventListener('click', function (ev) {
+          if (dragMoved) return;
+          ev.stopPropagation();
+          var z = parseFloat(slider.value);
+          ensureWavelengthInView(entry.line.wl * (1 + z));
+          selectLine(entry);
+        });
+        diagSvg.appendChild(g);
+
+        var eEv = H_C_EV_UM / entry.line.wl;
+        var readout = el('text', { class: 'nspl-sd-readout', x: x + 14, y: (levelY + groundY) / 2, 'text-anchor': 'start' });
+        readout.textContent = 'Eγ = hc/λ = ' + eEv.toFixed(2) + ' eV (' + CATEGORY_LABEL[cat] + ')';
+        readout.style.fill = color;
+        diagSvg.appendChild(readout);
+
+        genericDiagramArrows.push({ g: g, arrow: arrow, label: label, readout: readout, entry: entry, color: color, elemKey: elemKey });
+      });
+
+      genericRelevanceEls[elemKey] = { el: relText, hint: hint, h2Anim: h2Anim };
+    }
+
+    elementOrder.forEach(function (elemKey) { buildGenericSpeciesPanel(elemKey); });
+    speciesPanels = Array.prototype.slice.call(wrap.querySelectorAll('.nspl-species-panel'));
+
+    function updateGenericDiagramHighlights() {
+      var selectedElemKey = null;
+      genericDiagramArrows.forEach(function (a) { if (selected === a.entry) selectedElemKey = a.elemKey; });
+      genericDiagramArrows.forEach(function (a) {
+        var isSel = selected === a.entry;
+        var dim = selectedElemKey === a.elemKey && !isSel;
+        a.g.classList.toggle('nspl-sd-transition--selected', isSel);
+        a.g.classList.toggle('nspl-sd-transition--dim', dim);
+        a.g.style.color = a.color;
+        a.arrow.style.stroke = isSel ? a.color : '#64748b';
+        a.label.style.fill = isSel ? a.color : '#94a3b8';
+        a.label.style.fontWeight = isSel ? '700' : '400';
+        a.readout.classList.toggle('nspl-sd-readout--visible', isSel);
+      });
+      Object.keys(genericRelevanceEls).forEach(function (elemKey) {
+        var rec = genericRelevanceEls[elemKey];
+        var activeArrow = null;
+        genericDiagramArrows.forEach(function (a) { if (a.elemKey === elemKey && selected === a.entry) activeArrow = a; });
+        rec.el.textContent = activeArrow ? (LINE_RELEVANCE[activeArrow.entry.line.name] || FALLBACK_RELEVANCE) : rec.hint;
+        if (rec.h2Anim) {
+          var showH2Anim = !!(activeArrow && activeArrow.entry.line.species === 'H₂');
+          rec.h2Anim.classList.toggle('nspl-h2-anim-wrap--visible', showH2Anim);
+        }
+      });
+    }
+
+    renderSpeciesEquations(0);
+
+    // ---- Hydrogen energy-level diagram: one clickable arrow per H line
+    // actually in the catalog (not a schematic stand-in), built once
+    // from the real (n_i, n_f) assignment of each transition. Level
+    // y-positions are evenly stepped by n (not true -1/n^2 energy)
+    // purely for legibility — n=3..12 would otherwise crowd into the
+    // top few percent of the diagram, since that's genuinely where
+    // hydrogen's levels converge. ----
+    var H_LEVEL_Y = { 1: 520, 2: 474, 3: 428, 4: 382, 5: 336, 6: 290, 7: 275, 8: 260, 10: 245, 11: 230, 12: 215 };
+    var H_ION_Y = 185;
+    var H_GUIDE_X2 = 820; // dashed guides run from the level ticks out to near the new right edge
+    // Every series uses the same 30px step between consecutive members
+    // and the same 45px gap before the next series starts, so Lyman's
+    // spacing (now 3 members instead of 1) reads the same as the others
+    // instead of looking cramped by comparison.
+    var H_TRANSITIONS = [
+      { name: 'Lyα', ni: 2, nf: 1, series: 'lyman', x: 140 },
+      { name: 'Lyβ', ni: 3, nf: 1, series: 'lyman', x: 170 },
+      { name: 'Lyγ', ni: 4, nf: 1, series: 'lyman', x: 200 },
+      { name: 'Hα', ni: 3, nf: 2, series: 'balmer', x: 245 },
+      { name: 'Hβ', ni: 4, nf: 2, series: 'balmer', x: 275 },
+      { name: 'Hγ', ni: 5, nf: 2, series: 'balmer', x: 305 },
+      { name: 'Hδ', ni: 6, nf: 2, series: 'balmer', x: 335 },
+      { name: 'Paα', ni: 4, nf: 3, series: 'paschen', x: 380 },
+      { name: 'Paβ', ni: 5, nf: 3, series: 'paschen', x: 410 },
+      { name: 'Paγ', ni: 6, nf: 3, series: 'paschen', x: 440 },
+      { name: 'Paδ', ni: 7, nf: 3, series: 'paschen', x: 470 },
+      { name: 'Brγ', ni: 7, nf: 4, series: 'brackett', x: 515 },
+      { name: 'Brδ', ni: 8, nf: 4, series: 'brackett', x: 545 },
+      { name: 'Br 10', ni: 10, nf: 4, series: 'brackett', x: 575 },
+      { name: 'Br 11', ni: 11, nf: 4, series: 'brackett', x: 605 },
+      { name: 'Br 12', ni: 12, nf: 4, series: 'brackett', x: 635 }
+    ];
+    var H_SERIES_COLOR = { lyman: '#a78bfa', balmer: '#38bdf8', paschen: '#34d399', brackett: '#fbbf24' };
+    var H_CAT_LABEL = { uv: 'UV', optical: 'Optical', nir: 'Near-IR' };
+    // What each line is actually used for in practice, not just where
+    // it falls energetically. Shown below the diagram, separate from
+    // the theory/equations side, when that transition is selected.
+    var H_RELEVANCE = {
+      'Lyγ': 'Lyman-gamma is a much fainter, higher-order companion to Lyα, mainly useful as a cross-check on the Lyman-series cascade and on radiative-transfer models of resonant scattering in neutral hydrogen.',
+      'Lyβ': 'Lyman-beta is the next rung up the Lyman series from Lyα; because it scatters far less readily off neutral hydrogen than Lyα does, comparing the two helps disentangle intrinsic emission from radiative-transfer effects in the surrounding gas.',
+      'Lyα': 'Lyman-alpha is the brightest hydrogen line and the workhorse tracer of the reionization era, bright enough to be seen in galaxies more than 13 billion years old. Its short rest wavelength means it resonantly scatters off neutral hydrogen, so its observed profile also diagnoses outflows and the surrounding gas.',
+      'Hα': 'Hα is the standard tracer of recent star formation, since its emission scales directly with the number of young, ionizing massive stars. It also anchors the BPT diagram used to separate star-forming galaxies from active galactic nuclei, and its Doppler shift maps gas kinematics and rotation.',
+      'Hβ': 'Hβ pairs with Hα to form the Balmer decrement, the classic probe of dust extinction in a galaxy. Its width and strength also estimate the mass of a central black hole from the kinematics of gas near an active nucleus.',
+      'Hγ': 'Fainter than Hα and Hβ, Hγ helps pin down the shape of the dust extinction curve and the strength of underlying stellar absorption. Its ratio to the other Balmer lines also constrains the ages of stellar populations.',
+      'Hδ': 'Hδ is best known in absorption as the hallmark of post-starburst galaxies caught shortly after a burst of star formation has shut off. In emission, it adds another rung to extinction-curve measurements.',
+      'Paα': 'Paschen-alpha sits in the near-infrared, where dust absorbs far less light than at optical wavelengths, making it a star-formation tracer that sees through heavily obscured starbursts invisible in Hα.',
+      'Paβ': 'Paschen-beta, also largely immune to dust, is routinely used to measure accretion rates onto young stellar objects still embedded in their natal gas and dust.',
+      'Paγ': 'Paschen-gamma supplements Paα and Paβ in accretion-rate studies of young stars and provides an independent check on extinction corrections derived from other lines.',
+      'Paδ': 'Paschen-delta is intrinsically weak and mainly useful as a consistency check on extinction and recombination-cascade models when the brighter Paschen lines are unavailable.',
+      'Brγ': 'Brackett-gamma, deep in the near-infrared, traces ionizing massive stars and accretion in dust-obscured regions, including the innermost, heavily extincted lines of sight toward active galactic nuclei.',
+      'Brδ': 'Brackett-delta complements Brγ in young stellar object accretion studies, and together they form a Brackett decrement analogous to the Balmer one.',
+      'Br 10': 'This higher Brackett transition is faint but adds an extra point on the Brackett decrement, testing Case B recombination theory in regions too dust-obscured for optical lines.',
+      'Br 11': 'This higher Brackett transition is faint but adds an extra point on the Brackett decrement, testing Case B recombination theory in regions too dust-obscured for optical lines.',
+      'Br 12': 'This higher Brackett transition is faint but adds an extra point on the Brackett decrement, testing Case B recombination theory in regions too dust-obscured for optical lines.'
+    };
+    var SUBSCRIPT_DIGITS = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
+    function toSubscript(n) { return String(n).split('').map(function (c) { return SUBSCRIPT_DIGITS[c] || c; }).join(''); }
+    // E_n = -13.6 eV / n^2 (Bohr levels); the photon energy for a
+    // transition is just the difference between the two levels.
+    function hLevelEnergyEV(n) { return -13.6 / (n * n); }
+    var hDiagramArrows = [];
+
+    function buildHydrogenDiagram() {
+      var diagramSvg = wrap.querySelector('#nspl-sd-diagram-H');
+      if (!diagramSvg) return;
+
+      [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12].forEach(function (n) {
+        var y = H_LEVEL_Y[n];
+        diagramSvg.appendChild(el('line', { class: n === 1 ? 'nspl-sd-level nspl-sd-level--ground' : 'nspl-sd-level', x1: 40, y1: y, x2: 110, y2: y }));
+        diagramSvg.appendChild(el('line', { class: 'nspl-sd-level-guide', x1: 110, y1: y, x2: H_GUIDE_X2, y2: y }));
+        var lbl = el('text', { class: 'nspl-sd-level-label', x: 34, y: y + 4, 'text-anchor': 'end' });
+        lbl.textContent = 'n = ' + n;
+        diagramSvg.appendChild(lbl);
+      });
+      diagramSvg.appendChild(el('line', { class: 'nspl-sd-ionline', x1: 40, y1: H_ION_Y, x2: 110, y2: H_ION_Y }));
+      diagramSvg.appendChild(el('line', { class: 'nspl-sd-ionline', x1: 110, y1: H_ION_Y, x2: H_GUIDE_X2, y2: H_ION_Y }));
+      var ionLbl = el('text', { class: 'nspl-sd-level-label', x: 34, y: H_ION_Y + 4, 'text-anchor': 'end' });
+      ionLbl.textContent = 'n = ∞';
+      diagramSvg.appendChild(ionLbl);
+
+      [{ label: 'Lyman', x: 170 }, { label: 'Balmer', x: 290 }, { label: 'Paschen', x: 425 }, { label: 'Brackett', x: 575 }].forEach(function (h) {
+        var t = el('text', { class: 'nspl-sd-group-label', x: h.x, y: 168, 'text-anchor': 'middle' });
+        t.textContent = h.label;
+        diagramSvg.appendChild(t);
+      });
+
+      H_TRANSITIONS.forEach(function (tr) {
+        var entry = rendered.filter(function (e) { return e.line.species === H && e.line.name === tr.name; })[0];
+        if (!entry) return;
+        var y1 = H_LEVEL_Y[tr.ni], y2 = H_LEVEL_Y[tr.nf];
+        var color = H_SERIES_COLOR[tr.series];
+
+        var g = el('g', { class: 'nspl-sd-transition' });
+        var hit = el('rect', { x: tr.x - 11, y: y1 - 14, width: 22, height: (y2 - y1) + 16, fill: 'transparent' });
+        var arrow = el('line', { class: 'nspl-sd-arrow', x1: tr.x, y1: y1, x2: tr.x, y2: y2 - 2, stroke: color, 'marker-end': 'url(#nspl-arr-' + tr.series + ')' });
+        var label = el('text', { class: 'nspl-sd-tr-label', x: tr.x, y: y1 - 7, 'text-anchor': 'middle' });
+        label.textContent = tr.name;
+        var title = el('title', {});
+        title.textContent = tr.name + ': n=' + tr.ni + ' → n=' + tr.nf;
+        g.appendChild(hit);
+        g.appendChild(arrow);
+        g.appendChild(label);
+        g.appendChild(title);
+        g.addEventListener('click', function (ev) {
+          if (dragMoved) return;
+          ev.stopPropagation();
+          var z = parseFloat(slider.value);
+          ensureWavelengthInView(entry.line.wl * (1 + z));
+          selectLine(entry);
+        });
+        diagramSvg.appendChild(g);
+
+        // Readout, hidden until this transition is selected, then slides
+        // out to the right of its own arrow. Content is fixed (computed
+        // once here) since nothing about a transition's own physics ever
+        // changes.
+        var dE = 13.6 * (1 / (tr.nf * tr.nf) - 1 / (tr.ni * tr.ni));
+        var catLabel = H_CAT_LABEL[entry.line.cat] || entry.line.cat;
+        var readout = el('text', {
+          class: 'nspl-sd-readout', x: tr.x + 14, y: (y1 + y2) / 2 + 4, 'text-anchor': 'start'
+        });
+        readout.textContent = 'E' + toSubscript(tr.ni) + ' − E' + toSubscript(tr.nf) + ' = ' + dE.toFixed(2) + ' eV (' + catLabel + ')';
+        readout.style.fill = color;
+        diagramSvg.appendChild(readout);
+
+        hDiagramArrows.push({ g: g, arrow: arrow, label: label, readout: readout, entry: entry, color: color });
+      });
+    }
+    buildHydrogenDiagram();
+
+    var relevanceTextEl = wrap.querySelector('#nspl-sd-relevance-text');
+
+    function updateHydrogenDiagramHighlight() {
+      var anyOfMineSelected = !!(selected && selected.line.species === H);
+      var activeName = null;
+      hDiagramArrows.forEach(function (a) {
+        var isSel = selected === a.entry;
+        if (isSel) activeName = a.entry.line.name;
+        var dim = anyOfMineSelected && !isSel;
+        a.g.classList.toggle('nspl-sd-transition--selected', isSel);
+        a.g.classList.toggle('nspl-sd-transition--dim', dim);
+        a.g.style.color = a.color; // currentColor, for the hover/selected drop-shadow
+        a.arrow.style.stroke = isSel ? a.color : '#64748b';
+        a.label.style.fill = isSel ? a.color : '#94a3b8';
+        a.label.style.fontWeight = isSel ? '700' : '400';
+        a.readout.classList.toggle('nspl-sd-readout--visible', isSel);
+      });
+      if (relevanceTextEl) {
+        relevanceTextEl.textContent = (activeName && H_RELEVANCE[activeName]) ||
+          'Click a transition in the diagram above to read what it is actually used for in practice.';
+      }
+    }
+
+    function updateSpeciesDetail() {
+      var match = null;
+      speciesPanels.forEach(function (panel) {
+        var isMatch = openSpeciesPanel && panel.getAttribute('data-element') === openSpeciesPanel;
+        panel.style.display = isMatch ? '' : 'none';
+        if (isMatch) match = panel;
+      });
+      speciesDetailEl.classList.toggle('nspl-species-detail--visible', !!match);
+      if (match) {
+        updateHydrogenDiagramHighlight();
+        updateGenericDiagramHighlights();
+      }
+    }
+
+    function showInfo(entry) {
+      if (entry) {
+        var l = entry.line;
+        var zNow = parseFloat(slider.value);
+        var obs = l.wl * (1 + zNow);
+        var inCoverage = obs >= COVERAGE_MIN && obs <= COVERAGE_MAX;
+        infoEl.innerHTML =
+          '<span class="nspl-info-dot" style="background:' + l.color + '"></span>' +
+          '<strong>' + l.name + '</strong> &nbsp;(' + l.species + ', ion. ' + (l.ion || '—') + ') &nbsp;·&nbsp; ' +
+          'rest ' + l.wl.toFixed(4) + ' µm &nbsp;→&nbsp; observed ' + obs.toFixed(4) + ' µm &nbsp;· ' +
+          (inCoverage ? 'within NIRSpec coverage' : 'outside the selected NIRSpec configuration');
+        return;
+      }
+      var zNow2 = parseFloat(slider.value);
+      if (selectedIon) {
+        var members = ionToEntries[selectedIon];
+        var inCovCount = members.filter(function (e) {
+          var obs = e.line.wl * (1 + zNow2);
+          return obs >= COVERAGE_MIN && obs <= COVERAGE_MAX;
+        }).length;
+        var names = members.map(function (e) { return e.line.name; }).join(', ');
+        infoEl.innerHTML =
+          '<span class="nspl-info-dot" style="background:' + members[0].line.color + '"></span>' +
+          '<strong>' + selectedIon + '</strong> &nbsp;· ' + members.length + ' line' + (members.length === 1 ? '' : 's') +
+          ' &nbsp;· ' + inCovCount + ' within NIRSpec coverage at this redshift &nbsp;· ' +
+          '<span style="color:#64748b">' + names + '</span>';
+        return;
+      }
+      if (selectedElement) {
+        var ions = elementToIons[selectedElement];
+        var allMembers = [];
+        ions.forEach(function (ionKey) { allMembers = allMembers.concat(ionToEntries[ionKey]); });
+        var inCovCount2 = allMembers.filter(function (e) {
+          var obs = e.line.wl * (1 + zNow2);
+          return obs >= COVERAGE_MIN && obs <= COVERAGE_MAX;
+        }).length;
+        infoEl.innerHTML =
+          '<span class="nspl-info-dot" style="background:' + allMembers[0].line.color + '"></span>' +
+          '<strong>' + selectedElement + '</strong> &nbsp;· ' + ions.length + ' ionization state' + (ions.length === 1 ? '' : 's') +
+          ' (' + ions.join(', ') + ') &nbsp;· ' + allMembers.length + ' line' + (allMembers.length === 1 ? '' : 's') +
+          ' &nbsp;· ' + inCovCount2 + ' within NIRSpec coverage at this redshift';
+        return;
+      }
+      infoEl.innerHTML = '<span class="nspl-info-hint">Click a line (or a bubble) to identify it.</span>';
+    }
+
+    var bubbleLeaders = svg.querySelector('#nspl-bubble-leaders');
+    var bubbleLineDots = svg.querySelector('#nspl-bubble-line-dots');
+    var bubbleIonStems = svg.querySelector('#nspl-bubble-ion-stems');
+    var bubbleIons = svg.querySelector('#nspl-bubble-ions');
+    var bubbleElemStems = svg.querySelector('#nspl-bubble-elem-stems');
+    var bubbleElements = svg.querySelector('#nspl-bubble-elements');
+
+    // Lay bubbles out as close to their natural (data-driven) x as
+    // possible while never overlapping a neighbor, and never spilling
+    // past the plot's own left/right edges — regardless of how tightly
+    // clustered their natural positions are. A plain greedy left-to-right
+    // push (shift right only, never clamp) can walk the whole row off
+    // the right edge of the figure when many groups cluster together;
+    // this instead pushes apart symmetrically from both sides, then
+    // compresses/clamps the whole row to fit the available width as a
+    // last resort, so a bubble can never land outside the visible plot.
+    function packRow(groups) {
+      groups.sort(function (a, b) { return a.naturalX - b.naturalX; });
+      groups.forEach(function (g) { g.x = g.naturalX; });
+
+      for (var pass = 0; pass < 40; pass++) {
+        var moved = false;
+        for (var i = 0; i < groups.length - 1; i++) {
+          var a = groups[i], b = groups[i + 1];
+          var minGap = a.r + b.r + MIN_BUBBLE_GAP;
+          var gap = b.x - a.x;
+          if (gap < minGap) {
+            var shift = (minGap - gap) / 2;
+            a.x -= shift;
+            b.x += shift;
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+
+      if (groups.length === 0) return;
+      var minX = PLOT_LEFT + 30, maxX = RIGHT_EDGE - 30;
+      var first = groups[0], last = groups[groups.length - 1];
+      var span = (last.x + last.r) - (first.x - first.r);
+      var available = maxX - minX;
+      if (span > available && span > 0) {
+        var center = (first.x + last.x) / 2;
+        var scale = Math.max(0.25, available / span);
+        groups.forEach(function (g) { g.x = center + (g.x - center) * scale; });
+      }
+      var leftOverflow = minX - (groups[0].x - groups[0].r);
+      if (leftOverflow > 0) groups.forEach(function (g) { g.x += leftOverflow; });
+      var rightOverflow = (groups[groups.length - 1].x + groups[groups.length - 1].r) - maxX;
+      if (rightOverflow > 0) groups.forEach(function (g) { g.x -= rightOverflow; });
+    }
+
+    function buildBubbles() {
+      bubbleLeaders.innerHTML = '';
+      bubbleLineDots.innerHTML = '';
+      bubbleIonStems.innerHTML = '';
+      bubbleIons.innerHTML = '';
+      bubbleElemStems.innerHTML = '';
+      bubbleElements.innerHTML = '';
+
+      // Tier 1: line dots, one per currently-visible line, sitting at
+      // the SAME x as its stem above (purely vertical leader, no
+      // crossing). Tier 2: ion bubbles, positioned at the average x of
+      // their (now packed) line dots. Tier 3: element bubbles,
+      // positioned at the average x of their (now packed) ion bubbles.
+      var ionGroups = ionOrder.map(function (ionKey) {
+        var entries = ionToEntries[ionKey].filter(function (e) { return e.visible; });
+        return { ion: ionKey, entries: entries, element: ionToElement[ionKey] };
+      }).filter(function (g) { return g.entries.length > 0; });
+
+      ionGroups.forEach(function (g) {
+        var sumX = 0;
+        g.entries.forEach(function (e) { sumX += e.x; });
+        g.naturalX = sumX / g.entries.length;
+        g.r = bubbleRadiusForLabel(g.ion, ionRadius(g.entries.length));
+      });
+      packRow(ionGroups);
+
+      var elemGroups = elementOrder.map(function (elemKey) {
+        var ions = ionGroups.filter(function (g) { return g.element === elemKey; });
+        return { element: elemKey, ions: ions };
+      }).filter(function (g) { return g.ions.length > 0; });
+
+      elemGroups.forEach(function (g) {
+        var sumX = 0;
+        var lineCount = 0;
+        g.ions.forEach(function (ig) { sumX += ig.x; lineCount += ig.entries.length; });
+        g.naturalX = sumX / g.ions.length;
+        var labelText = ELEMENT_SHORT_LABEL[g.element] || g.element;
+        g.r = bubbleRadiusForLabel(labelText, elementRadius(lineCount));
+      });
+      packRow(elemGroups);
+
+      // --- Render tier 3 (elements) ---
+      elemGroups.forEach(function (eg) {
+        var color = eg.ions[0].entries[0].line.color;
+        var elemHighlighted =
+          (selected && ionToElement[selected.line.species] === eg.element) ||
+          (selectedIon && ionToElement[selectedIon] === eg.element) ||
+          (selectedElement === eg.element);
+        var anyInCoverage = eg.ions.some(function (ig) { return ig.entries.some(function (e) { return e.inCoverage; }); });
+        var totalLines = eg.ions.reduce(function (s, ig) { return s + ig.entries.length; }, 0);
+
+        var elemG = el('g', { class: 'nspl-hier-bubble' + (elemHighlighted ? ' nspl-hier-bubble--highlighted' : '') });
+        elemG.style.color = color;
+        var elemCircle = el('circle', { class: 'nspl-hier-circle', cx: eg.x, cy: ELEMENT_Y, r: eg.r, 'stroke-width': 2.25 });
+        if (elemHighlighted) elemCircle.style.stroke = color;
+        // Fill always fully opaque so the element-ion stem (which runs
+        // straight through this circle's center) is always fully hidden
+        // behind it; only the ring dims to signal "out of coverage".
+        elemCircle.style.fillOpacity = 1;
+        elemCircle.style.strokeOpacity = anyInCoverage ? 1 : 0.45;
+        var elemText = ELEMENT_SHORT_LABEL[eg.element] || eg.element;
+        var elemLabel = bubbleLabelText('nspl-hier-label', eg.x, ELEMENT_Y, elemText);
+        if (elemHighlighted) elemLabel.style.fill = color;
+        var elemTitle = el('title', {});
+        elemTitle.textContent = eg.element + ': ' + eg.ions.length + ' ionization state' + (eg.ions.length === 1 ? '' : 's') + ', ' + totalLines + ' lines';
+        elemG.appendChild(elemCircle);
+        elemG.appendChild(elemLabel);
+        elemG.appendChild(elemTitle);
+        elemG.addEventListener('click', function (ev) {
+          if (dragMoved) return;
+          ev.stopPropagation();
+          selectElement(eg.element);
+        });
+        bubbleElements.appendChild(elemG);
+
+        // --- Tier 2 (ions) belonging to this element ---
+        var revealed = isElementRevealed(eg.element);
+        var veiledClass = revealed ? '' : ' nspl-hier-veiled';
+        eg.ions.forEach(function (ig) {
+          var ionColor = ig.entries[0].line.color;
+          var ionHighlighted =
+            (selected && selected.line.species === ig.ion) ||
+            (selectedIon === ig.ion) ||
+            (selectedElement === eg.element);
+
+          var elemStem = el('line', { class: 'nspl-bubble-stem' + veiledClass, x1: eg.x, y1: ELEMENT_Y, x2: ig.x, y2: ION_Y });
+          elemStem.style.opacity = ionHighlighted ? 0.9 : (ig.entries.some(function (e) { return e.inCoverage; }) ? 0.45 : 0.2);
+          elemStem.style.stroke = ionHighlighted ? ionColor : '#475569';
+          bubbleElemStems.appendChild(elemStem);
+
+          var ionG = el('g', { class: 'nspl-hier-bubble' + (ionHighlighted ? ' nspl-hier-bubble--highlighted' : '') + veiledClass });
+          ionG.style.color = ionColor;
+          var ionCircle = el('circle', { class: 'nspl-hier-circle', cx: ig.x, cy: ION_Y, r: ig.r });
+          if (ionHighlighted) ionCircle.style.stroke = ionColor;
+          ionCircle.style.fillOpacity = 1;
+          ionCircle.style.strokeOpacity = ig.entries.some(function (e) { return e.inCoverage; }) ? 1 : 0.45;
+          var ionLabel = bubbleLabelText('nspl-hier-label', ig.x, ION_Y, ig.ion);
+          if (ionHighlighted) ionLabel.style.fill = ionColor;
+          var ionTitle = el('title', {});
+          ionTitle.textContent = ig.ion + ': ' + ig.entries.length + ' line' + (ig.entries.length === 1 ? '' : 's');
+          ionG.appendChild(ionCircle);
+          ionG.appendChild(ionLabel);
+          ionG.appendChild(ionTitle);
+          ionG.addEventListener('click', function (ev) {
+            if (dragMoved) return;
+            ev.stopPropagation();
+            selectIon(ig.ion);
+          });
+          bubbleIons.appendChild(ionG);
+
+          // --- Tier 1 (line dots) belonging to this ion ---
+          ig.entries.forEach(function (e) {
+            var lineHighlighted = (selected === e) || (!selected && (selectedIon === ig.ion || selectedElement === eg.element));
+
+            var leader = el('line', { class: 'nspl-bubble-leader' + veiledClass, x1: e.x, y1: e.tipY, x2: e.x, y2: LINE_Y });
+            leader.style.opacity = lineHighlighted ? 0.9 : (e.inCoverage ? 0.35 : 0.15);
+            leader.style.stroke = lineHighlighted ? e.line.color : '#475569';
+            bubbleLeaders.appendChild(leader);
+
+            var ionStem = el('line', { class: 'nspl-bubble-stem' + veiledClass, x1: ig.x, y1: ION_Y, x2: e.x, y2: LINE_Y });
+            ionStem.style.opacity = lineHighlighted ? 0.9 : (e.inCoverage ? 0.45 : 0.2);
+            ionStem.style.stroke = lineHighlighted ? e.line.color : '#475569';
+            bubbleIonStems.appendChild(ionStem);
+
+            var dotG = el('g', { class: 'nspl-hier-bubble' + (lineHighlighted ? ' nspl-hier-bubble--highlighted' : '') + veiledClass });
+            dotG.style.color = e.line.color;
+            var dot = el('circle', { class: 'nspl-hier-dot', cx: e.x, cy: LINE_Y, r: lineHighlighted ? 5 : 3.5 });
+            // Always fully opaque (never faded via opacity) so the leader
+            // line, which runs straight through this dot's center, is
+            // always fully hidden behind it; coverage is signaled by a
+            // duller fill color instead.
+            dot.style.fill = lineHighlighted ? e.line.color : (e.inCoverage ? '#64748b' : '#334155');
+            var dotTitle = el('title', {});
+            dotTitle.textContent = e.line.name + ' (' + e.line.species + ')';
+            dotG.appendChild(dot);
+            dotG.appendChild(dotTitle);
+            dotG.addEventListener('click', function (ev) {
+              if (dragMoved) return;
+              ev.stopPropagation();
+              selectLine(e);
+            });
+            bubbleLineDots.appendChild(dotG);
+          });
+        });
+      });
+    }
+
+    function render() {
+      var z = parseFloat(slider.value);
+      zValueEl.textContent = z.toFixed(2);
+
+      buildCoverage();
+      buildTicks();
+
+      var viewMinWl = Math.exp(viewLnMin), viewMaxWl = Math.exp(viewLnMax);
+
+      rendered.forEach(function (entry) {
+        var obs = entry.line.wl * (1 + z);
+        var x = xForWl(obs);
+        var visible = obs >= viewMinWl && obs <= viewMaxWl;
+        var inCoverage = obs >= COVERAGE_MIN && obs <= COVERAGE_MAX;
+        var isSelected = (entry === selected) ||
+          (!selected && selectedIon && entry.line.species === selectedIon) ||
+          (!selected && selectedElement && ionToElement[entry.line.species] === selectedElement);
+
+        entry.x = x;
+        entry.visible = visible;
+        entry.inCoverage = inCoverage;
+        entry.isSelected = isSelected;
+
+        entry.g.setAttribute('transform', 'translate(' + x + ',0)');
+        entry.g.style.opacity = visible ? (isSelected ? 1 : (inCoverage ? 0.85 : 0.3)) : 0;
+        entry.g.classList.toggle('nspl-line--selected', isSelected);
+
+        var color = isSelected ? entry.line.color : '#64748b';
+        entry.stem.style.stroke = color;
+        entry.tip.style.fill = color;
+        entry.label.style.fill = isSelected ? color : '#64748b';
+        entry.label.style.fontWeight = isSelected ? '700' : '400';
+        entry.holder.style.color = entry.line.color; // for currentColor drop-shadow
+      });
+
+      buildBubbles();
+      showInfo(selected);
+      updateSpeciesDetail();
+    }
+
+    // ---- Zoom (wheel/trackpad, centered on the cursor) ----
+    function applyZoom(cursorLn, factor) {
+      var range = viewLnMax - viewLnMin;
+      var newRange = Math.max(MIN_RANGE, Math.min(FULL_RANGE, range * factor));
+      var frac = (cursorLn - viewLnMin) / range;
+      var newMin = cursorLn - frac * newRange;
+      var newMax = newMin + newRange;
+      if (newMin < LN_MIN_HARD) { newMax += (LN_MIN_HARD - newMin); newMin = LN_MIN_HARD; }
+      if (newMax > LN_MAX_HARD) { newMin -= (newMax - LN_MAX_HARD); newMax = LN_MAX_HARD; }
+      viewLnMin = Math.max(LN_MIN_HARD, newMin);
+      viewLnMax = Math.min(LN_MAX_HARD, newMax);
+      render();
+    }
+
+    // Trackpad pinch-to-zoom is delivered to the browser as a wheel event
+    // with ctrlKey set (a long-standing convention all major browsers
+    // share), which is what we hook here — NOT plain two-finger scroll.
+    // Treating every wheel event as "zoom the plot" would hijack normal
+    // page scrolling the instant the cursor crosses this (quite tall)
+    // SVG, trapping anyone trying to scroll past it. Plain scroll is
+    // left completely alone; the +/- buttons and drag-to-pan cover
+    // mouse-only zooming.
+    svg.addEventListener('wheel', function (e) {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      var cursorLn = lnForClientX(e.clientX);
+      var factor = Math.exp(e.deltaY * 0.0015);
+      applyZoom(cursorLn, factor);
+    }, { passive: false });
+
+    function zoomByFactor(factor) {
+      var centerLn = (viewLnMin + viewLnMax) / 2;
+      applyZoom(centerLn, factor);
+    }
+    zoomInBtn.addEventListener('click', function () { zoomByFactor(0.6); });
+    zoomOutBtn.addEventListener('click', function () { zoomByFactor(1 / 0.6); });
+
+    // ---- Pan (pointer drag) ----
+    var dragging = false, dragMoved = false, dragStartX = 0, dragStartMin = 0, dragStartMax = 0;
+
+    var dragPointerId = null;
+
+    svg.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      dragMoved = false;
+      dragStartX = e.clientX;
+      dragStartMin = viewLnMin;
+      dragStartMax = viewLnMax;
+      dragPointerId = e.pointerId;
+      // Pointer capture is deferred until real movement is seen (below) —
+      // capturing unconditionally here would retarget the plain click
+      // that follows a no-movement press to the <svg> itself instead of
+      // the emission line underneath, breaking line selection.
+    });
+
+    svg.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - dragStartX;
+      if (Math.abs(dx) > 3 && !dragMoved) {
+        dragMoved = true;
+        svg.setPointerCapture(dragPointerId);
+        svg.classList.add('nspl-dragging');
+      }
+      if (!dragMoved) return;
+      var rect = svg.getBoundingClientRect();
+      var scaleX = 1800 / rect.width;
+      var range = dragStartMax - dragStartMin;
+      var deltaLn = (dx * scaleX / PLOT_WIDTH) * range;
+      var newMin = dragStartMin - deltaLn;
+      var newMax = dragStartMax - deltaLn;
+      if (newMin < LN_MIN_HARD) { newMax += (LN_MIN_HARD - newMin); newMin = LN_MIN_HARD; }
+      if (newMax > LN_MAX_HARD) { newMin -= (newMax - LN_MAX_HARD); newMax = LN_MAX_HARD; }
+      viewLnMin = newMin;
+      viewLnMax = newMax;
+      render();
+    });
+
+    function endDrag() {
+      dragging = false;
+      svg.classList.remove('nspl-dragging');
+    }
+    svg.addEventListener('pointerup', endDrag);
+    svg.addEventListener('pointerleave', endDrag);
+    svg.addEventListener('pointercancel', endDrag);
+
+    svg.addEventListener('dblclick', function () {
+      viewLnMin = LN_MIN_HARD;
+      viewLnMax = LN_MAX_HARD;
+      render();
+    });
+
+    resetBtn.addEventListener('click', function () {
+      viewLnMin = LN_MIN_HARD;
+      viewLnMax = LN_MAX_HARD;
+      render();
+    });
+
+    slider.addEventListener('input', render);
+    render();
+  });
+})();
+</script>

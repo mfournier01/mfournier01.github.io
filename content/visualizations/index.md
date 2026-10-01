@@ -25,6 +25,17 @@ sections:
     design:
       columns: '1'
 
+  - block: linked-image
+    content:
+      image: jwst-icon.png
+      alt: James Webb Space Telescope line illustration
+      link: /jwst-explorer/
+      width: 320px
+    design:
+      columns: '1'
+      spacing:
+        padding: ["0", "0", "1rem", "0"]
+
   - block: markdown-wide
     content:
       title: Simulating the formation of galaxies with TNG50

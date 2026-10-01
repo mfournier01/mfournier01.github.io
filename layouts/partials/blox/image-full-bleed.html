@@ -1,0 +1,33 @@
+{{/* Project custom block: a full-bleed image spanning the entire browser
+     viewport width edge-to-edge (no max-width, no side padding) — the same
+     treatment as the hero background video. Distinct from `markdown-wide`,
+     which stays capped at `max-w-5xl` with side padding for other uses
+     (e.g. the Visualizations entries).
+
+     On devices with a mouse (not touch), hovering shows a circular lens
+     that zooms in 3x on the image under the cursor (see lens-zoom.js /
+     the `.lens-container`/`.lens` CSS in custom.css). The lens samples a
+     near-original-resolution rendition so the zoomed view stays sharp,
+     while the base `<img>` is served at a lighter web-optimized size. */}}
+
+{{ $page := .wcPage }}
+{{ $block := .wcBlock }}
+{{ $alt := $block.content.alt | default "" }}
+{{ $creditName := $block.content.credit_name | default "" }}
+{{ $credit := $block.content.credit | default "" }}
+{{ $res := $page.Resources.GetMatch $block.content.image }}
+
+{{ with $res }}
+  {{/* Centered crop to a 3:1 width:height ratio, then two renditions: a
+       lighter one for normal display, and a higher-resolution one the
+       lens (see lens-zoom.js) samples from so its 3x zoom stays sharp. */}}
+  {{ $web := .Fill "2400x800 Center webp q85" }}
+  {{ $zoom := .Fill "4000x1333 Center webp q90" }}
+  <div class="relative w-full lens-container" data-zoom-src="{{ $zoom.RelPermalink }}" data-zoom-factor="3">
+    <img src="{{ $web.RelPermalink }}" alt="{{ $alt }}" class="block w-full h-auto fade-edges-y" draggable="false">
+    <div class="lens" aria-hidden="true"></div>
+  </div>
+  {{ with $credit }}
+  <p class="text-xs text-slate-500 dark:text-slate-400 text-center max-w-5xl mx-auto px-6 mt-2">{{ with $creditName }}<strong>{{ . }}</strong> &middot; {{ end }}{{ $credit }}</p>
+  {{ end }}
+{{ end }}

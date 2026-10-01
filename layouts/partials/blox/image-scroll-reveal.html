@@ -1,0 +1,38 @@
+{{/* Project custom block: a full-bleed image pair (same framing, same
+     pixel dimensions) where the overlay image progressively replaces the
+     base image as the block scrolls through the viewport — e.g. a
+     stellar-light image giving way to an emission-line overlay of the same
+     galaxy. The reveal boundary is scroll-linked, drawn as a sharp white
+     line, and labelled on each side (see scroll-reveal.js); the whole
+     block's top/bottom edges fade into the page background via the shared
+     `.fade-edges-y` mask, same as `image-full-bleed`. */}}
+
+{{ $page := .wcPage }}
+{{ $block := .wcBlock }}
+{{ $altBase := $block.content.alt_base | default "" }}
+{{ $altOverlay := $block.content.alt_overlay | default "" }}
+{{ $labelAbove := $block.content.label_overlay | default "" }}
+{{ $labelBelow := $block.content.label_base | default "" }}
+{{ $creditName := $block.content.credit_name | default "" }}
+{{ $credit := $block.content.credit | default "" }}
+{{ $baseRes := $page.Resources.GetMatch $block.content.base_image }}
+{{ $overlayRes := $page.Resources.GetMatch $block.content.overlay_image }}
+
+{{ with $baseRes }}
+  {{ $base := . }}
+  {{ with $overlayRes }}
+    {{ $overlay := . }}
+    {{ $baseWeb := $base.Resize "2400x webp q85" }}
+    {{ $overlayWeb := $overlay.Resize "2400x webp q85" }}
+    <div class="relative w-full fade-edges-y scroll-reveal" data-reveal-speed="6" data-reveal-anchor="0.45">
+      <img src="{{ $baseWeb.RelPermalink }}" alt="{{ $altBase }}" class="block w-full h-auto" draggable="false">
+      <img src="{{ $overlayWeb.RelPermalink }}" alt="{{ $altOverlay }}" class="block w-full h-auto absolute inset-0 scroll-reveal-overlay" draggable="false">
+      <div class="scroll-reveal-line" aria-hidden="true"></div>
+      {{ with $labelAbove }}<p class="scroll-reveal-label scroll-reveal-label-above">{{ . | $page.RenderString | safeHTML }}</p>{{ end }}
+      {{ with $labelBelow }}<p class="scroll-reveal-label scroll-reveal-label-below">{{ . | $page.RenderString | safeHTML }}</p>{{ end }}
+    </div>
+    {{ with $credit }}
+    <p class="text-xs text-slate-500 dark:text-slate-400 text-center max-w-5xl mx-auto px-6 mt-2">{{ with $creditName }}<strong>{{ . }}</strong> &middot; {{ end }}{{ $credit }}</p>
+    {{ end }}
+  {{ end }}
+{{ end }}

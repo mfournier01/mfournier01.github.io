@@ -43,7 +43,7 @@ sections:
       title: '📚 My Research'
       subtitle: ''
       text: |-
-      
+
         My main topic of interest is the multiphase nature of the intracluster medium and the interaction between feedback from supermassive black holes, thermal instabilities and magnetic fields. To explore these questions, I use advanced numerical methods and run GPU-accelerated simulations on supercomputers.
 
         In the past, I have also been working on neutrino detectors, cosmological simulations of galaxy formation and cosmic ray physics.
@@ -60,6 +60,16 @@ sections:
     design:
       view: article-grid
       columns: 2
+  - block: image-full-bleed
+    content:
+      image: noirlab2126a5k.jpg
+      alt: A giant elliptical galaxy surrounded by a diffuse glow of intracluster light, amid a dense field of background galaxies
+      credit_name: 'The Fornax Cluster, about 60 million light-years away'
+      credit: 'CTIO/NOIRLab/DOE/NSF/AURA · Acknowledgment: Image processing: T.A. Rector (University of Alaska Anchorage/NSF NOIRLab), J. Miller (Gemini Observatory/NSF NOIRLab), M. Zamani (NSF NOIRLab) & D. de Martin (NSF NOIRLab)'
+    design:
+      columns: '1'
+      spacing:
+        padding: ["0", "0", "2rem", "0"]
   - block: markdown
     content:
       title: Publications List
@@ -98,10 +108,24 @@ sections:
       heading_size: sm
       spacing:
         padding: ["0", "0", "3rem", "0"]
+  - block: image-scroll-reveal
+    content:
+      base_image: NGC1275b.jpg
+      overlay_image: NGC1275d.jpg
+      alt_base: NGC 1275, the Perseus cluster's central galaxy, in stellar light
+      alt_overlay: NGC 1275 with its filamentary ionized-gas nebula overlaid
+      label_overlay: '<span class="label-optical">Optical</span> (<span class="label-halpha">H$\alpha$</span> enhanced) + <span class="label-radio">Radio</span> (144 MHz)'
+      label_base: '<span class="label-optical">Optical</span>'
+      credit_name: NGC 1275
+      credit: LOFAR/Frits Sweijen, NASA, ESA, and the Hubble Heritage (STScI/AURA)-ESA/Hubble Collaboration
+    design:
+      columns: '1'
+      spacing:
+        padding: ["0", "0", "2rem", "0"]
   - block: collection
     id: talks
     content:
-      title: Recent & Upcoming Talks
+      title: News
       filters:
         folders:
           - event

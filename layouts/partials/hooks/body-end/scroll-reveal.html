@@ -1,0 +1,118 @@
+<script>
+// Scroll-to-settle + hover-drag crossfade for `.scroll-reveal` blocks (see
+// layouts/partials/blox/image-scroll-reveal.html). Two phases:
+//  1. As the block crosses the viewport, a sharp boundary line slides down
+//     from the top and settles at the image's vertical middle (50%) —
+//     see `scrollBoundary()` — then stops responding to further scroll.
+//  2. Hovering the image hands control to the mouse: the line follows the
+//     cursor's vertical position (0-100%), so the viewer can drag through
+//     the full before/after range themselves. On mouseleave it eases back
+//     to wherever scroll currently has it settled.
+(function () {
+  var containers = document.querySelectorAll('.scroll-reveal');
+  if (!containers.length) return;
+
+  function applyBoundary(container, boundary) {
+    var overlay = container.querySelector('.scroll-reveal-overlay');
+    var line = container.querySelector('.scroll-reveal-line');
+    var labelAbove = container.querySelector('.scroll-reveal-label-above');
+    var labelBelow = container.querySelector('.scroll-reveal-label-below');
+
+    container.dataset.currentBoundary = boundary;
+
+    var gradient = 'linear-gradient(to bottom, black 0%, black ' + boundary + '%, transparent ' + boundary + '%, transparent 100%)';
+    overlay.style.webkitMaskImage = gradient;
+    overlay.style.maskImage = gradient;
+
+    line.style.top = boundary + '%';
+    line.style.transform = 'translateY(-50%)';
+
+    if (labelAbove) {
+      labelAbove.style.top = boundary + '%';
+      labelAbove.style.transform = 'translateY(calc(-100% - 10px))';
+    }
+    if (labelBelow) {
+      labelBelow.style.top = boundary + '%';
+      labelBelow.style.transform = 'translateY(10px)';
+    }
+  }
+
+  function scrollBoundary(container, vh) {
+    var rect = container.getBoundingClientRect();
+    var span = vh + rect.height;
+    var raw = span > 0 ? (vh - rect.top) / span : 0;
+
+    var speed = parseFloat(container.dataset.revealSpeed) || 3;
+    var anchor = parseFloat(container.dataset.revealAnchor);
+    if (isNaN(anchor)) anchor = 0.5;
+
+    // Capped at 0.5 (not 1): the sweep settles at the image's middle and
+    // stays there, rather than running through to a full reveal.
+    var progress = Math.max(0, Math.min(0.5, 0.5 + speed * (raw - anchor)));
+    return progress * 100;
+  }
+
+  function animateTo(container, target) {
+    if (container._revealAnimFrame) {
+      window.cancelAnimationFrame(container._revealAnimFrame);
+    }
+    var start = parseFloat(container.dataset.currentBoundary) || 0;
+    var duration = 400;
+    var startTime = null;
+
+    function step(ts) {
+      if (container.dataset.hovering === '1') return; // mouse took back over
+      if (!startTime) startTime = ts;
+      var t = Math.min(1, (ts - startTime) / duration);
+      var eased = 1 - Math.pow(1 - t, 3);
+      applyBoundary(container, start + (target - start) * eased);
+      if (t < 1) {
+        container._revealAnimFrame = window.requestAnimationFrame(step);
+      }
+    }
+    container._revealAnimFrame = window.requestAnimationFrame(step);
+  }
+
+  function updateScroll() {
+    var vh = window.innerHeight;
+    containers.forEach(function (container) {
+      if (container.dataset.hovering === '1') return; // mouse is in control
+      applyBoundary(container, scrollBoundary(container, vh));
+    });
+  }
+
+  var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  containers.forEach(function (container) {
+    container.dataset.hovering = '';
+    if (!canHover) return; // touch devices: scroll-settle only, no hijack
+
+    container.addEventListener('mousemove', function (e) {
+      container.dataset.hovering = '1';
+      var rect = container.getBoundingClientRect();
+      var y = e.clientY - rect.top;
+      var pct = Math.max(0, Math.min(100, (y / rect.height) * 100));
+      applyBoundary(container, pct);
+    });
+
+    container.addEventListener('mouseleave', function () {
+      container.dataset.hovering = '';
+      animateTo(container, scrollBoundary(container, window.innerHeight));
+    });
+  });
+
+  var ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(function () {
+      updateScroll();
+      ticking = false;
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  updateScroll();
+})();
+</script>

@@ -1,3 +1,8 @@
+/* STIX Two Text, italic only — used solely for the scroll-reveal labels
+   (see below), not a sitewide font. Must stay the first rule: `@import`
+   is only valid before any other CSS rule in the file. */
+@import url('https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@1,400&display=swap');
+
 /* --- Compensate for the EB Garamond font swap ---
    1. Garamond's x-height is noticeably smaller than Inter's at the same
       font-size, so text reads smaller/harder to read — nudge the root
@@ -72,4 +77,93 @@ html {
    effect — confirmed zero occurrences of `text-orange-*` in wc.min.css. */
 .pub-citation-count {
   color: #d97757; /* Claude's brand orange */
+}
+
+/* --- Magnifying lens on full-bleed images (see image-full-bleed.html) ---
+   Only engaged on devices with a real mouse; lens-zoom.js toggles its
+   `display` on mousemove/mouseleave and never attaches listeners at all
+   on touch devices, so this stays hidden there regardless. */
+@media (hover: hover) and (pointer: fine) {
+  .lens-container {
+    cursor: none;
+  }
+}
+
+.lens {
+  position: absolute;
+  display: none;
+  width: 440px;
+  height: 440px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.5);
+  background-repeat: no-repeat;
+  background-color: black;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* --- Soft top/bottom fade on full-bleed images ---
+   A mask gradient (not an actual blur) feathers the image's alpha at its
+   top/bottom edges so the page background shows through gradually instead
+   of the image ending in a hard horizontal line. */
+.fade-edges-y {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 60px, black calc(100% - 60px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, black 60px, black calc(100% - 60px), transparent 100%);
+}
+
+/* --- Scroll-reveal boundary: a sharp line + side labels ---
+   (see layouts/partials/blox/image-scroll-reveal.html / scroll-reveal.js).
+   Position (top/transform) is set per-frame by the script as the boundary
+   tracks scroll; these just set fixed appearance. Both sit inside the same
+   `.fade-edges-y`-masked container as the images, so they fade out
+   automatically too when the boundary nears the top/bottom edge. */
+/* Once settled, the boundary invites a mouse drag to move it — only on
+   devices with an actual pointer, so touch doesn't get a stray cursor. */
+@media (hover: hover) and (pointer: fine) {
+  .scroll-reveal {
+    cursor: ns-resize;
+  }
+}
+
+.scroll-reveal-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: white;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.scroll-reveal-label {
+  position: absolute;
+  left: 1.5rem;
+  text-align: left;
+  font-family: 'STIX Two Text', serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.scroll-reveal-label .label-optical {
+  /* Gradient — "Optical" is the full-color composite, unlike the
+     single-color Hα/radio channels beside it. */
+  background: linear-gradient(90deg, #34d399, #67e8f9, #60a5fa, #c084fc, #f472b6, #fdba74);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.scroll-reveal-label .label-halpha {
+  color: #fb923c; /* orange */
+}
+
+.scroll-reveal-label .label-radio {
+  color: #c084fc; /* purple */
 }

@@ -20,12 +20,13 @@ superuser: true
 highlight_name: true
 
 # Role/position/tagline
-role: PhD Student in Computational Astrophysics
+role: Postdoctoral Researcher
 
 # Organizations/Affiliations to display in Biography blox
 organizations:
-  - name: Hamburg Universität
-    url: https://www.physik.uni-hamburg.de/de/hs.html
+  - name: Institut d'Astrophysique de Paris (IAP)
+    url: https://www.iap.fr/
+  - name: CNRS & Sorbonne Université
 
 # Social network links
 # Need to use another icon? Simply download the SVG icon to your `assets/media/icons/` folder.
@@ -48,12 +49,6 @@ interests:
   - Multiphase Gas
 
 education:
-  # Not started yet — re-enable once the position begins.
-  # - area: Postdoctoral Researcher
-  #   institution: Institut d'Astrophysique de Paris
-  #   date_start: 2026-07-01
-  #   date_end: ''
-  #   summary: ''
   - area: PhD in Astrophysics
     institution: Hamburg Universität
     date_start: 2023-07-24
@@ -71,6 +66,13 @@ education:
     date_end: 2022-08-01
     summary: ''
 work:
+  - position: Postdoctoral Researcher · Paris, France
+    company_name: "Institut d'Astrophysique de Paris (IAP)<br>CNRS & Sorbonne Université"
+    company_url: https://www.iap.fr/
+    company_logo: ''
+    date_start: 2026-10-01
+    date_end: ''
+    summary: ''
   - position: Master internship
     company_name: École Normale Supérieure de Lyon
     company_url: https://www.ens-lyon.fr/
@@ -158,4 +160,4 @@ awards:
 
 ## About Me
 
-I am a PhD candidate at Hamburg Universität working on magnetohydrodynamical simulations of galaxy clusters. When I'm not working, I enjoy bouldering, playing the drums, attending concert and practicing photography.
+I am a Postdoctoral Researcher at the Institut d'Astrophysique de Paris (IAP) working on magnetohydrodynamical simulations of galaxy clusters. When I'm not working, I enjoy bouldering, playing the drums, attending concert and practicing photography.

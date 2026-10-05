@@ -1,0 +1,44 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<div class="exh-wrap">
+  <h1 class="exh-title">Explorers</h1>
+  <p class="exh-lead">Small interactive pages I build, with AI assistance, to help myself understand and learn new things in astronomy, from how telescopes and instruments work to the physics of what they observe.</p>
+
+  <div class="exh-cards">
+    {{ with .Page.Resources.GetMatch "jwst-icon.png" }}
+    {{ $img := .Resize "320x webp q90" }}
+    <a class="exh-card" href="/jwst-explorer/">
+      <img src="{{ $img.RelPermalink }}" alt="James Webb Space Telescope line illustration" class="exh-card-img">
+      <div class="exh-card-body">
+        <div class="exh-card-title">JWST Explorer</div>
+        <div class="exh-card-text">The four JWST instruments, their wavelength coverage, emission lines and mid-infrared features across redshift, and how big an object looks in each field of view.</div>
+        <div class="exh-card-link">Open &rarr;</div>
+      </div>
+    </a>
+    {{ end }}
+    <div class="exh-card exh-card--soon">
+      <div class="exh-card-body">
+        <div class="exh-card-title">More to come</div>
+        <div class="exh-card-text">Dust, other telescopes and more.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .exh-wrap * { font-style: normal; }
+  .exh-wrap em, .exh-wrap i { font-style: italic; }
+  .exh-wrap { max-width: 860px; margin: 0 auto; padding: 0 1rem 3rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; }
+  .exh-title { margin: 0 0 0.5rem; font-size: 2.2rem; font-weight: 700; color: #e2e8f0; text-align: center; }
+  .exh-lead { margin: 0 auto 2.2rem; max-width: 620px; text-align: center; font-size: 1.05rem; line-height: 1.5; }
+
+
+  .exh-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
+  .exh-card { display: flex; align-items: center; gap: 1.1rem; padding: 1.1rem 1.3rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); color: inherit; text-decoration: none; transition: border-color 0.2s ease, transform 0.2s ease; }
+  a.exh-card:hover { border-color: #60a5fa; transform: translateY(-2px); }
+  .exh-card--soon { border-style: dashed; color: #94a3b8; justify-content: center; text-align: center; }
+  .exh-card-img { width: 110px; height: auto; flex: 0 0 auto; }
+  .exh-card-title { font-size: 1.25rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.25rem; }
+  .exh-card--soon .exh-card-title { color: #94a3b8; }
+  .exh-card-text { font-size: 0.92rem; line-height: 1.45; }
+  .exh-card-link { margin-top: 0.5rem; font-size: 0.9rem; font-weight: 700; color: #60a5fa; }
+</style>

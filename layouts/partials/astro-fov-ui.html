@@ -1,0 +1,54 @@
+{{/* Shared markup for the "how big would it look to <instrument>?" figures. */}}
+<div class="nfv-wrap">
+  <div class="nfv-intro">
+    <h2 class="nfv-title">{{ .title }}</h2>
+    {{ .intro }}
+  </div>
+
+  <div class="nfv-controls">
+    <label class="nfv-field nfv-field--grow">
+      <span>Search by name</span>
+      <input type="text" id="nfv-search" list="nfv-names" placeholder="e.g. M51, Crab Nebula, Jupiter, GN-z11" autocomplete="off" spellcheck="false">
+      <datalist id="nfv-names"></datalist>
+    </label>
+    <label class="nfv-field">
+      <span>Or choose</span>
+      <select id="nfv-select"></select>
+    </label>
+  </div>
+  <div class="nfv-status" id="nfv-status"></div>
+
+  <div class="nfv-controls nfv-controls--params">
+    {{ .extra }}
+    <label class="nfv-field">
+      <span>Type</span>
+      <select id="nfv-type"></select>
+    </label>
+    <label class="nfv-field">
+      <span>Distance</span>
+      <span class="nfv-pair"><input type="number" id="nfv-dist" min="0" step="any"><select id="nfv-dist-unit"></select></span>
+    </label>
+    <label class="nfv-field">
+      <span>Diameter</span>
+      <span class="nfv-pair"><input type="number" id="nfv-diam" min="0" step="any"><select id="nfv-diam-unit"></select></span>
+    </label>
+  </div>
+
+  <div class="nfv-fig">
+    <canvas id="nfv-canvas"></canvas>
+  </div>
+
+  <div class="nfv-toolbar">
+    <button type="button" class="nfv-btn" id="nfv-fit-fov">Fit field of view</button>
+    <button type="button" class="nfv-btn" id="nfv-fit-obj">Fit object</button>
+    <span class="nfv-zoom">
+      <span>Zoom</span>
+      <input type="range" id="nfv-zoom" min="-2" max="4" step="0.01" value="0">
+    </span>
+  </div>
+
+  <div class="nfv-cards" id="nfv-cards"></div>
+  <div class="nfv-note">
+    Distances and diameters are rough, rounded values meant for scale, not for measurement. The Moon moves too fast for JWST to track, and is included only for comparison.
+  </div>
+</div>

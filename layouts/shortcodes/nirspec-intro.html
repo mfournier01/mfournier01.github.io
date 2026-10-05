@@ -1,0 +1,11 @@
+{{ $body := `  <p>
+    <strong>NIRSpec</strong> is JWST's near-infrared spectrograph (about 0.6 to 5.3&nbsp;&micro;m). A prism and several gratings disperse the light at resolving powers <em>R</em> from about 30 to 2700, and light can enter in three ways: a micro-shutter array that takes spectra of up to about 200 targets at once, an integral-field unit that records a spectrum at every point of a 3&Prime;&nbsp;&times;&nbsp;3&Prime; patch, and fixed slits for bright sources and transits.
+  </p>
+  <p>
+    NIRSpec's spectra identify emission lines and give exact redshifts, gas velocities, temperatures and chemical abundances, but only for selected targets. In contrast with <strong>NIRCam</strong>, which images wide fields at a resolving power of at most about 100 and is used to find and characterize the targets NIRSpec then follows up, NIRSpec trades field of view for spectral detail. In contrast with <strong>MIRI</strong>, which works at 5 to 28&nbsp;&micro;m and sees cool dust, molecules and heavily obscured sources, NIRSpec stops at 5.3&nbsp;&micro;m and is best for the rest-frame ultraviolet and optical lines of distant galaxies and for warm gas.
+  </p>
+  <p>
+    This page shows where the main emission lines land on NIRSpec's spectrum as the redshift changes. To compare an object's angular size with NIRSpec's apertures, see the figure on the <a href="/jwst-explorer/" style="text-decoration:underline">JWST Explorer</a> page.
+  </p>
+` }}
+{{ partial "instrument-intro.html" (dict "title" "JWST NIRSpec" "body" ($body | safeHTML)) }}

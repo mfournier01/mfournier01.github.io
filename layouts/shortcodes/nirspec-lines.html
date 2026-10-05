@@ -19,6 +19,20 @@
 
 <div class="nspl-wrap">
   <div class="nspl-panel">
+  <div class="nspl-intro">
+    <h2 class="nspl-intro-title">Where the emission lines land</h2>
+    <p>
+      The <strong>resolving power</strong> <em>R</em> is how finely a mode separates wavelengths,
+    </p>
+    <div class="nspl-eq-block" data-tex="R \equiv \frac{\lambda}{\Delta\lambda}, \qquad \Delta v \simeq \frac{c}{R}"></div>
+    <p>
+      where &Delta;&lambda; is the width of an unresolved line and &Delta;v the corresponding velocity. The prism (<em>R</em>&nbsp;&sim;&nbsp;30 to 300) finds lines and gives redshifts; <em>R</em>&nbsp;&sim;&nbsp;1000 (300&nbsp;km/s) splits close pairs like [O&nbsp;II]; <em>R</em>&nbsp;&sim;&nbsp;2700 (110&nbsp;km/s) starts to resolve outflows and rotation.
+    </p>
+    <p>
+      <strong>The figure:</strong> each point is a line at its observed wavelength &lambda;<sub>rest</sub>(1 + z) (set by the redshift slider) against its upper-level energy E<sub>u</sub>/k, colored by transition type. The curves on the right-hand axis give each mode's <em>R</em>. Click a line, ion or element to see what produces it.
+    </p>
+  </div>
+
   <div class="nspl-controls">
     <label class="nspl-z-label" for="nspl-z-slider">
       Redshift <span class="nspl-z-value" id="nspl-z-value">0.00</span>
@@ -155,6 +169,11 @@
 </div>
 
 <style>
+  /* Upright by default; italics only for <em> (math symbols, emphasis).
+     Placed first so deliberate italic class rules below still win. */
+  .nspl-wrap * { font-style: normal; }
+  .nspl-wrap em, .nspl-wrap i { font-style: italic; }
+
   @import url('https://fonts.googleapis.com/css2?family=STIX+Two+Text:wght@400;700&display=swap');
 
   .nspl-wrap {
@@ -170,6 +189,24 @@
        to it rather than to the page. */
     width: 100%;
     position: relative;
+  }
+
+  .nspl-intro {
+    max-width: 760px;
+    margin: 0 auto 1.5rem;
+    font-family: 'STIX Two Text', serif;
+    color: #cbd5e1;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .nspl-intro p { margin: 0 0 0.7rem; }
+
+  .nspl-intro-title {
+    margin: 0 0 0.7rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e2e8f0;
   }
 
   .nspl-controls {
@@ -931,6 +968,7 @@
   .nspl-hier-veiled {
     display: none;
   }
+
 </style>
 
 <script>
@@ -1061,8 +1099,13 @@
   // detail diagram still uses its own finer-grained series colors
   // (Lyman/Balmer/Paschen/Brackett), which is a separate, richer
   // breakdown shown only there. ----
-  var CATEGORY_COLOR = { forbidden: '#38bdf8', semiforbidden: '#34d399', permitted: '#fbbf24', molecular: '#a78bfa' };
-  var CATEGORY_LABEL = { forbidden: 'forbidden', semiforbidden: 'semi-forbidden', permitted: 'permitted', molecular: 'molecular' };
+  // Single source of truth shared with the NIRCam page: data/line_categories.json.
+  var CATEGORY_DATA = {{ site.Data.line_categories | jsonify | safeJS }} || { forbidden: { color: '#38bdf8', label: 'forbidden' }, semiforbidden: { color: '#34d399', label: 'semi-forbidden' }, permitted: { color: '#fbbf24', label: 'permitted' }, molecular: { color: '#a78bfa', label: 'molecular' } };
+  var CATEGORY_COLOR = {}, CATEGORY_LABEL = {};
+  Object.keys(CATEGORY_DATA).forEach(function (k) {
+    CATEGORY_COLOR[k] = CATEGORY_DATA[k].color;
+    CATEGORY_LABEL[k] = CATEGORY_DATA[k].label;
+  });
 
   function categoryOfLine(line) {
     if (line.species === 'PAH' || line.species === 'H₂' || line.species === 'H₂O') return 'molecular';

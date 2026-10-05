@@ -1,0 +1,35 @@
+{{/* One timeline entry. Params: idx kind title org url start end summary button fmt page */}}
+{{ $start := now }}{{ if .start }}{{ $start = time .start }}{{ end }}
+{{ $isCurrent := true }}{{ $endT := now }}
+{{ if .end }}{{ $isCurrent = false }}{{ $endT = time .end }}{{ end }}
+{{ $months := int (div ($endT.Sub $start).Hours 730.5) }}
+{{ $dur := "" }}
+{{ if lt $months 1 }}{{ $dur = "< 1 month" }}
+{{ else if lt $months 12 }}{{ $dur = printf "%d month%s" $months (cond (eq $months 1) "" "s") }}
+{{ else }}
+  {{ $y := div $months 12 }}{{ $m := mod $months 12 }}
+  {{ $dur = printf "%d yr" $y }}{{ if gt $m 0 }}{{ $dur = printf "%s %d mo" $dur $m }}{{ end }}
+{{ end }}
+<li class="exp-item exp-item--{{ .kind }}{{ if $isCurrent }} exp-item--current{{ end }}" style="animation-delay: {{ mul .idx 90 }}ms">
+  <span class="exp-node" aria-hidden="true">{{ partial "exp-icon" .kind }}</span>
+  <div class="exp-card">
+    <div class="exp-card-top">
+      <h4 class="exp-title">{{ .title }}</h4>
+      {{ if $isCurrent }}<span class="exp-badge"><span class="exp-badge-dot"></span>Current</span>{{ end }}
+    </div>
+    <div class="exp-org">
+      {{ if .url }}<a href="{{ .url }}" target="_blank" rel="noopener">{{ .org | safeHTML }}</a>{{ else }}{{ .org | safeHTML }}{{ end }}
+    </div>
+    <div class="exp-meta">
+      <span class="exp-chip">
+        <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 2a1 1 0 0 1 1 1v1h6V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Zm10 7H4v7h12V9Z"/></svg>
+        {{ if .start }}{{ $start | time.Format .fmt }} – {{ end }}{{ if $isCurrent }}{{ i18n "present" | default "Present" }}{{ else }}{{ $endT | time.Format .fmt }}{{ end }}
+      </span>
+      <span class="exp-chip exp-chip--dur">{{ $dur }}</span>
+    </div>
+    {{ with .summary }}<div class="exp-summary prose prose-slate dark:prose-invert">{{ . | $.page.RenderString }}</div>{{ end }}
+    {{ with .button }}
+    <a href="{{ .url }}" target="_blank" rel="noopener" class="exp-button">{{ .text }}</a>
+    {{ end }}
+  </div>
+</li>

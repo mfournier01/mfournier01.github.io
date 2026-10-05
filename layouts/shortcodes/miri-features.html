@@ -1,0 +1,271 @@
+<!--
+  MIRI mid-infrared feature map: PAH bands, H2 rotational lines, fine-structure
+  lines, hydrogen recombination lines and dust/ice features, redshifted by a
+  slider, over MIRI's imager filters, coronagraph filters, low-resolution
+  spectrometer and the 12 sub-bands of the medium-resolution spectrometer.
+  Band edges and feature wavelengths are approximate. Vanilla JS + inline SVG.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<div class="mrf-wrap">
+  <div class="mrf-intro">
+    <h2 class="mrf-title">Spectral features and MIRI's coverage</h2>
+    <p>
+      Each line is a spectral feature at its observed wavelength &lambda;<sub>rest</sub>(1&nbsp;+&nbsp;<em>z</em>), colored by type; shaded bands are broad features such as the silicate absorption. Rest-frame mid-infrared features (PAHs, H&#8322;, fine-structure lines, dust and ice) are in MIRI's range at low redshift, while the rest-frame optical and near-infrared lines (H&alpha;, [O&nbsp;III], Pa&alpha; and others) move into it for galaxies at <em>z</em>&nbsp;&gtrsim&nbsp;3 to 10. The rows below show which MIRI imager filter, coronagraph filter, spectrometer or spectrometer sub-band catches it. Move the slider to redshift the features, and click one to see what it traces.
+    </p>
+  </div>
+
+  <div class="mrf-controls">
+    <label class="mrf-z-label" for="mrf-z-slider">Redshift <span class="mrf-z-value" id="mrf-z-value">0.00</span></label>
+    <input type="range" id="mrf-z-slider" class="mrf-z-slider" min="0" max="10" step="0.01" value="0">
+  </div>
+  <div class="mrf-legend" id="mrf-legend"></div>
+
+  <div class="mrf-fig">
+    <svg id="mrf-svg" viewBox="0 0 1200 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MIRI spectral features versus observed wavelength, over MIRI's filters and spectrometer bands">
+      <g id="mrf-grid"></g>
+      <g id="mrf-broad"></g>
+      <g id="mrf-bands"></g>
+      <g id="mrf-features"></g>
+      <g id="mrf-axis"></g>
+    </svg>
+  </div>
+
+  <div class="mrf-detail" id="mrf-detail"></div>
+</div>
+
+<style>
+  .mrf-wrap * { font-style: normal; }
+  .mrf-wrap em, .mrf-wrap i { font-style: italic; }
+  .mrf-wrap { width: 100%; margin: 0 auto; padding: 0 1rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; }
+  .mrf-intro { max-width: 760px; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.55; }
+  .mrf-intro p { margin: 0 0 0.7rem; }
+  .mrf-title { margin: 0 0 0.7rem; font-size: 1.5rem; font-weight: 700; color: #e2e8f0; }
+
+  .mrf-controls { display: flex; align-items: center; gap: 0.75rem; max-width: 760px; margin: 0 auto 0.8rem; }
+  .mrf-z-label { color: #e2e8f0; white-space: nowrap; }
+  .mrf-z-value { display: inline-block; min-width: 3em; font-weight: 700; color: #fbbf24; }
+  .mrf-z-slider { flex: 1; accent-color: #fbbf24; }
+  .mrf-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem; margin: 0 auto 0.8rem; max-width: 760px; font-size: 0.9rem; }
+  .mrf-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .mrf-legend-swatch { width: 11px; height: 11px; border-radius: 50%; }
+
+  .mrf-fig { max-width: 1150px; margin: 0 auto; }
+  #mrf-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .mrf-band { stroke: rgba(15,23,42,0.7); stroke-width: 1; opacity: 0.8; transition: opacity 0.15s ease; }
+  .mrf-band--hit { stroke: #f8fafc; stroke-width: 2.5; opacity: 1; }
+  .mrf-band-label { font-size: 12px; fill: #0f172a; font-weight: 700; text-anchor: middle; pointer-events: none; }
+  .mrf-row-label { font-size: 14px; fill: #94a3b8; text-anchor: end; }
+  .mrf-grid-line { stroke: #1e293b; stroke-width: 1; }
+  .mrf-axis-line { stroke: #475569; stroke-width: 1; }
+  .mrf-axis-text { font-size: 14px; fill: #94a3b8; text-anchor: middle; }
+  .mrf-axis-title { font-size: 16px; fill: #cbd5e1; text-anchor: middle; }
+  .mrf-feat { cursor: pointer; }
+  .mrf-feat-line { stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.8; filter: drop-shadow(0 0 2px rgba(0,0,0,0.9)); transition: opacity 0.15s ease, stroke-width 0.15s ease; }
+  .mrf-feat:hover .mrf-feat-line, .mrf-feat--sel .mrf-feat-line { opacity: 1; stroke-width: 2.5; stroke-dasharray: none; }
+  .mrf-feat-label { font-size: 13px; text-anchor: start; paint-order: stroke; stroke: #0f172a; stroke-width: 3px; font-weight: 700; }
+  .mrf-feat-dot { filter: drop-shadow(0 0 2px rgba(0,0,0,0.9)); transition: r 0.15s ease; }
+  .mrf-feat:hover .mrf-feat-dot, .mrf-feat--sel .mrf-feat-dot { r: 5; }
+  .mrf-feat-leader { stroke-width: 1; opacity: 0.5; }
+  .mrf-dim .mrf-feat:not(.mrf-feat--sel) { opacity: 0.35; }
+
+  .mrf-detail { max-width: 760px; margin: 1rem auto 2rem; padding: 0.9rem 1.25rem; border: 1px solid rgba(148,163,184,0.25); border-radius: 0.6rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); font-size: 0.95rem; line-height: 1.5; }
+  .mrf-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+  .mrf-dot { width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+  .mrf-obs { color: #94a3b8; }
+  .mrf-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
+  .mrf-chip { display: inline-block; padding: 0.05rem 0.55rem; border-radius: 999px; font-size: 0.82rem; font-weight: 700; border: 1px solid rgba(45,212,191,0.5); color: #2dd4bf; background: rgba(45,212,191,0.12); }
+  .mrf-muted { color: #64748b; }
+</style>
+
+<script>
+(function () {
+  var CATS = {{ site.Data.line_categories | jsonify | safeJS }} || { forbidden: { color: '#38bdf8', label: 'forbidden' }, semiforbidden: { color: '#34d399', label: 'semi-forbidden' }, permitted: { color: '#fbbf24', label: 'permitted' }, molecular: { color: '#a78bfa', label: 'molecular' } };
+  var TYPES = {
+    forbidden: { color: CATS.forbidden.color, label: 'fine-structure (forbidden) line' },
+    permitted: { color: CATS.permitted.color, label: 'hydrogen recombination line' },
+    molecular: { color: CATS.molecular.color, label: 'molecular (PAH, H₂)' },
+    dust: { color: '#f472b6', label: 'dust and ice' }
+  };
+  var TEAL = '#2dd4bf';
+
+  // name, rest wavelength (um), type, rest width of broad features (um), description
+  var F = [
+    ['Hβ', 0.4861, 'permitted', 0, 'Balmer recombination line of hydrogen (n = 4 to 2). It reaches MIRI at z ≳ 8.5 and is used with Hα to measure dust attenuation and with [O III] for ionization.'],
+    ['[O III] 4959', 0.4959, 'forbidden', 0, 'The weaker line of the [O III] doublet (its partner at 5007 Å is about three times brighter). Tracks highly ionized gas in young, low-metallicity galaxies.'],
+    ['[O III] 5007', 0.5007, 'forbidden', 0, 'Doubly ionized oxygen, among the brightest lines of distant star-forming galaxies. MIRI observes it at z ≈ 8 to 10 and beyond, probing gas ionization and metallicity in the first few hundred million years.'],
+    ['Hα', 0.6563, 'permitted', 0, 'Balmer recombination line of hydrogen (n = 3 to 2), the most direct tracer of star formation. It falls in MIRI\'s range for z ≈ 6.6 and above, so MIRI is how Hα is measured in the first billion years.'],
+    ['[S II]', 0.6724, 'forbidden', 0, 'Singly ionized sulfur doublet (6717, 6731 Å), a tracer of low-ionization gas, shocks and electron density.'],
+    ['[S III] 9531', 0.9531, 'forbidden', 0, 'Doubly ionized sulfur, a metallicity and ionization diagnostic that is less affected by dust than optical lines.'],
+    ['He I 1.08', 1.0830, 'permitted', 0, 'Helium line sensitive to the gas density and to the hardness of the radiation field; seen in star-forming galaxies and active nuclei.'],
+    ['Paβ', 1.2818, 'permitted', 0, 'Paschen recombination line of hydrogen (n = 5 to 3), a dust-penetrating star-formation tracer.'],
+    ['[Fe II] 1.26', 1.257, 'forbidden', 0, 'Singly ionized iron, bright in shocks and supernova remnants and in the narrow-line regions of active nuclei.'],
+    ['Paα', 1.8751, 'permitted', 0, 'Paschen recombination line of hydrogen (n = 4 to 3), about 20 times less affected by dust than Hα; it is MIRI\'s main star-formation tracer for dusty galaxies at z ≈ 1.5 to 14.'],
+    ['H₂ 1-0 S(1)', 2.1218, 'molecular', 0, 'Rovibrational line of molecular hydrogen (E/k ≈ 6950 K) tracing hot, shocked or irradiated molecular gas in nearby galaxies and active nuclei.'],
+    ['Brγ', 2.1661, 'permitted', 0, 'Brackett recombination line of hydrogen (n = 7 to 4), a dust-penetrating tracer of ionized gas.'],
+    ['PAH 3.3', 3.29, 'molecular', 0.1, 'Carbon-hydrogen stretching mode of PAHs, the shortest-wavelength PAH feature. It is a star-formation tracer in dusty galaxies at z ≈ 0.4 to 7 and tells aromatic from aliphatic carbon.'],
+    ['Brα', 4.0523, 'permitted', 0, 'Brackett recombination line of hydrogen (n = 5 to 4), among the least dust-affected hydrogen lines that MIRI can reach in galaxies at z ≈ 0 to 6.'],
+    ['PAH 6.2', 6.22, 'molecular', 0.25, 'Carbon-carbon stretching vibration of polycyclic aromatic hydrocarbons (PAHs), large carbon molecules excited by ultraviolet light from young stars. Strong PAHs trace star formation and the surfaces of dusty clouds.'],
+    ['PAH 7.7', 7.7, 'molecular', 1.0, 'A blend of carbon-carbon stretching and carbon-hydrogen bending modes, the brightest PAH complex. Its strength is widely used as a star-formation tracer, including in distant galaxies.'],
+    ['PAH 8.6', 8.6, 'molecular', 0.4, 'Carbon-hydrogen in-plane bending mode of PAHs; its strength relative to the 7.7 µm band is sensitive to the molecules\' ionization state.'],
+    ['PAH 11.3', 11.3, 'molecular', 0.4, 'Out-of-plane bending of an isolated carbon-hydrogen bond on a PAH, the strongest PAH band at long wavelengths. Its ratio to 7.7 µm probes the size and charge of the molecules.'],
+    ['PAH 12.7', 12.7, 'molecular', 0.4, 'Out-of-plane bending of three adjacent carbon-hydrogen bonds on a PAH edge, blended with the [Ne II] line at 12.81 µm.'],
+    ['PAH 16.4', 16.45, 'molecular', 0.3, 'Skeletal (carbon-carbon-carbon) bending of PAHs, one of the longer-wavelength PAH features.'],
+    ['PAH 17', 17.1, 'molecular', 0.8, 'A broad complex of PAH skeletal modes, sometimes blended with the H₂ S(1) line.'],
+    ['H₂ S(0)', 28.22, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 2 to 0), upper-level energy E/k ≈ 510 K. Traces the bulk of cool, warm molecular gas.'],
+    ['H₂ S(1)', 17.03, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 3 to 1), E/k ≈ 1015 K. Warm molecular gas heated by shocks, outflows or ultraviolet light.'],
+    ['H₂ S(2)', 12.28, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 4 to 2), E/k ≈ 1682 K. Warm molecular gas, often blended with PAH 12.7.'],
+    ['H₂ S(3)', 9.665, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 5 to 3), E/k ≈ 2504 K. It sits in the 9.7 µm silicate absorption trough in obscured sources.'],
+    ['H₂ S(4)', 8.025, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 6 to 4), E/k ≈ 3474 K. Hot molecular gas in shocks and outflows.'],
+    ['H₂ S(5)', 6.909, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 7 to 5), E/k ≈ 4586 K. Probes hot, shocked molecular gas.'],
+    ['H₂ S(6)', 6.109, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 8 to 6), E/k ≈ 5829 K. Very hot molecular gas.'],
+    ['H₂ S(7)', 5.511, 'molecular', 0, 'Pure rotational line of molecular hydrogen (J = 9 to 7), E/k ≈ 7197 K. The hottest rotational line MIRI reaches.'],
+    ['[Fe II] 5.34', 5.340, 'forbidden', 0, 'Fine-structure line of singly ionized iron. Bright in shocks, supernova remnants and jets, where iron is released from dust grains.'],
+    ['[Ni II]', 6.636, 'forbidden', 0, 'Fine-structure line of singly ionized nickel, found with [Fe II] in shocked gas and supernova remnants.'],
+    ['[Ar II]', 6.985, 'forbidden', 0, 'Argon fine-structure line (ionization potential 15.8 eV), a common tracer of ionized gas in star-forming regions.'],
+    ['[Ar V]', 7.902, 'forbidden', 0, 'Argon fine-structure line requiring 59.8 eV photons, a sign of a hard radiation field such as an active galactic nucleus.'],
+    ['[Ar III]', 8.991, 'forbidden', 0, 'Argon fine-structure line (27.6 eV). Together with [Ar II] it measures the hardness of the radiation field.'],
+    ['[S IV]', 10.511, 'forbidden', 0, 'Sulfur fine-structure line (34.8 eV); its strength relative to [Ne II] and [Ne III] traces how hard the ionizing radiation is.'],
+    ['[Ne II]', 12.814, 'forbidden', 0, 'Neon fine-structure line (21.6 eV), the main coolant of ionized gas in star-forming regions and a standard star-formation rate tracer.'],
+    ['[Ne V] 14.3', 14.322, 'forbidden', 0, 'Highly ionized neon (97 eV), produced almost only by an active galactic nucleus or very hot stars, so it is a clean AGN indicator.'],
+    ['[Ne III]', 15.555, 'forbidden', 0, 'Neon fine-structure line (41 eV). Its ratio to [Ne II] measures the hardness of the radiation field.'],
+    ['[S III]', 18.713, 'forbidden', 0, 'Sulfur fine-structure line (23.3 eV); paired with the 33.5 µm line it measures the electron density of ionized gas.'],
+    ['[Ne V] 24.3', 24.318, 'forbidden', 0, 'The second highly ionized neon line (97 eV), an active galactic nucleus indicator in the long-wavelength channels.'],
+    ['[O IV]', 25.890, 'forbidden', 0, 'Oxygen fine-structure line (54.9 eV), a tracer of active galactic nuclei, fast shocks and Wolf-Rayet stars; often blended with [Fe II] 25.99 µm.'],
+    ['[Fe II] 26.0', 25.988, 'forbidden', 0, 'Fine-structure line of singly ionized iron, a shock tracer in the longest-wavelength MIRI channel.'],
+    ['Pfα', 7.460, 'permitted', 0, 'Hydrogen recombination line (n = 6 to 5). Mid-infrared hydrogen lines are much less affected by dust extinction than optical ones, so they trace ionized gas in dusty regions.'],
+    ['Huα', 12.372, 'permitted', 0, 'Hydrogen recombination line (n = 7 to 6), blended with H₂ S(2); a dust-penetrating probe of ionized gas.'],
+    ['Silicate 9.7', 9.7, 'dust', 2.0, 'The Si–O stretching band of silicate dust. In absorption it shows deeply buried sources such as obscured nuclei and protostars; in emission it comes from warm dust around active nuclei.'],
+    ['H₂O ice', 12.0, 'dust', 2.0, 'Broad libration band of water ice, seen in absorption toward cold, dense clouds and protostars where water freezes onto grains.'],
+    ['CO₂ ice', 15.2, 'dust', 0.5, 'Bending mode of carbon dioxide ice, a sensitive probe of the ice chemistry and heating history around protostars.'],
+    ['Silicate 18', 18.0, 'dust', 3.5, 'The O–Si–O bending band of silicate dust, observed together with the 9.7 µm band to measure dust composition and extinction.']
+  ].map(function (f) { return { name: f[0], wl: f[1], type: f[2], w: f[3], desc: f[4], color: TYPES[f[2]].color }; });
+
+  // Instrument bands: [name, lo, hi] in um (approximate).
+  var ROWS = [
+    { label: 'Imager', y: 168, bands: [['F560W', 5.0, 6.2], ['F770W', 6.6, 8.9], ['F1000W', 9.0, 11.0], ['F1130W', 10.8, 11.6], ['F1280W', 11.6, 14.0], ['F1500W', 13.5, 16.5], ['F1800W', 16.5, 19.5], ['F2100W', 18.5, 23.5], ['F2550W', 23.0, 28.0]], color: TEAL },
+    { label: 'Coronagraph', y: 204, bands: [['F1065C', 10.4, 10.9], ['F1140C', 11.2, 11.6], ['F1550C', 15.0, 16.0], ['F2300C', 20.6, 25.4]], color: '#5eead4' },
+    { label: 'Low-res spectrometer', y: 240, bands: [['LRS prism, R ~ 100', 5.0, 14.0]], color: '#99f6e4' },
+    { label: 'MRS channel 1', y: 276, bands: [['1A', 4.90, 5.74], ['1B', 5.66, 6.63], ['1C', 6.53, 7.65]], color: '#14b8a6', sub: true },
+    { label: 'MRS channel 2', y: 312, bands: [['2A', 7.51, 8.77], ['2B', 8.67, 10.13], ['2C', 10.02, 11.70]], color: '#2dd4bf', sub: true },
+    { label: 'MRS channel 3', y: 348, bands: [['3A', 11.55, 13.47], ['3B', 13.34, 15.57], ['3C', 15.41, 17.98]], color: '#5eead4', sub: true },
+    { label: 'MRS channel 4', y: 384, bands: [['4A', 17.70, 20.95], ['4B', 20.69, 24.48], ['4C', 24.40, 27.90]], color: '#99f6e4', sub: true }
+  ];
+  var ROW_H = 26;
+  var WL_MIN = 4.6, WL_MAX = 29, X0 = 150, X1 = 1170, AXIS_Y = 430;
+  function xFor(wl) { return X0 + (Math.log(wl) - Math.log(WL_MIN)) / (Math.log(WL_MAX) - Math.log(WL_MIN)) * (X1 - X0); }
+
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  var wrap = document.querySelector('.mrf-wrap');
+  var svg = wrap.querySelector('#mrf-svg');
+  var gGrid = svg.querySelector('#mrf-grid'), gBroad = svg.querySelector('#mrf-broad'), gBands = svg.querySelector('#mrf-bands');
+  var gFeat = svg.querySelector('#mrf-features'), gAxis = svg.querySelector('#mrf-axis');
+  var detail = wrap.querySelector('#mrf-detail'), slider = wrap.querySelector('#mrf-z-slider'), zValue = wrap.querySelector('#mrf-z-value');
+  var legendEl = wrap.querySelector('#mrf-legend');
+  var selected = null;
+  function fmt(x) { return x.toFixed(2); }
+
+  legendEl.innerHTML = Object.keys(TYPES).map(function (k) {
+    return '<span class="mrf-legend-item"><span class="mrf-legend-swatch" style="background:' + TYPES[k].color + '"></span>' + TYPES[k].label + '</span>';
+  }).join('');
+
+  // Static scaffolding.
+  [5, 6, 7, 8, 9, 10, 12, 15, 20, 25].forEach(function (t) {
+    gGrid.appendChild(sv('line', { class: 'mrf-grid-line', x1: xFor(t), y1: 150, x2: xFor(t), y2: AXIS_Y }));
+    gAxis.appendChild(sv('line', { class: 'mrf-axis-line', x1: xFor(t), y1: AXIS_Y, x2: xFor(t), y2: AXIS_Y + 6 }));
+    gAxis.appendChild(sv('text', { class: 'mrf-axis-text', x: xFor(t), y: AXIS_Y + 24 }, String(t)));
+  });
+  gAxis.appendChild(sv('line', { class: 'mrf-axis-line', x1: X0, y1: AXIS_Y, x2: X1, y2: AXIS_Y }));
+  gAxis.appendChild(sv('text', { class: 'mrf-axis-title', x: (X0 + X1) / 2, y: AXIS_Y + 52 }, 'Observed wavelength (µm)'));
+
+  var bandEls = [];
+  ROWS.forEach(function (row) {
+    gGrid.appendChild(sv('text', { class: 'mrf-row-label', x: X0 - 14, y: row.y + ROW_H / 2 + 5 }, row.label));
+    row.bands.forEach(function (b, i) {
+      var x = xFor(b[1]), w = Math.max(3, xFor(b[2]) - xFor(b[1]));
+      var rect = sv('rect', { class: 'mrf-band', x: x, y: row.y, width: w, height: ROW_H, rx: 3, fill: row.color });
+      if (row.sub) rect.style.opacity = i % 2 ? 0.62 : 0.85;
+      var tt = sv('title', {}, b[0] + ': ' + fmt(b[1]) + ' to ' + fmt(b[2]) + ' µm');
+      rect.appendChild(tt);
+      gBands.appendChild(rect);
+      if (w > 30) gBands.appendChild(sv('text', { class: 'mrf-band-label', x: x + w / 2, y: row.y + ROW_H / 2 + 4 }, b[0]));
+      bandEls.push({ el: rect, lo: b[1], hi: b[2], name: b[0], row: row.label });
+    });
+  });
+
+  function bandsFor(o) { return bandEls.filter(function (b) { return o >= b.lo && o <= b.hi; }); }
+  function inView(o) { return o >= WL_MIN && o <= WL_MAX; }
+
+  function render() {
+    var z = parseFloat(slider.value);
+    zValue.textContent = z.toFixed(2);
+    gBroad.innerHTML = ''; gFeat.innerHTML = '';
+    var vis = F.map(function (f) { return { f: f, o: f.wl * (1 + z) }; })
+      .filter(function (d) { return inView(d.o); })
+      .sort(function (a, b) { return a.o - b.o; });
+    // Nudge label columns so rotated labels (about 14 px wide) never overlap.
+    var MINGAP = 15, prev = -1e9;
+    vis.forEach(function (d) { d.x = xFor(d.o); d.lx = Math.max(d.x, prev + MINGAP); prev = d.lx; });
+    var over = vis.length ? vis[vis.length - 1].lx - (X1 + 10) : 0;
+    if (over > 0) { var next = 1e9; for (var i = vis.length - 1; i >= 0; i--) { vis[i].lx = Math.min(vis[i].lx, next - MINGAP, X1 + 10); next = vis[i].lx; } }
+
+    vis.forEach(function (d) {
+      var f = d.f;
+      if (f.w > 0) {
+        var x0 = xFor(Math.max(WL_MIN, d.o - f.w * (1 + z) / 2)), x1 = xFor(Math.min(WL_MAX, d.o + f.w * (1 + z) / 2));
+        gBroad.appendChild(sv('rect', { x: x0, y: 150, width: Math.max(2, x1 - x0), height: AXIS_Y - 150, fill: f.color, opacity: 0.10, 'pointer-events': 'none' }));
+      }
+      var g = sv('g', { class: 'mrf-feat' + (selected === f ? ' mrf-feat--sel' : '') });
+      g.appendChild(sv('line', { class: 'mrf-feat-leader', x1: d.x, y1: 146, x2: d.lx, y2: 128, stroke: f.color }));
+      g.appendChild(sv('line', { class: 'mrf-feat-line', x1: d.x, y1: 146, x2: d.x, y2: AXIS_Y, stroke: f.color }));
+      g.appendChild(sv('circle', { class: 'mrf-feat-dot', cx: d.x, cy: 146, r: 3.5, fill: f.color }));
+      g.appendChild(sv('rect', { x: d.x - 6, y: 146, width: 12, height: AXIS_Y - 146, fill: 'transparent' }));
+      g.appendChild(sv('text', { class: 'mrf-feat-label', transform: 'translate(' + (d.lx + 4) + ',124) rotate(-90)', fill: f.color }, f.name));
+      g.addEventListener('click', function () { selected = (selected === f) ? null : f; render(); });
+      gFeat.appendChild(g);
+    });
+    gFeat.setAttribute('class', selected ? 'mrf-dim' : '');
+
+    bandEls.forEach(function (b) { b.el.classList.toggle('mrf-band--hit', !!(selected && inView(selected.wl * (1 + z)) && selected.wl * (1 + z) >= b.lo && selected.wl * (1 + z) <= b.hi)); });
+    updateDetail(z, vis.length);
+  }
+
+  function updateDetail(z, nVisible) {
+    var html;
+    if (selected) {
+      var o = selected.wl * (1 + z);
+      if (!inView(o)) {
+        selected = null;
+      }
+    }
+    if (selected) {
+      var o2 = selected.wl * (1 + z), hits = bandsFor(o2);
+      html = '<div class="mrf-head"><span class="mrf-dot" style="background:' + selected.color + ';color:' + selected.color + '"></span>' +
+        '<strong style="color:' + selected.color + '">' + selected.name + '</strong><span class="mrf-obs">rest ' + selected.wl.toFixed(2) + ' µm → observed ' + fmt(o2) + ' µm · ' + TYPES[selected.type].label + '</span></div>' +
+        '<div>' + selected.desc + '</div><div class="mrf-chips">' +
+        (hits.length ? hits.map(function (b) { return '<span class="mrf-chip" title="' + b.row + '">' + b.name + '</span>'; }).join('') : '<span class="mrf-muted">No MIRI mode covers it at this redshift.</span>') + '</div>';
+    } else {
+      html = '<span class="mrf-muted">At z = ' + z.toFixed(2) + ', ' + nVisible + ' of the ' + F.length + ' tracked features fall in MIRI\'s 5 to 28 µm range. Click one for what it traces and which MIRI modes catch it. Band edges and wavelengths are approximate.</span>';
+    }
+    detail.innerHTML = html;
+  }
+
+  slider.addEventListener('input', render);
+  // Clicking anywhere other than a feature (or the controls / info panel) deselects.
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    if (!selected || !t || !t.closest) return;
+    if (t.closest('.mrf-feat') || t.closest('.mrf-controls') || t.closest('.mrf-detail')) return;
+    selected = null;
+    render();
+  });
+  render();
+})();
+</script>

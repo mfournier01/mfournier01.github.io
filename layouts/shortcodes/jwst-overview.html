@@ -1,0 +1,161 @@
+<!--
+  JWST overview shown under the instrument diagram: a short fact box, a
+  wavelength-coverage figure (instruments plus Hubble for comparison) and a
+  comparison table. Values are rounded, from memory. Vanilla JS + inline SVG.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<style>
+  .jov-wrap * { font-style: normal; }
+  .jov-wrap em, .jov-wrap i { font-style: italic; }
+  .jov-wrap { max-width: 960px; margin: 2.5rem auto 0; padding: 0 1rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; font-size: 1rem; line-height: 1.55; }
+  .jov-title { margin: 2rem 0 0.8rem; font-size: 1.5rem; font-weight: 700; color: #e2e8f0; }
+  .jov-title:first-child { margin-top: 0; }
+  .jov-box { max-width: 760px; padding: 1.1rem 1.4rem 0.5rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.75rem; background: rgba(148,163,184,0.1); }
+  .jov-box p { margin: 0 0 0.7rem; }
+  .jov-title--center { text-align: center; margin-bottom: 1rem; font-size: 1.9rem; }
+  .jov-box--center { margin: 0 auto; }
+
+  .jov-fig { position: relative; max-width: 960px; }
+  #jov-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .jov-bar { cursor: default; transition: opacity 0.15s ease; opacity: 0.85; }
+  .jov-bar:hover { opacity: 1; stroke: #f8fafc; stroke-width: 2; }
+  .jov-name { font-size: 16px; fill: #e2e8f0; text-anchor: end; }
+  .jov-bar-text { font-size: 13px; fill: #0f172a; font-weight: 700; text-anchor: middle; pointer-events: none; }
+  .jov-region { font-size: 13px; fill: #94a3b8; text-anchor: middle; }
+  .jov-tick { font-size: 14px; fill: #94a3b8; text-anchor: middle; }
+  .jov-axis-title { font-size: 15px; fill: #cbd5e1; text-anchor: middle; }
+  .jov-grid { stroke: #1e293b; stroke-width: 1; }
+  .jov-feat-line { stroke: #f8fafc; stroke-width: 1.5; stroke-dasharray: 4 4; opacity: 0.75; pointer-events: none; filter: drop-shadow(0 0 2px rgba(0,0,0,0.9)); }
+  .jov-feat-box { fill: rgba(15,23,42,0.92); stroke: rgba(251,191,36,0.6); stroke-width: 1.5; }
+  .jov-feat-title { font-size: 14px; font-weight: 700; fill: #fbbf24; }
+  .jov-feat-sub { font-size: 13px; fill: #94a3b8; }
+  .jov-tip { position: absolute; display: none; pointer-events: none; z-index: 5; max-width: 270px; padding: 0.5rem 0.75rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 0.4rem; background: rgba(15,23,42,0.96); font-size: 0.85rem; line-height: 1.4; color: #e2e8f0; }
+  .jov-tip--visible { display: block; }
+
+  .jov-table-wrap { overflow-x: auto; }
+  .jov-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .jov-table th { text-align: left; padding: 0.5rem 0.7rem; color: #94a3b8; font-weight: 700; border-bottom: 1px solid rgba(148,163,184,0.35); }
+  .jov-table td { padding: 0.55rem 0.7rem; border-bottom: 1px solid rgba(148,163,184,0.14); vertical-align: top; }
+  .jov-table tbody tr:hover { background: rgba(148,163,184,0.07); }
+  .jov-table td:first-child { font-weight: 700; color: #e2e8f0; white-space: nowrap; }
+  .jov-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; }
+</style>
+{{ $part := .Get "part" }}
+{{ if eq $part "glance" }}
+<div class="jov-wrap">
+  <h2 class="jov-title jov-title--center">JWST at a glance</h2>
+  <div class="jov-box jov-box--center">
+    <p>
+      The <strong>James Webb Space Telescope</strong> was launched on 25 December 2021 and observes the sky in the infrared, from 0.6 to 28&nbsp;&micro;m. Its 6.5&nbsp;m primary mirror is made of 18 gold-coated beryllium hexagons and collects about six times as much light as Hubble's. It orbits the Sun at the Sun&ndash;Earth L2 point, about 1.5 million km from Earth, behind a five-layer sunshield that keeps the telescope below about 50&nbsp;K so that its own heat does not drown out the faint infrared signal. Infrared light is what lets it see through dust, and see the light of the earliest galaxies, which the expansion of the universe has stretched to these wavelengths.
+    </p>
+    <p>
+      Four instruments share the focal plane. Hover a hexagon below for a summary, or click one to explore it.
+    </p>
+  </div>
+</div>
+{{ else }}
+<div class="jov-wrap">
+  <h2 class="jov-title">Wavelength coverage</h2>
+  <div class="jov-fig">
+    <svg id="jov-svg" viewBox="0 0 1000 530" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wavelength coverage of the JWST instruments compared with Hubble"></svg>
+    <div class="jov-tip" id="jov-tip"></div>
+  </div>
+
+  <h2 class="jov-title">The instruments compared</h2>
+  <div class="jov-table-wrap">
+    <table class="jov-table">
+      <thead><tr><th>Instrument</th><th>Wavelengths</th><th>Field of view</th><th>Resolving power <em>R</em></th><th>Typical use</th></tr></thead>
+      <tbody>
+        <tr><td><span class="jov-dot" style="background:#60a5fa"></span>NIRCam</td><td>0.6 to 5.0 &micro;m</td><td>two 2.2&prime; &times; 2.2&prime; modules</td><td>about 4 to 100 (filters)</td><td>deep imaging, galaxies, star formation, coronagraphy</td></tr>
+        <tr><td><span class="jov-dot" style="background:#c084fc"></span>NIRSpec</td><td>0.6 to 5.3 &micro;m</td><td>3.4&prime; &times; 3.6&prime; shutters, 3&Prime; &times; 3&Prime; IFU, slits</td><td>30 to 2700</td><td>redshifts, abundances, gas velocities</td></tr>
+        <tr><td><span class="jov-dot" style="background:#fb923c"></span>MIRI</td><td>4.9 to 27.9 &micro;m</td><td>113&Prime; &times; 74&Prime; imager, IFU 3&Prime; to 8&Prime;</td><td>about 100 (slit), 1300 to 3700 (IFU)</td><td>dust, PAHs, ices, obscured sources</td></tr>
+        <tr><td><span class="jov-dot" style="background:#34d399"></span>NIRISS</td><td>0.6 to 5.0 &micro;m</td><td>2.2&prime; &times; 2.2&prime;</td><td>about 150 (slitless), 700 (single object)</td><td>slitless spectroscopy, exoplanet transits, interferometry</td></tr>
+        <tr><td><span class="jov-dot" style="background:#34d399"></span>FGS</td><td>0.6 to 5.0 &micro;m</td><td>two 2.3&prime; &times; 2.3&prime; detectors</td><td>none (guiding)</td><td>holds the pointing steady on a guide star</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  var svg = document.getElementById('jov-svg'), tip = document.getElementById('jov-tip');
+  if (!svg) return;
+
+  var WL_MIN = 0.1, WL_MAX = 30, X0 = 170, X1 = 980, TOP = 132, ROW = 42, BAR = 26;
+  function xFor(wl) { return X0 + (Math.log(wl) - Math.log(WL_MIN)) / (Math.log(WL_MAX) - Math.log(WL_MIN)) * (X1 - X0); }
+
+  // name, lo, hi (um), color, tooltip
+  var ROWS = [
+    ['Hubble', 0.115, 1.7, '#94a3b8', 'Hubble Space Telescope, for comparison: ultraviolet to near-infrared, about 0.1 to 1.7 µm, with a 2.4 m mirror.'],
+    ['NIRCam', 0.6, 5.0, '#60a5fa', 'NIRCam: 0.6 to 5.0 µm, imaging with short- (0.6 to 2.3 µm) and long-wavelength (2.4 to 5.0 µm) channels.'],
+    ['NIRSpec', 0.6, 5.3, '#c084fc', 'NIRSpec: 0.6 to 5.3 µm. A prism covers the whole range at R ~ 100; gratings cover about 1 to 5.3 µm at R ~ 1000 and 2700.'],
+    ['NIRISS', 0.6, 5.0, '#34d399', 'NIRISS: 0.6 to 5.0 µm. Single-object slitless spectroscopy 0.6 to 2.8 µm, wide-field slitless 0.8 to 2.2 µm, aperture masking 2.8 to 4.8 µm.'],
+    ['FGS', 0.6, 5.0, '#6ee7b7', 'Fine Guidance Sensor: guides on a star in about 0.6 to 5 µm to hold the pointing steady.'],
+    ['MIRI', 4.9, 27.9, '#fb923c', 'MIRI: 4.9 to 27.9 µm. Imager 5.6 to 25.5 µm, low-resolution spectrometer 5 to 14 µm, medium-resolution integral-field spectrometer 4.9 to 27.9 µm.']
+  ];
+
+  // Region labels and ticks.
+  var regions = [['ultraviolet', 0.1, 0.4], ['visible', 0.4, 0.7], ['near-infrared', 0.7, 5.0], ['mid-infrared', 5.0, 30]];
+  regions.forEach(function (r, i) {
+    var xa = xFor(r[1]), xb = xFor(r[2]);
+    svg.appendChild(sv('rect', { x: xa, y: TOP - 50, width: xb - xa, height: 20, fill: ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'][i], opacity: 0.16 }));
+    svg.appendChild(sv('text', { class: 'jov-region', x: (xa + xb) / 2, y: TOP - 35 }, xb - xa > 60 ? r[0] : ''));
+  });
+  [0.1, 0.2, 0.5, 1, 2, 5, 10, 20].forEach(function (t) {
+    var y1 = TOP - 6, y2 = TOP + ROWS.length * ROW;
+    svg.appendChild(sv('line', { class: 'jov-grid', x1: xFor(t), y1: y1, x2: xFor(t), y2: y2 }));
+    svg.appendChild(sv('text', { class: 'jov-tick', x: xFor(t), y: y2 + 22 }, String(t)));
+  });
+  svg.appendChild(sv('text', { class: 'jov-axis-title', x: (X0 + X1) / 2, y: TOP + ROWS.length * ROW + 132 }, 'Wavelength (µm)'));
+
+  ROWS.forEach(function (r, i) {
+    var y = TOP + i * ROW + (ROW - BAR) / 2;
+    svg.appendChild(sv('text', { class: 'jov-name', x: X0 - 14, y: y + BAR / 2 + 5 }, r[0]));
+    var rect = sv('rect', { class: 'jov-bar', x: xFor(r[1]), y: y, width: xFor(r[2]) - xFor(r[1]), height: BAR, rx: 4, fill: r[3] });
+    svg.appendChild(rect);
+    svg.appendChild(sv('text', { class: 'jov-bar-text', x: (xFor(r[1]) + xFor(r[2])) / 2, y: y + BAR / 2 + 4.5 }, r[1] + ' to ' + r[2] + ' µm'));
+    rect.addEventListener('mousemove', function (ev) {
+      var box = svg.parentNode.getBoundingClientRect();
+      tip.textContent = r[4];
+      tip.classList.add('jov-tip--visible');
+      var x = ev.clientX - box.left + 14, yy = ev.clientY - box.top + 14;
+      if (x + 280 > box.width) x = ev.clientX - box.left - 284;
+      tip.style.left = x + 'px'; tip.style.top = yy + 'px';
+    });
+    rect.addEventListener('mouseleave', function () { tip.classList.remove('jov-tip--visible'); });
+  });
+
+  // Iconic features: where a given line lands on the axis and who sees it,
+  // half in boxes above the plot and half below, to keep them apart.
+  var FEATS = [
+    { wl: 4.27, side: 'above', anchor: 'end', title: 'Protostar: CO₂ ice', sub: '4.27 µm, seen by NIRSpec and NIRCam' },
+    { wl: 7.7, side: 'above', anchor: 'start', title: 'Nearby galaxy: PAH emission', sub: '7.7 µm, seen by MIRI' },
+    { wl: 0.12157 * 11, side: 'below', anchor: 'end', title: 'High-redshift galaxy: Lyα at z = 10', sub: '1.34 µm, seen by NIRCam and NIRSpec' },
+    { wl: 0.5007 * 9, side: 'below', anchor: 'start', title: 'Early galaxy: [O III] at z = 8', sub: '4.5 µm, seen by NIRCam and NIRSpec' }
+  ];
+  var BOTTOM = TOP + ROWS.length * ROW, BOX_H = 48, INSET = 18;
+  FEATS.forEach(function (f) {
+    var x = xFor(f.wl);
+    var w = Math.max(f.title.length * 7.8, f.sub.length * 6.4) + 26;
+    var bx = f.anchor === 'start' ? x - INSET : x - w + INSET;
+    var by = f.side === 'above' ? 6 : BOTTOM + 44;
+    var y1 = f.side === 'above' ? by + BOX_H : TOP - 8, y2 = f.side === 'above' ? BOTTOM : by;
+    svg.appendChild(sv('line', { class: 'jov-feat-line', x1: x, y1: y1, x2: x, y2: y2 }));
+    svg.appendChild(sv('circle', { cx: x, cy: f.side === 'above' ? BOTTOM : TOP - 8, r: 4, fill: '#fbbf24' }));
+    svg.appendChild(sv('rect', { class: 'jov-feat-box', x: bx, y: by, width: w, height: BOX_H, rx: 7 }));
+    svg.appendChild(sv('text', { class: 'jov-feat-title', x: bx + 13, y: by + 20 }, f.title));
+    svg.appendChild(sv('text', { class: 'jov-feat-sub', x: bx + 13, y: by + 38 }, f.sub));
+  });
+})();
+</script>
+{{ end }}

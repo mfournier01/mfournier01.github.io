@@ -1,0 +1,17 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+{{/* Grey introduction box at the top of an instrument page: .title and .body (HTML). */}}
+<div class="nci-wrap">
+  <h1 class="nci-title">{{ .title }}</h1>
+  <div class="nci-box">
+  {{ .body }}
+  </div>
+</div>
+
+<style>
+  .nci-wrap * { font-style: normal; }
+  .nci-wrap em, .nci-wrap i { font-style: italic; }
+  .nci-wrap { max-width: 760px; margin: 0 auto 2.5rem; padding: 0 1rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; font-size: 1rem; line-height: 1.55; }
+  .nci-wrap p { margin: 0 0 0.7rem; }
+  .nci-box { padding: 1.1rem 1.4rem 0.5rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.75rem; background: rgba(148,163,184,0.1); }
+  .nci-title { margin: 0 0 0.8rem; font-size: 2rem; font-weight: 700; color: #e2e8f0; }
+</style>

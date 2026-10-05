@@ -1,0 +1,11 @@
+{{ $body := `  <p>
+    <strong>MIRI</strong> is JWST's mid-infrared instrument, covering 5 to 28&nbsp;&micro;m. It has an imager (about 113&Prime;&nbsp;&times;&nbsp;74&Prime;, with coronagraphs for faint companions next to bright stars), a low-resolution spectrometer (<em>R</em>&nbsp;&sim;&nbsp;100 over 5 to 14&nbsp;&micro;m) and a medium-resolution integral-field spectrometer (<em>R</em>&nbsp;&sim;&nbsp;3000 in four channels). Its detectors are cooled to about 7&nbsp;K by a dedicated cryocooler, because at these wavelengths warm hardware glows as brightly as the sky.
+  </p>
+  <p>
+    MIRI is suited to observing warm dust, large carbon molecules (PAHs), water and carbon dioxide ice, molecular hydrogen, and highly ionized gas near black holes, most of which is faint or invisible at shorter wavelengths. In contrast with <strong>NIRCam</strong>, which is most sensitive to starlight and warm gas and images the near-infrared with finer pixels, MIRI detects the thermal emission of dust heated by that starlight. In contrast with <strong>NIRSpec</strong>, which stops at 5.3&nbsp;&micro;m and covers the rest-frame ultraviolet and optical lines of distant galaxies, MIRI's spectra cover rest-frame near- and mid-infrared features that are much less affected by dust extinction.
+  </p>
+  <p>
+    This page maps the main mid-infrared spectral features and which MIRI mode catches them as the redshift changes. To compare an object's angular size with MIRI's field of view, see the figure on the <a href="/jwst-explorer/" style="text-decoration:underline">JWST Explorer</a> page.
+  </p>
+` }}
+{{ partial "instrument-intro.html" (dict "title" "JWST MIRI" "body" ($body | safeHTML)) }}

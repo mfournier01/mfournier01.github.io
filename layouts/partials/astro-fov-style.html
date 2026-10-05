@@ -1,0 +1,40 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<style>
+  .nfv-wrap * { font-style: normal; }
+  .nfv-wrap em, .nfv-wrap i { font-style: italic; }
+  .nfv-wrap { width: 100%; margin: 3rem auto 0; padding: 2.5rem 1rem 0; border-top: 1px solid rgba(148,163,184,0.2); font-family: 'STIX Two Text', serif; color: #cbd5e1; }
+  .nfv-intro { max-width: 760px; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.55; }
+  .nfv-intro p { margin: 0 0 0.7rem; }
+  .nfv-title { margin: 0 0 0.7rem; font-size: 1.5rem; font-weight: 700; color: #e2e8f0; }
+
+  .nfv-controls { display: flex; flex-wrap: wrap; gap: 0.8rem 1.2rem; align-items: flex-end; max-width: 1000px; margin: 0 auto 0.6rem; }
+  .nfv-controls--params { margin-bottom: 1rem; }
+  .nfv-field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: #94a3b8; }
+  .nfv-field--grow { flex: 1 1 280px; }
+  .nfv-pair { display: flex; gap: 0.3rem; }
+  .nfv-wrap input[type="text"], .nfv-wrap input[type="number"], .nfv-wrap select {
+    font-family: inherit; font-size: 0.95rem; color: #e2e8f0; background: #0f172a; border: 1px solid rgba(148,163,184,0.35);
+    border-radius: 0.4rem; padding: 0.4rem 0.6rem; min-width: 0;
+  }
+  .nfv-wrap input[type="number"] { width: 8.5rem; }
+  .nfv-wrap input:focus, .nfv-wrap select:focus { outline: none; border-color: #fbbf24; }
+  .nfv-status { max-width: 1000px; margin: 0 auto 0.8rem; min-height: 1.3em; font-size: 0.9rem; color: #94a3b8; }
+  .nfv-status strong { color: #fbbf24; }
+  .nfv-status .nfv-warn { color: #fb923c; }
+
+  .nfv-fig { max-width: 1000px; margin: 0 auto; border: 1px solid rgba(148,163,184,0.25); border-radius: 0.6rem; overflow: hidden; background: #03060d; }
+  #nfv-canvas { display: block; width: 100%; }
+
+  .nfv-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; max-width: 1000px; margin: 0.7rem auto 0; font-size: 0.9rem; }
+  .nfv-btn { font-family: inherit; font-size: 0.88rem; color: #e2e8f0; background: rgba(30,41,59,0.7); border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; padding: 0.3rem 0.9rem; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease; }
+  .nfv-btn:hover { background: rgba(56,189,248,0.15); border-color: #38bdf8; }
+  .nfv-zoom { display: inline-flex; align-items: center; gap: 0.5rem; flex: 1 1 200px; color: #94a3b8; }
+  .nfv-zoom input { flex: 1; accent-color: #fbbf24; }
+
+  .nfv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.8rem; max-width: 1000px; margin: 1rem auto 0; }
+  .nfv-card { padding: 0.75rem 1rem; border: 1px solid rgba(148,163,184,0.25); border-radius: 0.6rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); }
+  .nfv-card-label { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 0.25rem; }
+  .nfv-card-value { font-size: 1.35rem; font-weight: 700; color: #fbbf24; line-height: 1.2; }
+  .nfv-card-sub { margin-top: 0.2rem; font-size: 0.85rem; color: #94a3b8; line-height: 1.35; }
+  .nfv-note { max-width: 1000px; margin: 0.9rem auto 2rem; font-size: 1rem; color: #94a3b8; }
+</style>

@@ -1,0 +1,315 @@
+<!--
+  Interactive JWST/NIRCam filter explorer: every NIRCam filter drawn as a
+  band on a wavelength axis (rows = wide / medium / narrow, colors = the
+  two simultaneous channels), with a redshift slider that shifts a set of
+  rest-frame emission lines through the bands and lists which filters
+  catch them. Filter wavelengths are approximate (pivot and 50%-ish
+  transmission edges). Vanilla JS + inline SVG, no dependencies.
+-->
+<div class="ncf-wrap">
+  <div class="ncf-intro">
+    <h2 class="ncf-title">The filter bandpasses</h2>
+    <p>
+      A filter is a band centered on a wavelength &lambda; with width &Delta;&lambda;, so its spectral resolution is <em>R</em>&nbsp;=&nbsp;&lambda;/&Delta;&lambda;: about 4 for the wide filters, 10 for the medium ones and 100 for the narrow ones. Wide filters collect the most light; narrow ones isolate a single emission line. Bands in <strong style="color:#38bdf8">blue</strong> belong to the short-wavelength channel and bands in <strong style="color:#fb923c">orange</strong> to the long-wavelength channel, and every observation uses one filter from each. Move the slider to redshift some familiar lines, which land at &lambda;<sub>rest</sub>(1&nbsp;+&nbsp;<em>z</em>), and see which filters catch them.
+    </p>
+  </div>
+
+  <div class="ncf-controls">
+    <label class="ncf-z-label" for="ncf-z-slider">Redshift <span class="ncf-z-value" id="ncf-z-value">2.00</span></label>
+    <input type="range" id="ncf-z-slider" class="ncf-z-slider" min="0" max="12" step="0.01" value="2">
+  </div>
+
+  <div class="ncf-legend" id="ncf-legend"></div>
+
+  <div class="ncf-fig">
+    <svg id="ncf-svg" viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NIRCam filter bandpasses versus wavelength, with redshifted emission lines overlaid">
+      <g id="ncf-grid"></g>
+      <g id="ncf-bands"></g>
+      <g id="ncf-lines"></g>
+      <g id="ncf-axis"></g>
+    </svg>
+    <div class="ncf-tip" id="ncf-tip"></div>
+  </div>
+
+  <div class="ncf-naming">
+    <div class="ncf-naming-title">Reading a filter name</div>
+    <div class="ncf-naming-decode" id="ncf-decode"></div>
+    <div class="ncf-naming-rules">
+      <span><b>F</b> filter</span>
+      <span><b>number</b> nominal wavelength in units of 0.01 &micro;m (150 = 1.50 &micro;m); very wide filters can sit well off it</span>
+      <span><b>W</b> wide (R&nbsp;&sim;&nbsp;4) &nbsp;·&nbsp; <b>M</b> medium (&sim;10) &nbsp;·&nbsp; <b>N</b> narrow (&sim;100) &nbsp;·&nbsp; <b>W2</b> extra-wide, roughly twice a wide filter</span>
+    </div>
+  </div>
+
+  <div class="ncf-detail" id="ncf-detail"></div>
+</div>
+
+<style>
+  /* Upright by default; italics only for <em> (math symbols, emphasis).
+     Placed first so deliberate italic class rules below still win. */
+  .ncf-wrap * { font-style: normal; }
+  .ncf-wrap em, .ncf-wrap i { font-style: italic; }
+
+  @import url('https://fonts.googleapis.com/css2?family=STIX+Two+Text:wght@400;700&display=swap');
+
+  .ncf-wrap { width: 100%; margin: 0 auto; padding: 0 1rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; }
+  .ncf-intro { max-width: 760px; margin: 0 auto 1.25rem; font-size: 1rem; line-height: 1.55; }
+  .ncf-intro p { margin: 0 0 0.7rem; }
+  .ncf-title { margin: 0 0 0.7rem; font-size: 1.5rem; font-weight: 700; color: #e2e8f0; }
+
+  .ncf-controls { display: flex; align-items: center; gap: 0.75rem; max-width: 760px; margin: 0 auto 1rem; }
+  .ncf-z-label { color: #e2e8f0; white-space: nowrap; }
+  .ncf-z-value { display: inline-block; min-width: 3em; font-weight: 700; color: #fbbf24; }
+  .ncf-z-slider { flex: 1; accent-color: #fbbf24; }
+
+  .ncf-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem; margin: 0 auto 0.8rem; max-width: 760px; font-size: 0.9rem; color: #cbd5e1; }
+  .ncf-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .ncf-legend-swatch { width: 11px; height: 11px; border-radius: 50%; }
+
+  .ncf-fig { position: relative; max-width: 1150px; margin: 0 auto; }
+  #ncf-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .ncf-band { cursor: pointer; transition: opacity 0.15s ease, stroke 0.15s ease; stroke: transparent; stroke-width: 2; opacity: 0.8; }
+  .ncf-band:hover, .ncf-band--active { opacity: 1; stroke: #f8fafc; }
+  .ncf-band--hit { stroke: #f8fafc; stroke-width: 2; opacity: 1; }
+  .ncf-band-label { font-size: 12px; fill: #0f172a; font-weight: 700; text-anchor: middle; pointer-events: none; }
+  .ncf-band-label--out { fill: #cbd5e1; font-weight: 400; text-anchor: start; }
+  .ncf-row-label { font-size: 14px; fill: #94a3b8; text-anchor: end; }
+  .ncf-tick { stroke: #475569; stroke-width: 1; }
+  .ncf-grid-line { stroke: #1e293b; stroke-width: 1; }
+  .ncf-axis-text { font-size: 14px; fill: #94a3b8; text-anchor: middle; }
+  .ncf-axis-title { font-size: 16px; fill: #cbd5e1; text-anchor: middle; }
+  .ncf-chan-text { font-size: 13px; text-anchor: middle; }
+  .ncf-divider { stroke: #475569; stroke-dasharray: 4 4; }
+  .ncf-line {  stroke-width: 1.5; stroke-dasharray: 5 4; opacity: 0.85; pointer-events: none; filter: drop-shadow(0 0 2px rgba(0,0,0,0.9)); }
+  .ncf-line-label { font-size: 13px; font-weight: 700; text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: #0f172a; stroke-width: 3px; }
+
+  .ncf-tip { position: absolute; display: none; pointer-events: none; z-index: 5; max-width: 260px; padding: 0.5rem 0.75rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 0.4rem; background: rgba(15,23,42,0.96); font-size: 0.85rem; line-height: 1.4; color: #e2e8f0; }
+  .ncf-tip--visible { display: block; }
+
+  .ncf-naming { max-width: 760px; margin: 1rem auto 0; padding: 0.75rem 1.25rem; border: 1px dashed rgba(148,163,184,0.3); border-radius: 0.6rem; font-size: 0.9rem; line-height: 1.45; }
+  .ncf-naming-title { font-weight: 700; color: #e2e8f0; margin-bottom: 0.4rem; }
+  .ncf-naming-decode { font-size: 1.15rem; margin-bottom: 0.45rem; }
+  .ncf-nm-part { display: inline-block; padding: 0 0.4rem; border-radius: 0.3rem; font-weight: 700; margin-right: 0.15rem; }
+  .ncf-nm-part--f { background: rgba(148,163,184,0.18); color: #e2e8f0; }
+  .ncf-nm-part--num { background: rgba(251,191,36,0.16); color: #fbbf24; }
+  .ncf-nm-part--kind { background: rgba(167,139,250,0.18); color: #c4b5fd; }
+  .ncf-nm-gloss { font-size: 0.85rem; color: #94a3b8; margin-left: 0.4rem; }
+  .ncf-naming-rules { display: flex; flex-direction: column; gap: 0.15rem; color: #94a3b8; }
+  .ncf-naming-rules b { color: #cbd5e1; }
+
+  .ncf-detail { max-width: 760px; margin: 1rem auto 0; padding: 0.9rem 1.25rem 0.8rem; border: 1px solid rgba(148,163,184,0.25); border-radius: 0.6rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); font-size: 0.95rem; line-height: 1.4; }
+  .ncf-head { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; padding-bottom: 0.6rem; margin-bottom: 0.4rem; border-bottom: 1px solid rgba(148,163,184,0.18); color: #e2e8f0; }
+  .ncf-zhl { color: #fbbf24; }
+  .ncf-rows { display: flex; flex-direction: column; }
+  .ncf-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.38rem 0; border-bottom: 1px solid rgba(148,163,184,0.08); }
+  .ncf-row:last-child { border-bottom: none; }
+  .ncf-row strong { min-width: 6.2em; }
+  .ncf-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 6px currentColor; }
+  .ncf-obs { min-width: 5.2em; color: #94a3b8; font-variant-numeric: tabular-nums; }
+  .ncf-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .ncf-chip { display: inline-block; padding: 0.05rem 0.55rem; border-radius: 999px; font-size: 0.82rem; font-weight: 700; border: 1px solid; }
+  .ncf-chip--sw { color: #38bdf8; background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.45); }
+  .ncf-chip--lw { color: #fb923c; background: rgba(251,146,60,0.12); border-color: rgba(251,146,60,0.45); }
+  .ncf-foot { margin-top: 0.5rem; font-size: 0.8rem; color: #64748b; font-style: italic; }
+  .ncf-muted { color: #64748b; }
+
+</style>
+
+<script>
+(function () {
+  var SW = '#38bdf8', LW = '#fb923c';
+
+  // name, kind (W2 extra-wide, W wide, M medium, N narrow), channel,
+  // lo/hi band edges (um); pivot = band center. Approximate.
+  var FILTERS = [
+    ['F150W2', 'W2', 'SW', 0.99, 2.38], ['F322W2', 'W2', 'LW', 2.42, 4.0],
+    ['F070W', 'W', 'SW', 0.62, 0.79], ['F090W', 'W', 'SW', 0.79, 1.0], ['F115W', 'W', 'SW', 1.0, 1.28],
+    ['F150W', 'W', 'SW', 1.33, 1.67], ['F200W', 'W', 'SW', 1.75, 2.23],
+    ['F277W', 'W', 'LW', 2.42, 3.13], ['F356W', 'W', 'LW', 3.14, 3.9], ['F444W', 'W', 'LW', 3.9, 5.0],
+    ['F140M', 'M', 'SW', 1.33, 1.48], ['F162M', 'M', 'SW', 1.54, 1.71], ['F182M', 'M', 'SW', 1.75, 1.93], ['F210M', 'M', 'SW', 1.99, 2.2],
+    ['F250M', 'M', 'LW', 2.4, 2.6], ['F300M', 'M', 'LW', 2.83, 3.17], ['F335M', 'M', 'LW', 3.17, 3.45], ['F360M', 'M', 'LW', 3.45, 3.8],
+    ['F410M', 'M', 'LW', 3.9, 4.2], ['F430M', 'M', 'LW', 4.2, 4.36], ['F460M', 'M', 'LW', 4.5, 4.72], ['F480M', 'M', 'LW', 4.72, 5.0],
+    ['F164N', 'N', 'SW', 1.63, 1.66], ['F187N', 'N', 'SW', 1.86, 1.89], ['F212N', 'N', 'SW', 2.1, 2.14],
+    ['F323N', 'N', 'LW', 3.2, 3.25], ['F405N', 'N', 'LW', 4.04, 4.07], ['F466N', 'N', 'LW', 4.63, 4.67], ['F470N', 'N', 'LW', 4.69, 4.73]
+  ].map(function (f) {
+    return { name: f[0], kind: f[1], chan: f[2], lo: f[3], hi: f[4], pivot: (f[3] + f[4]) / 2, R: ((f[3] + f[4]) / 2) / (f[4] - f[3]) };
+  });
+
+  // Colors follow the NIRSpec page's transition-type scheme, defined once in
+  // data/line_categories.json (edit it there to recolor both pages).
+  // (The fallback only matters if the dev server was started before data/ existed.)
+  var CATS = {{ site.Data.line_categories | jsonify | safeJS }} || { forbidden: { color: '#38bdf8', label: 'forbidden' }, semiforbidden: { color: '#34d399', label: 'semi-forbidden' }, permitted: { color: '#fbbf24', label: 'permitted' }, molecular: { color: '#a78bfa', label: 'molecular' } };
+  var LINES = [
+    { name: 'Lyα', wl: 0.12157, cat: 'permitted' }, { name: '[O II]', wl: 0.3727, cat: 'forbidden' },
+    { name: 'Hβ', wl: 0.4861, cat: 'permitted' }, { name: '[O III]', wl: 0.5007, cat: 'forbidden' },
+    { name: 'Hα', wl: 0.6563, cat: 'permitted' }, { name: 'He I', wl: 1.083, cat: 'permitted' },
+    { name: 'Paβ', wl: 1.2818, cat: 'permitted' }, { name: 'Paα', wl: 1.8751, cat: 'permitted' },
+    { name: '3.3 µm PAH', wl: 3.3, cat: 'molecular' }, { name: 'Brα', wl: 4.0523, cat: 'permitted' }
+  ];
+  LINES.forEach(function (l) { l.color = CATS[l.cat].color; });
+
+  var KIND_LABEL = { W2: 'extra-wide', W: 'wide', M: 'medium', N: 'narrow' };
+  var ROWS = [
+    { kind: 'W2', label: 'Extra-wide', y: 120, h: 28 },
+    { kind: 'W', label: 'Wide', y: 190, h: 28 },
+    { kind: 'M', label: 'Medium', y: 310, h: 28 },
+    { kind: 'N', label: 'Narrow', y: 420, h: 28 }
+  ];
+
+  var WL_MIN = 0.55, WL_MAX = 5.15, X0 = 150, X1 = 1150, AXIS_Y = 475;
+  function xFor(wl) { return X0 + (wl - WL_MIN) / (WL_MAX - WL_MIN) * (X1 - X0); }
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  var wrap = document.querySelector('.ncf-wrap');
+  var svg = wrap.querySelector('#ncf-svg');
+  var gGrid = svg.querySelector('#ncf-grid'), gBands = svg.querySelector('#ncf-bands');
+  var gLines = svg.querySelector('#ncf-lines'), gAxis = svg.querySelector('#ncf-axis');
+  var tip = wrap.querySelector('#ncf-tip'), detail = wrap.querySelector('#ncf-detail');
+  var slider = wrap.querySelector('#ncf-z-slider'), zValue = wrap.querySelector('#ncf-z-value');
+  var hovered = null;
+
+  function rowFor(kind) { return ROWS.filter(function (r) { return r.kind === kind; })[0]; }
+  function fmt(x) { return x.toFixed(2); }
+
+  // Static scaffolding: grid, axis, row labels, channel divider.
+  for (var t = 1; t <= 5; t++) {
+    gGrid.appendChild(sv('line', { class: 'ncf-grid-line', x1: xFor(t), y1: 90, x2: xFor(t), y2: AXIS_Y }));
+    gAxis.appendChild(sv('line', { class: 'ncf-tick', x1: xFor(t), y1: AXIS_Y, x2: xFor(t), y2: AXIS_Y + 6 }));
+    gAxis.appendChild(sv('text', { class: 'ncf-axis-text', x: xFor(t), y: AXIS_Y + 24 }, String(t)));
+  }
+  gAxis.appendChild(sv('line', { class: 'ncf-tick', x1: X0, y1: AXIS_Y, x2: X1, y2: AXIS_Y }));
+  gAxis.appendChild(sv('text', { class: 'ncf-axis-title', x: (X0 + X1) / 2, y: AXIS_Y + 52 }, 'Observed wavelength (µm)'));
+  ROWS.forEach(function (r) {
+    gGrid.appendChild(sv('text', { class: 'ncf-row-label', x: X0 - 14, y: r.y + r.h / 2 + 5 }, r.label));
+  });
+  var xDiv = xFor(2.36);
+  gGrid.appendChild(sv('line', { class: 'ncf-divider', x1: xDiv, y1: 90, x2: xDiv, y2: AXIS_Y }));
+  gGrid.appendChild(sv('text', { class: 'ncf-chan-text', x: (xFor(0.55) + xDiv) / 2, y: 30, fill: SW }, 'Short-wavelength channel · 0.031″/pixel'));
+  gGrid.appendChild(sv('text', { class: 'ncf-chan-text', x: (xDiv + X1) / 2, y: 30, fill: LW }, 'Long-wavelength channel · 0.063″/pixel'));
+
+  // Bands.
+  var bandEls = {};
+  FILTERS.forEach(function (f) {
+    var row = rowFor(f.kind);
+    var x = xFor(f.lo), w = Math.max(4, xFor(f.hi) - xFor(f.lo));
+    var color = f.chan === 'SW' ? SW : LW;
+    var rect = sv('rect', { class: 'ncf-band', x: x, y: row.y, width: w, height: row.h, rx: 3, fill: color });
+    gBands.appendChild(rect);
+    var cx = x + w / 2;
+    if (f.kind === 'W' || f.kind === 'W2') {
+      gBands.appendChild(sv('text', { class: 'ncf-band-label', x: cx, y: row.y + row.h / 2 + 4 }, f.name));
+    } else {
+      var lab = sv('text', { class: 'ncf-band-label ncf-band-label--out', x: 0, y: 0, transform: 'translate(' + (cx + 4) + ',' + (row.y - 6) + ') rotate(-90)' }, f.name);
+      gBands.appendChild(lab);
+    }
+    rect.addEventListener('mouseenter', function (ev) { hovered = f; showTip(ev, f); updateDetail(); });
+    rect.addEventListener('mousemove', function (ev) { moveTip(ev); });
+    rect.addEventListener('mouseleave', function () { hovered = null; tip.classList.remove('ncf-tip--visible'); updateDetail(); });
+    bandEls[f.name] = rect;
+  });
+
+  function linesIn(f, z) {
+    return LINES.filter(function (l) { var o = l.wl * (1 + z); return o >= f.lo && o <= f.hi; });
+  }
+  function filtersFor(o) {
+    return FILTERS.filter(function (f) { return o >= f.lo && o <= f.hi; });
+  }
+
+  function showTip(ev, f) {
+    var z = parseFloat(slider.value), ls = linesIn(f, z);
+    tip.innerHTML = '<strong>' + f.name + '</strong> · ' + KIND_LABEL[f.kind] + ', ' + (f.chan === 'SW' ? 'short' : 'long') + '-wavelength channel<br>' +
+      fmt(f.lo) + ' to ' + fmt(f.hi) + ' µm (center ' + fmt(f.pivot) + ' µm)<br>R ≈ ' + Math.round(f.R) +
+      (ls.length ? '<br>Contains: ' + ls.map(function (l) { return l.name; }).join(', ') : '');
+    tip.classList.add('ncf-tip--visible');
+    moveTip(ev);
+  }
+  function moveTip(ev) {
+    var r = wrap.querySelector('.ncf-fig').getBoundingClientRect();
+    var x = ev.clientX - r.left + 14, y = ev.clientY - r.top + 14;
+    if (x + 270 > r.width) x = ev.clientX - r.left - 274;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+  }
+
+  var decodeEl = wrap.querySelector('#ncf-decode');
+  var KIND_LETTER = { W2: 'W2', W: 'W', M: 'M', N: 'N' };
+  function updateDecode(f) {
+    f = f || FILTERS.filter(function (x) { return x.name === 'F150W2'; })[0];
+    var num = f.name.slice(1, f.name.search(/[WMN]/));
+    decodeEl.innerHTML = '<span class="ncf-nm-part ncf-nm-part--f">F</span><span class="ncf-nm-part ncf-nm-part--num">' + num +
+      '</span><span class="ncf-nm-part ncf-nm-part--kind">' + KIND_LETTER[f.kind] + '</span>' +
+      '<span class="ncf-nm-gloss">' + f.name + ' = filter, nominal wavelength ' + (parseInt(num, 10) / 100).toFixed(2) + ' µm, ' + KIND_LABEL[f.kind] + '</span>';
+  }
+  updateDecode(null);
+
+  var legendEl = wrap.querySelector('#ncf-legend');
+  var usedCats = {};
+  LINES.forEach(function (l) { usedCats[l.cat] = true; });
+  legendEl.innerHTML = '<span class="ncf-muted">Emission lines:</span>' + Object.keys(CATS).filter(function (k) { return usedCats[k]; }).map(function (k) {
+    return '<span class="ncf-legend-item"><span class="ncf-legend-swatch" style="background:' + CATS[k].color + '"></span>' + CATS[k].label + '</span>';
+  }).join('');
+
+  function chip(f) {
+    return '<span class="ncf-chip ncf-chip--' + f.chan.toLowerCase() + '">' + f.name + '</span>';
+  }
+  function dot(color) { return '<span class="ncf-dot" style="background:' + color + '"></span>'; }
+
+  function updateDetail() {
+    var z = parseFloat(slider.value);
+    var html = '';
+    updateDecode(hovered);
+    if (hovered) {
+      var f = hovered, ls = linesIn(f, z);
+      html = '<div class="ncf-head">' + chip(f) + '<span class="ncf-head-text">' + KIND_LABEL[f.kind] + ' filter &nbsp;·&nbsp; ' +
+        fmt(f.lo) + ' to ' + fmt(f.hi) + ' µm &nbsp;·&nbsp; R ≈ ' + Math.round(f.R) + '</span></div>';
+      html += ls.length
+        ? '<div class="ncf-rows">' + ls.map(function (l) {
+            return '<div class="ncf-row">' + dot(l.color) + '<strong style="color:' + l.color + '">' + l.name + '</strong><span class="ncf-obs">' + fmt(l.wl * (1 + z)) + ' µm</span></div>';
+          }).join('') + '</div>'
+        : '<div class="ncf-muted">No tracked emission line falls in this filter at z = ' + z.toFixed(2) + '.</div>';
+    } else {
+      var rows = '';
+      LINES.forEach(function (l) {
+        var o = l.wl * (1 + z);
+        if (o < 0.6 || o > 5.0) return;
+        var fs = filtersFor(o);
+        rows += '<div class="ncf-row">' + dot(l.color) + '<strong style="color:' + l.color + '">' + l.name + '</strong>' +
+          '<span class="ncf-obs">' + fmt(o) + ' µm</span><span class="ncf-chips">' +
+          (fs.length ? fs.map(chip).join('') : '<span class="ncf-muted">no filter</span>') + '</span></div>';
+      });
+      html = '<div class="ncf-head"><span class="ncf-head-text">At <strong class="ncf-zhl">z = ' + z.toFixed(2) + '</strong>, lines in NIRCam\'s range and the filters that catch them</span></div>' +
+        (rows ? '<div class="ncf-rows">' + rows + '</div>' : '<div class="ncf-muted">None of the tracked lines fall in NIRCam\'s range at this redshift.</div>') +
+        '<div class="ncf-foot">Hover a filter for its details. Band edges are approximate and drawn without overlap.</div>';
+    }
+    detail.innerHTML = html;
+  }
+
+  function render() {
+    var z = parseFloat(slider.value);
+    zValue.textContent = z.toFixed(2);
+    gLines.innerHTML = '';
+    var visible = LINES.map(function (l) { return { l: l, o: l.wl * (1 + z) }; })
+      .filter(function (d) { return d.o >= WL_MIN && d.o <= WL_MAX; })
+      .sort(function (a, b) { return a.o - b.o; });
+    var hit = {};
+    visible.forEach(function (d, i) {
+      var x = xFor(d.o), level = i % 3;
+      gLines.appendChild(sv('line', { class: 'ncf-line', x1: x, y1: 58 + level * 10, x2: x, y2: AXIS_Y, stroke: d.l.color }));
+      gLines.appendChild(sv('text', { class: 'ncf-line-label', x: x, y: 54 + level * 10, fill: d.l.color }, d.l.name));
+      filtersFor(d.o).forEach(function (f) { hit[f.name] = true; });
+    });
+    FILTERS.forEach(function (f) { bandEls[f.name].classList.toggle('ncf-band--hit', !!hit[f.name]); });
+    updateDetail();
+  }
+
+  slider.addEventListener('input', render);
+  render();
+})();
+</script>

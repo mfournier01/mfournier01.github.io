@@ -1,0 +1,6 @@
+{
+  "forbidden":     { "color": "#38bdf8", "label": "forbidden" },
+  "semiforbidden": { "color": "#34d399", "label": "semi-forbidden" },
+  "permitted":     { "color": "#fbbf24", "label": "permitted" },
+  "molecular":     { "color": "#a78bfa", "label": "molecular" }
+}

@@ -1,98 +1,158 @@
-{{/* Four slowly-floating hexagons, one per JWST science instrument,
-     arranged as a diamond (a square layout rotated 45°, tightened up a
-     bit) — top, right, bottom, left — and connected along the perimeter
-     so the four dashed edges read as a loose ring. Only the layout is
-     rotated; each hexagon polygon itself stays upright (unrotated).
-     Each hexagon is grey by default;
-     hovering it reveals one colored accent element and tints the outline
-     in that instrument's color. A small JS loop drives the floating
-     motion (different frequency/phase per node, via sine waves) and keeps
-     recomputing the connecting lines' endpoints every frame, so the ring
-     visibly deforms to follow each hexagon as it drifts — the lines are
-     not anchored to fixed points. The lines are drawn before the hexagons
-     in the markup, and the hexagons have an opaque fill, so each line
-     tucks behind the hexagons rather than crossing in front of them.
-     Each hexagon holds a grey line-icon standing in for that instrument;
-     hovering turns the icon and hex outline to the instrument's color and
-     pops the (bold) instrument name out below it. */}}
+{{/* Four fixed hexagons, one per JWST science instrument, arranged as a
+     symmetric diamond (top, right, bottom, left) and joined by dashed
+     lines along the perimeter. Each hexagon is grey by default; hovering
+     it tints the outline and icon in the instrument's color, pops the
+     instrument name out below it, and slides a short description box out
+     to its right. The hexagons do not move. Hexagons whose page exists
+     are links. */}}
+
+{{ $hex := "0,-55 47.6,-27.5 47.6,27.5 0,55 -47.6,27.5 -47.6,-27.5" }}
 
 <div class="jwst-net-wrap">
   <svg class="jwst-net" viewBox="0 0 600 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of JWST's four science instruments, connected as a network">
 
     <g class="jwst-net-lines">
-      <line data-from="0" data-to="1" x1="300" y1="124" x2="456" y2="280" />
-      <line data-from="1" data-to="3" x1="456" y1="280" x2="300" y2="436" />
-      <line data-from="3" data-to="2" x1="300" y1="436" x2="144" y2="280" />
-      <line data-from="2" data-to="0" x1="144" y1="280" x2="300" y2="124" />
+      <line x1="300" y1="124" x2="456" y2="280" />
+      <line x1="456" y1="280" x2="300" y2="436" />
+      <line x1="300" y1="436" x2="144" y2="280" />
+      <line x1="144" y1="280" x2="300" y2="124" />
     </g>
 
-    {{ $hex := "0,-55 47.6,-27.5 47.6,27.5 0,55 -47.6,27.5 -47.6,-27.5" }}
-
-    <g class="jwst-net-node jwst-net-node--nircam" transform="translate(300,124)">
-      <polygon class="jwst-net-hex" points="{{ $hex }}" />
-      {{/* Camera: body, viewfinder bump, lens. */}}
-      <g class="jwst-net-icon">
-        <rect x="-16" y="-10" width="32" height="22" rx="4" />
-        <rect x="-6" y="-17" width="12" height="7" rx="2" />
-        <circle cx="0" cy="1" r="7" />
-      </g>
+    <g class="jwst-net-node jwst-net-node--nircam" transform="translate(300,124)"
+       data-name="NIRCam" data-range="0.6 to 5 µm · imaging"
+       data-desc="The near-infrared camera, and JWST's main imager. It photographs two adjacent 2.2′ × 2.2′ fields at once through short- and long-wavelength filters, for deep fields, galaxies, star-forming regions and exoplanet coronagraphy. It also senses the mirror alignment."
+       data-hint="Click to explore the filters">
+      <a href="/jwst-explorer/nircam/" class="jwst-net-link" aria-label="Explore NIRCam's filter bandpasses">
+        <polygon class="jwst-net-hex" points="{{ $hex }}" />
+        {{/* Camera: body, viewfinder bump, lens, flash. */}}
+        <g class="jwst-net-icon">
+          <rect x="-22" y="-11" width="44" height="28" rx="5" />
+          <path d="M-9,-11 L-6,-18 H6 L9,-11" />
+          <circle cx="0" cy="3" r="9" />
+          <circle class="jwst-net-icon-fill" cx="0" cy="3" r="3.5" />
+          <circle class="jwst-net-icon-fill" cx="15" cy="-5" r="1.8" />
+        </g>
+      </a>
       <text class="jwst-net-label" x="0" y="88" text-anchor="middle">NIRCam</text>
     </g>
 
-    <g class="jwst-net-node jwst-net-node--nirspec" transform="translate(456,280)">
+    <g class="jwst-net-node jwst-net-node--nirspec" transform="translate(456,280)"
+       data-name="NIRSpec" data-range="0.6 to 5.3 µm · spectroscopy"
+       data-desc="The near-infrared spectrograph. It splits light into spectra at resolving powers from about 30 to 2700, using a micro-shutter array for many targets at once, a 3″ × 3″ integral-field unit and fixed slits. It measures redshifts, gas velocities and abundances."
+       data-hint="Click to explore the emission lines">
       <a href="/jwst-explorer/nirspec/" class="jwst-net-link" aria-label="Explore NIRSpec's emission-line coverage">
         <polygon class="jwst-net-hex" points="{{ $hex }}" />
-        {{/* Prism dispersing light into a spectrum. */}}
+        {{/* Prism: incoming beam, triangle, three dispersed rays. */}}
         <g class="jwst-net-icon">
-          <polygon points="-15,11 1,-15 11,11" />
-          <line x1="12" y1="2" x2="25" y2="-5" />
-          <line x1="13" y1="8" x2="27" y2="8" />
-          <line x1="12" y1="14" x2="25" y2="21" />
+          <path d="M0,-17 L-17,12 H17 Z" />
+          <line x1="-31" y1="-1" x2="-13" y2="-1" />
+          <line x1="10" y1="-6" x2="31" y2="-15" />
+          <line x1="13" y1="-1" x2="34" y2="-1" />
+          <line x1="16" y1="4" x2="31" y2="11" />
         </g>
       </a>
       <text class="jwst-net-label" x="0" y="88" text-anchor="middle">NIRSpec</text>
     </g>
 
-    <g class="jwst-net-node jwst-net-node--miri" transform="translate(144,280)">
-      <polygon class="jwst-net-hex" points="{{ $hex }}" />
-      {{/* Thermometer, for the mid-infrared/thermal instrument. */}}
-      <g class="jwst-net-icon">
-        <rect x="-4" y="-18" width="8" height="25" rx="4" />
-        <circle cx="0" cy="11" r="8" />
-        <line x1="-4" y1="-10" x2="-9" y2="-10" />
-        <line x1="-4" y1="-2" x2="-9" y2="-2" />
-      </g>
+    <g class="jwst-net-node jwst-net-node--miri" transform="translate(144,280)"
+       data-name="MIRI" data-range="5 to 28 µm · mid-infrared"
+       data-desc="The mid-infrared instrument, with an imager, coronagraphs and spectrometers, cooled to about 7 K. It observes warm dust, PAH molecules, water and CO₂ ice, molecular hydrogen and obscured sources that are faint at shorter wavelengths."
+       data-hint="Click to explore the spectral features">
+      <a href="/jwst-explorer/miri/" class="jwst-net-link" aria-label="Explore MIRI's mid-infrared spectral features">
+        <polygon class="jwst-net-hex" points="{{ $hex }}" />
+        {{/* Thermometer: one outline, mercury column and bulb, tick marks. */}}
+        <g class="jwst-net-icon">
+          <path d="M-5,-16 A5,5 0 0 1 5,-16 V4.3 A10,10 0 1 1 -5,4.3 Z" />
+          <line x1="0" y1="-6" x2="0" y2="10" stroke-width="4" />
+          <circle class="jwst-net-icon-fill" cx="0" cy="13" r="5" />
+          <line x1="10" y1="-12" x2="16" y2="-12" />
+          <line x1="10" y1="-5" x2="16" y2="-5" />
+          <line x1="10" y1="2" x2="16" y2="2" />
+        </g>
+      </a>
       <text class="jwst-net-label" x="0" y="88" text-anchor="middle">MIRI</text>
     </g>
 
-    <g class="jwst-net-node jwst-net-node--fgs" transform="translate(300,436)">
+    <g class="jwst-net-node jwst-net-node--fgs" transform="translate(300,436)"
+       data-name="FGS / NIRISS" data-range="0.6 to 5 µm · guiding and slitless spectroscopy"
+       data-desc="The fine guidance sensor locks onto a guide star to hold JWST's pointing steady to a few milliarcseconds. NIRISS shares its housing and adds wide-field slitless spectroscopy, aperture-masking interferometry and transiting-exoplanet spectroscopy."
+       data-hint="Page coming soon">
       <polygon class="jwst-net-hex" points="{{ $hex }}" />
-      {{/* Targeting reticle, for the guidance/imaging sensor. */}}
+      {{/* Targeting reticle: ring, crossing ticks, center dot. */}}
       <g class="jwst-net-icon">
-        <circle cx="0" cy="0" r="16" />
-        <circle cx="0" cy="0" r="4" />
-        <line x1="0" y1="-22" x2="0" y2="-16" />
-        <line x1="0" y1="16" x2="0" y2="22" />
-        <line x1="-22" y1="0" x2="-16" y2="0" />
-        <line x1="16" y1="0" x2="22" y2="0" />
+        <circle cx="0" cy="0" r="14" />
+        <line x1="0" y1="-23" x2="0" y2="-8" />
+        <line x1="0" y1="8" x2="0" y2="23" />
+        <line x1="-23" y1="0" x2="-8" y2="0" />
+        <line x1="8" y1="0" x2="23" y2="0" />
+        <circle class="jwst-net-icon-fill" cx="0" cy="0" r="3" />
       </g>
       <text class="jwst-net-label" x="0" y="88" text-anchor="middle">FGS/NIRISS</text>
     </g>
 
   </svg>
+
+  <div class="jwst-net-info" id="jwst-net-info" aria-live="polite">
+    <div class="jwst-net-info-name"></div>
+    <div class="jwst-net-info-range"></div>
+    <div class="jwst-net-info-desc"></div>
+    <div class="jwst-net-info-hint"></div>
+  </div>
 </div>
 
 <style>
+  /* The wrapper is wider than the diagram so the description box has room
+     to slide out to the right of any hexagon while the diagram stays
+     centered. */
   .jwst-net-wrap {
+    position: relative;
     width: 100%;
-    max-width: 600px;
+    max-width: 960px;
     margin: 0 auto;
   }
 
   .jwst-net {
-    width: 100%;
+    display: block;
+    width: 62.5%;
     height: auto;
+    margin: 0 auto;
     overflow: visible;
+  }
+
+  .jwst-net-info {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 250px;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-left: 3px solid var(--accent, #94a3b8);
+    border-radius: 0.5rem;
+    background: rgba(15, 23, 42, 0.96);
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    opacity: 0;
+    transform: translateX(-18px);
+    pointer-events: none;
+    z-index: 4;
+    transition: opacity 0.25s ease, transform 0.3s ease, left 0.25s ease, top 0.25s ease;
+  }
+
+  .jwst-net-info--visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .jwst-net-info-name { font-size: 1.1rem; font-weight: 700; color: var(--accent, #e2e8f0); }
+  .jwst-net-info-range { margin-bottom: 0.4rem; font-size: 0.8rem; color: #94a3b8; }
+  .jwst-net-info-hint { margin-top: 0.5rem; font-size: 0.8rem; color: #64748b; }
+
+  @media (max-width: 760px) {
+    .jwst-net-wrap { max-width: 600px; }
+    .jwst-net { width: 100%; }
+    .jwst-net-info { position: static; width: auto; margin: 1rem auto 0; transform: none; }
+    .jwst-net-info:not(.jwst-net-info--visible) { display: none; }
   }
 
   .jwst-net-lines line {
@@ -152,72 +212,45 @@
   .jwst-net-node:hover .jwst-net-icon {
     stroke: var(--accent);
   }
-</style>
 
+  .jwst-net-icon-fill {
+    fill: #94a3b8;
+    stroke: none;
+    transition: fill 0.35s ease;
+  }
+
+  .jwst-net-node:hover .jwst-net-icon-fill {
+    fill: var(--accent);
+  }
+</style>
 <script>
 (function () {
-  document.querySelectorAll('.jwst-net').forEach(function (svg) {
-    var nodes = Array.prototype.slice.call(svg.querySelectorAll('.jwst-net-node'));
-    var data = nodes.map(function (g) {
-      var m = /translate\(([-\d.]+),\s*([-\d.]+)\)/.exec(g.getAttribute('transform') || '');
-      return {
-        g: g,
-        baseX: m ? parseFloat(m[1]) : 0,
-        baseY: m ? parseFloat(m[2]) : 0,
-        x: 0,
-        y: 0,
-        fx: 0.09 + Math.random() * 0.05,
-        fy: 0.07 + Math.random() * 0.05,
-        px: Math.random() * Math.PI * 2,
-        py: Math.random() * Math.PI * 2,
-        ax: 6 + Math.random() * 4,
-        ay: 8 + Math.random() * 5
-      };
+  document.querySelectorAll('.jwst-net-wrap').forEach(function (wrap) {
+    var info = wrap.querySelector('.jwst-net-info');
+    var nameEl = info.querySelector('.jwst-net-info-name'), rangeEl = info.querySelector('.jwst-net-info-range');
+    var descEl = info.querySelector('.jwst-net-info-desc'), hintEl = info.querySelector('.jwst-net-info-hint');
+
+    function show(node) {
+      nameEl.textContent = node.getAttribute('data-name');
+      rangeEl.textContent = node.getAttribute('data-range');
+      descEl.textContent = node.getAttribute('data-desc');
+      hintEl.textContent = node.getAttribute('data-hint');
+      info.style.setProperty('--accent', getComputedStyle(node).getPropertyValue('--accent'));
+      if (getComputedStyle(info).position !== 'static') {
+        var w = wrap.getBoundingClientRect(), h = node.querySelector('.jwst-net-hex').getBoundingClientRect();
+        info.style.left = (h.right - w.left + 14) + 'px';
+        info.style.top = (h.top + h.height / 2 - w.top - info.offsetHeight / 2) + 'px';
+      }
+      info.classList.add('jwst-net-info--visible');
+    }
+    function hide() { info.classList.remove('jwst-net-info--visible'); }
+
+    wrap.querySelectorAll('.jwst-net-node').forEach(function (node) {
+      node.addEventListener('mouseenter', function () { show(node); });
+      node.addEventListener('mouseleave', hide);
+      node.addEventListener('focusin', function () { show(node); });
+      node.addEventListener('focusout', hide);
     });
-
-    var lines = Array.prototype.slice.call(svg.querySelectorAll('.jwst-net-lines line')).map(function (line) {
-      return {
-        el: line,
-        from: data[parseInt(line.dataset.from, 10)],
-        to: data[parseInt(line.dataset.to, 10)]
-      };
-    });
-
-    function place() {
-      data.forEach(function (n) {
-        n.x = n.baseX;
-        n.y = n.baseY;
-        n.g.setAttribute('transform', 'translate(' + n.x + ',' + n.y + ')');
-      });
-      lines.forEach(function (l) {
-        l.el.setAttribute('x1', l.from.x);
-        l.el.setAttribute('y1', l.from.y);
-        l.el.setAttribute('x2', l.to.x);
-        l.el.setAttribute('y2', l.to.y);
-      });
-    }
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      place();
-      return;
-    }
-
-    function frame(ts) {
-      var t = ts / 1000;
-      data.forEach(function (n) {
-        n.x = n.baseX + Math.sin(t * n.fx + n.px) * n.ax;
-        n.y = n.baseY + Math.sin(t * n.fy + n.py) * n.ay;
-        n.g.setAttribute('transform', 'translate(' + n.x + ',' + n.y + ')');
-      });
-      lines.forEach(function (l) {
-        l.el.setAttribute('x1', l.from.x);
-        l.el.setAttribute('y1', l.from.y);
-        l.el.setAttribute('x2', l.to.x);
-        l.el.setAttribute('y2', l.to.y);
-      });
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
   });
 })();
 </script>

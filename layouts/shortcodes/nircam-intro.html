@@ -1,0 +1,11 @@
+{{ $body := `  <p>
+    <strong>NIRCam</strong> is JWST's main near-infrared camera. It images two adjacent 2.2&prime;&nbsp;&times;&nbsp;2.2&prime; fields at once, and a dichroic splits each field's light into a <strong style="color:#38bdf8">short-wavelength channel</strong> (0.6 to 2.3&nbsp;&micro;m, 0.031&Prime; pixels) and a <strong style="color:#fb923c">long-wavelength channel</strong> (2.4 to 5.0&nbsp;&micro;m, 0.063&Prime; pixels) that observe simultaneously, each through its own filter. It also hosts coronagraphs and the sensors used to keep JWST's mirror segments aligned.
+  </p>
+  <p>
+    NIRCam provides images (shapes, positions and colors) over a wide field with fine pixels, which suits deep surveys, resolved stars, star-forming regions and galaxy morphology, and the brightness through several filters is enough to estimate redshifts and find the most distant candidates. In contrast with <strong>NIRSpec</strong>, which disperses the light of selected targets into detailed spectra (line identification, exact redshifts, gas velocities and abundances) but over a small area, NIRCam's filters only reach a resolving power of about 100. In contrast with <strong>MIRI</strong>, which works at 5 to 28&nbsp;&micro;m and observes cool dust, molecules and heavily obscured sources, NIRCam is most sensitive to starlight and warm gas.
+  </p>
+  <p>
+    This page shows the NIRCam filter bandpasses and which emission lines each filter catches as the redshift changes. To compare an object's angular size with NIRCam's field of view, see the figure on the <a href="/jwst-explorer/" style="text-decoration:underline">JWST Explorer</a> page.
+  </p>
+` }}
+{{ partial "instrument-intro.html" (dict "title" "JWST NIRCam" "body" ($body | safeHTML)) }}

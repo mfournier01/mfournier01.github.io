@@ -10,4 +10,6 @@ full_width: true
 # rendered (see layouts/_default/blank.html): just the plot, full width.
 ---
 
+{{< nirspec-intro >}}
+
 {{< nirspec-lines >}}

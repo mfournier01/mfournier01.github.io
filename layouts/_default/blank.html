@@ -4,6 +4,13 @@
      page. Set `full_width: true` to drop the centered `max-w-4xl` wrapper
      for content (e.g. a wide plot) that should span the full page width. */}}
 {{ define "main" }}
+{{ with .Params.back_url }}
+<div class="px-6 pt-6">
+  <a href="{{ . }}" class="inline-flex items-center gap-2 rounded-full border border-gray-400/40 px-4 py-1.5 text-sm text-gray-500 dark:text-gray-300 no-underline hover:bg-gray-500/10 transition-colors">
+    <span aria-hidden="true">&larr;</span> {{ $.Params.back_label | default "Back" }}
+  </a>
+</div>
+{{ end }}
 {{ if .Params.full_width }}
 <div class="min-h-[60vh] py-10">
   {{ .Content }}

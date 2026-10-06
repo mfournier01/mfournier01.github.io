@@ -1,5 +1,5 @@
 ---
-title: "AGN Explorer"
+title: "Active galactic nuclei"
 date: 2026-10-05
 layout: blank
 back_url: "/explorers/"

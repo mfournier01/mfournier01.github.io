@@ -3,27 +3,59 @@
   <h1 class="exh-title">Explorers</h1>
   <p class="exh-lead">Small interactive pages I build, with AI assistance, to help myself understand and learn new things in astronomy, from how telescopes and instruments work to the physics of what they observe.</p>
 
+  <h2 class="exh-cat">Telescopes and instruments</h2>
+  <p class="exh-cat-text">How the observatories work: instruments, wavelength coverage and what they can see.</p>
   <div class="exh-cards">
     {{ with .Page.Resources.GetMatch "jwst-icon.png" }}
     {{ $img := .Resize "320x webp q90" }}
     <a class="exh-card" href="/jwst-explorer/">
       <img src="{{ $img.RelPermalink }}" alt="James Webb Space Telescope line illustration" class="exh-card-img">
       <div class="exh-card-body">
-        <div class="exh-card-title">JWST Explorer</div>
+        <div class="exh-card-title">The JWST instruments</div>
         <div class="exh-card-text">The four JWST instruments, their wavelength coverage, emission lines and mid-infrared features across redshift, and how big an object looks in each field of view.</div>
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
     {{ end }}
+    <div class="exh-card exh-card--soon">
+      <div class="exh-card-body">
+        <div class="exh-card-title">More to come</div>
+        <div class="exh-card-text">Other telescopes and instruments.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="exh-cat">Astrophysical processes</h2>
+  <p class="exh-cat-text">The physics of the gas, dust and black holes that telescopes observe.</p>
+  <div class="exh-cards">
     <a class="exh-card" href="/dust-explorer/">
       <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
-        <defs><radialGradient id="exh-g" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fb923c" stop-opacity="0.9"/><stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></radialGradient></defs>
-        <circle cx="60" cy="60" r="52" fill="url(#exh-g)" opacity="0.5"/>
-        <g fill="#e2e8f0"><circle cx="38" cy="48" r="5"/><circle cx="64" cy="36" r="3.5"/><circle cx="82" cy="58" r="6"/><circle cx="52" cy="74" r="4"/><circle cx="74" cy="84" r="3"/><circle cx="30" cy="76" r="2.5"/><circle cx="92" cy="38" r="2.5"/><circle cx="58" cy="58" r="2"/></g>
+        <defs><radialGradient id="exh-gd" cx="36%" cy="32%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></radialGradient></defs>
+        <g><circle cx="87.5" cy="27.5" r="9.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="35.0" cy="30.0" r="9.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="105.0" cy="45.0" r="7.2" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="20.0" cy="47.5" r="7.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="42.5" cy="100.0" r="7.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="82.5" cy="102.5" r="7.2" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="95.0" cy="65.0" r="10.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="27.5" cy="70.0" r="10.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="62.5" cy="95.0" r="9.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="60.0" cy="35.0" r="12.0" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="75.0" cy="80.0" r="13.2" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="47.5" cy="80.0" r="14.4" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="80.0" cy="47.5" r="15.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="40.0" cy="50.0" r="14.4" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="60.0" cy="62.5" r="18.0" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/></g>
       </svg>
       <div class="exh-card-body">
-        <div class="exh-card-title">Dust Explorer</div>
+        <div class="exh-card-title">Dust physics</div>
         <div class="exh-card-text">How cosmic dust forms, the kinds of grains, how they dim starlight, and the processes (sputtering, shattering, growth) that shape their life cycle.</div>
+        <div class="exh-card-link">Open &rarr;</div>
+      </div>
+    </a>
+    <a class="exh-card" href="/molecular-explorer/">
+      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+        <defs>
+          <radialGradient id="exh-mo" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="0.3" stop-color="#f87171"/><stop offset="1" stop-color="#b91c1c"/></radialGradient>
+          <radialGradient id="exh-mh" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset="0.35" stop-color="#e2e8f0"/><stop offset="1" stop-color="#64748b"/></radialGradient>
+          <radialGradient id="exh-mg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#34d399" stop-opacity="0.35"/><stop offset="1" stop-color="#34d399" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle cx="60" cy="62" r="56" fill="url(#exh-mg)"/>
+        <g stroke="#cbd5e1" stroke-width="7" stroke-linecap="round" opacity="0.85"><path d="M60 72L28 42M60 72L92 42"/></g>
+        <circle cx="28" cy="42" r="13" fill="url(#exh-mh)" stroke="#0f172a" stroke-width="1.2"/>
+        <circle cx="92" cy="42" r="13" fill="url(#exh-mh)" stroke="#0f172a" stroke-width="1.2"/>
+        <circle cx="60" cy="74" r="21" fill="url(#exh-mo)" stroke="#0f172a" stroke-width="1.2"/>
+        <circle cx="100" cy="98" r="5" fill="#60a5fa" opacity="0.8"/><circle cx="18" cy="96" r="4" fill="#fbbf24" opacity="0.7"/>
+      </svg>
+      <div class="exh-card-body">
+        <div class="exh-card-title">Molecular Gas and Thermochemistry</div>
+        <div class="exh-card-text">How gas heats, cools and becomes molecular, from H₂ and CO in clouds to the cold filaments in cluster cores: shielding, chemical networks, thermal instability and star formation in nearby galaxies.</div>
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
@@ -40,17 +72,30 @@
         <circle cx="60" cy="60" r="7" fill="#0b1220" stroke="#e2e8f0" stroke-width="2"/>
       </svg>
       <div class="exh-card-body">
-        <div class="exh-card-title">AGN Explorer</div>
+        <div class="exh-card-title">Active galactic nuclei</div>
         <div class="exh-card-text">An interactive spectrum of an active galactic nucleus, with every component and band clickable, and the physics behind it: black holes, accretion, broad-line gas, the dusty torus, jets, and how black holes grow.</div>
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
-    <div class="exh-card exh-card--soon">
+  </div>
+
+  <h2 class="exh-cat">Simulations and codes</h2>
+  <p class="exh-cat-text">How a numerical model of galaxy formation is built, and why.</p>
+  <div class="exh-cards">
+    <a class="exh-card" href="/stars-explorer/">
+      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+        <defs><radialGradient id="exh-gs" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fef3c7" stop-opacity="0.95"/><stop offset="1" stop-color="#f472b6" stop-opacity="0"/></radialGradient></defs>
+        <g stroke="#94a3b8" stroke-opacity="0.55" fill="none"><path d="M60 8V112M8 60H112" stroke-dasharray="3 4"/><circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="26" stroke="#f472b6" stroke-opacity="0.7"/></g>
+        <circle cx="60" cy="60" r="30" fill="url(#exh-gs)"/>
+        <path d="M60 46l4 10 11 1-8 7 3 11-10-6-10 6 3-11-8-7 11-1z" fill="#fde68a" stroke="#0f172a" stroke-width="1"/>
+        <circle cx="96" cy="34" r="5" fill="#34d399"/><path d="M62 58L92 36" stroke="#34d399" stroke-dasharray="3 3"/>
+      </svg>
       <div class="exh-card-body">
-        <div class="exh-card-title">More to come</div>
-        <div class="exh-card-text">Other telescopes and more.</div>
+        <div class="exh-card-title">Stellar Particles in AthenaPK</div>
+        <div class="exh-card-text">How stars form and explode in the simulation, and why the model is built this way: virial support, supernova remnants and the terminal momentum, the ghost swarm across meshblocks, and the test runs that validate it.</div>
+        <div class="exh-card-link">Open &rarr;</div>
       </div>
-    </div>
+    </a>
   </div>
 </div>
 
@@ -62,6 +107,9 @@
   .exh-lead { margin: 0 auto 2.2rem; max-width: 620px; text-align: center; font-size: 1.05rem; line-height: 1.5; }
 
 
+  .exh-cat { margin: 2.2rem 0 0.2rem; padding-bottom: 0.35rem; font-size: 1.4rem; font-weight: 700; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,0.3); }
+  .exh-cat:first-of-type { margin-top: 0; }
+  .exh-cat-text { margin: 0.1rem 0 0.9rem; font-size: 0.95rem; color: #94a3b8; }
   .exh-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
   .exh-card { display: flex; align-items: center; gap: 1.1rem; padding: 1.1rem 1.3rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); color: inherit; text-decoration: none; transition: border-color 0.2s ease, transform 0.2s ease; }
   a.exh-card:hover { border-color: #60a5fa; transform: translateY(-2px); }

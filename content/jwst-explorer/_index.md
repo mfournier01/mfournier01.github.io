@@ -1,5 +1,5 @@
 ---
-title: "JWST Explorer"
+title: "The JWST instruments"
 date: 2026-10-01
 layout: blank
 back_url: "/explorers/"

@@ -1,0 +1,1875 @@
+<!--
+  Dust explorer: what cosmic dust is, how it forms, the kinds of dust grains
+  (size ladder, grain structure, extinction curve), the dust life cycle, and
+  the processes that destroy or grow grains, with an interactive sputtering
+  demo.
+
+  The grain populations, seeding efficiencies, accretion, sputtering, shock
+  destruction, shattering, coagulation and PAH equations follow the CALIMA
+  dust model of Rodriguez Montero et al. (2026, arXiv:2602.21790). The
+  sputtering-rate curves are digitized by eye from its Fig. 6.
+
+  Vanilla JS + inline SVG; KaTeX from a CDN for all the mathematics (display
+  equations, inline symbols and the math labels inside the figures).
+  Hugo parses this file as a template: never write a double opening curly
+  brace in it (in LaTeX strings use a space or a command between braces).
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+
+<div class="dx-wrap">
+
+  <h1 class="dx-title">Cosmic dust</h1>
+  <div class="dx-box">
+    <p>
+      <strong>Cosmic dust</strong> is made of solid grains from about a nanometre to a micrometre across, mostly silicates, carbon-rich material and ices, together with large molecules called PAHs. It makes up only about 1% of the mass of the interstellar medium, but it matters far more than that: it absorbs ultraviolet and optical light and re-emits it in the infrared, so it shapes almost everything JWST sees. It locks up heavy elements, heats the gas through the photoelectric effect, cools gas so that clouds can collapse into stars, and forms molecular hydrogen on its surface. It is also the raw material of planets.
+    </p>
+    <p>
+      This page covers where dust comes from, the main kinds of grains, and the processes that build and destroy them. The equations and parameters follow the CALIMA dust model for galaxy simulations (<a href="https://arxiv.org/abs/2602.21790" style="text-decoration:underline">Rodríguez Montero et al. 2026</a>), unless stated otherwise. Grain features such as the PAH bands and the silicate absorption are the ones tracked in the <a href="/jwst-explorer/miri/" style="text-decoration:underline">MIRI feature map</a>.
+    </p>
+  </div>
+
+  <nav class="dx-map" id="dx-map" aria-label="Map of this page"></nav>
+
+  <!-- ========================= 1. Formation ========================= -->
+  <h2 class="dx-h2">How dust forms</h2>
+  <p class="dx-p">
+    Dust grains form by <em>condensation</em>: in a gas that is cool and dense enough, atoms and molecules of refractory elements (Mg, Si, Fe, C, Al, O) stick together into clusters, which then grow. Condensation needs the gas to be <em>supersaturated</em>,
+  </p>
+  <div class="dx-eq-block" data-tex="S_i \equiv \frac{p_i}{p_{\mathrm{sat},i}(T)} > 1 ,"></div>
+  <p class="dx-p">
+    where <span class="dx-m" data-tex="p_i">p_i</span> is the partial pressure of a species and <span class="dx-m" data-tex="p_{\mathrm{sat}}">p_sat</span> its saturation vapour pressure at the gas temperature <span class="dx-m" data-tex="T">T</span>. In practice this happens in gas that has cooled below about 1000 to 1800 K, depending on the material, which limits the places where grains are born to a few kinds of sources:
+  </p>
+  <div class="dx-cards">
+    <div class="dx-card"><div class="dx-card-title" style="color:#fb923c">Evolved low-mass stars (AGB)</div>
+      The cool, dense winds of asymptotic giant branch stars (1 to 8 solar masses) cool as they expand, and dust condenses within a few stellar radii. The <em>C/O ratio</em> decides what forms: CO locks up all the carbon or oxygen it can, so the leftover element makes the dust. Oxygen-rich stars (C/O&nbsp;&lt;&nbsp;1) make silicates; carbon-rich ones (C/O&nbsp;&ge;&nbsp;1) make carbon grains and, according to the paper, some PAHs.</div>
+    <div class="dx-card"><div class="dx-card-title" style="color:#f472b6">Core-collapse supernovae</div>
+      The ejecta of massive-star explosions cool quickly and are rich in refractory elements, so grains condense there. Supernova dust is observed to be dominated by relatively large grains (0.1&nbsp;&micro;m and above), which survive the reverse shock better, so the model puts all of it in the large-grain population. Type Ia supernovae are assumed to make no dust. The condensation efficiencies are uncertain by up to an order of magnitude.</div>
+    <div class="dx-card"><div class="dx-card-title" style="color:#38bdf8">Growth in the interstellar medium</div>
+      In dense, cold gas, metals from the gas phase stick onto existing grains (<em>accretion</em>) and grains stick to each other (<em>coagulation</em>). Stellar sources dominate dust production at low metallicity, while growth in the ISM takes over in metal-rich galaxies, which is why the dust-to-metal ratio rises with metallicity.</div>
+  </div>
+
+  <h3 class="dx-h3">How much dust does a star inject?</h3>
+  <p class="dx-p">
+    Dust made in a stellar wind or explosion is limited by whichever element of the grain is least abundant. For silicates, with <span class="dx-m" data-tex="M_\ell">M_l</span> the mass of element <span class="dx-m" data-tex="\ell">l</span> (Mg, Fe, Si or O) released by the star, <span class="dx-m" data-tex="A_\ell">A_l</span> its atomic weight and <span class="dx-m" data-tex="N_\ell">N_l</span> the number of its atoms in the silicate formula, the <em>key element</em> sets the number of silicate units that can form,
+  </p>
+  <div class="dx-eq-block" data-tex="m_{\mathrm{key}} = \min_{\ell=\mathrm{Mg,Fe,Si,O}}\left(\frac{M_\ell}{A_\ell N_\ell}\right), \qquad D^{k}_{\mathrm{ej,sil},\ell} = \delta^{k}_{\mathrm{Sil}}\; m_{\mathrm{key}}\, A_\ell N_\ell ,"></div>
+  <p class="dx-p">
+    where <span class="dx-m" data-tex="\delta^{k}_{\mathrm{Sil}}">d</span> is the condensation efficiency for a source <span class="dx-m" data-tex="k">k</span>. The model assumes an olivine with equal amounts of magnesium and iron (MgFeSiO<sub>4</sub>). In an AGB star with C/O&nbsp;&ge;&nbsp;1, all the oxygen is locked in CO and only the excess carbon condenses,
+  </p>
+  <div class="dx-eq-block" data-tex="D^{\mathrm{AGB}}_{\mathrm{ej,C}} = \delta^{\mathrm{AGB}}_{\mathrm{C}}\left(M^{\mathrm{AGB}}_{\mathrm{C}} - \frac{A_{\mathrm C}}{A_{\mathrm O}}\, M^{\mathrm{AGB}}_{\mathrm{O}}\right) \qquad (\mathrm{C/O} \ge 1)."></div>
+  <div class="dx-table-wrap dx-table-wrap--sm">
+    <table class="dx-table dx-table--sm">
+      <thead><tr><th>Source</th><th>Silicate efficiency</th><th>Carbon efficiency</th></tr></thead>
+      <tbody>
+        <tr><td>Core-collapse supernova</td><td>0.8</td><td>0.5</td></tr>
+        <tr><td>Type Ia supernova</td><td>0</td><td>0</td></tr>
+        <tr><td>AGB star, C/O &lt; 1</td><td>0.8</td><td>0</td></tr>
+        <tr><td>AGB star, C/O &ge; 1</td><td>0</td><td>1 (of the excess carbon)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="dx-h3">Growth in the interstellar medium</h3>
+  <p class="dx-p">
+    Accretion is the main way dust grows. For each grain population <span class="dx-m" data-tex="j">j</span>, the dust mass density <span class="dx-m" data-tex="\rho_{d,j}">rho_d</span> grows at a rate that slows as the grains use up the available metals (<span class="dx-m" data-tex="\rho_{Z,j}">rho_Z</span> is the density of metals in gas and dust),
+  </p>
+  <div class="dx-eq-block" data-tex="\dot\rho_{\mathrm{acc},j} = \left(1 - \frac{\rho_{d,j}}{\rho_{Z,j}}\right)\frac{\rho_{d,j}}{\tau_{\mathrm{acc},j}}, \qquad \tau_{\mathrm{acc},j}^{-1} = \alpha\,\frac{F_{\mathrm C}\,\pi a_j^2}{f_X\, m_{\mathrm{gr},j}}\;\rho_X\, v_X ,"></div>
+  <p class="dx-p">
+    where <span class="dx-m" data-tex="\alpha">alpha</span> is the sticking coefficient, <span class="dx-m" data-tex="\pi a_j^2">pi a^2</span> the geometric cross-section of a grain of mass <span class="dx-m" data-tex="m_{\mathrm{gr},j}">m_gr</span>, and <span class="dx-m" data-tex="\rho_X">rho_X</span>, <span class="dx-m" data-tex="v_X">v_X</span>, <span class="dx-m" data-tex="f_X">f_X</span> are the gas-phase density, thermal speed <span class="dx-m" data-tex="v_X = (8k_{\mathrm B}T/\pi m_X)^{1/2}">v</span> and fractional contribution to the grain of the <em>limiting</em> element <span class="dx-m" data-tex="X">X</span>, the one that is scarcest relative to the grain composition. The Coulomb factor <span class="dx-m" data-tex="F_{\mathrm C}">F_C</span> accounts for the electrostatic attraction or repulsion between a charged grain and an ion: small grains in cold gas are neutral or negative and attract positive ions (<span class="dx-m" data-tex="F_{\mathrm C} > 1">F_C &gt; 1</span>), while large grains are stripped of electrons and repel them. The paper cuts accretion off above <span class="dx-m" data-tex="n_{\mathrm H} = 10^{4}\ \mathrm{cm^{-3}}">n_H = 10^4 cm^-3</span>, where icy mantles cover the grains and hide the refractory surface. The sticking coefficient <span class="dx-m" data-tex="\alpha">alpha</span> is the largest uncertainty of the whole model.
+  </p>
+
+  <h3 class="dx-h3">The dust budget</h3>
+  <p class="dx-p">
+    Putting the sources and sinks together, the dust density in a patch of gas obeys
+  </p>
+  <div class="dx-eq-block" data-tex="\begin{aligned} \frac{d\rho_d}{dt} \;=\; & \underbrace{\dot\rho_{\mathrm{ej}}}_{\text{stellar seeding}} + \underbrace{\left(1-\frac{\rho_d}{\rho_Z}\right)\frac{\rho_d}{\tau_{\mathrm{acc}}}}_{\text{accretion}} \\[1.2em] & - \underbrace{\frac{\rho_d}{\tau_{\mathrm{sp}}}}_{\text{thermal sputtering}} - \underbrace{\dot\rho_{\mathrm{SN}}}_{\text{supernova shocks}} \pm \underbrace{\text{flows, astration}}_{\text{gas motion, star formation}} . \end{aligned}"></div>
+  <p class="dx-p">
+    Shattering and coagulation move mass between small and large grains but leave the total dust mass unchanged, so they do not appear here, although they change how fast accretion and sputtering act. Because each term depends on density, temperature and metallicity, the dust-to-metal ratio of a galaxy varies from place to place instead of being a single number.
+  </p>
+
+  <h3 class="dx-h3">The dust cycle</h3>
+  <p class="dx-p">Dust is recycled between the phases of the interstellar medium. Click a stage to see what happens there.</p>
+  <div class="dx-fig"><svg id="dx-cycle" viewBox="0 0 900 540" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The dust life cycle"></svg></div>
+  <div class="dx-detail" id="dx-cycle-detail"></div>
+
+  <!-- ========================= 2. Kinds ========================= -->
+  <h2 class="dx-h2">The kinds of dust</h2>
+  <p class="dx-p">
+    Dust is not one substance but a mixture of populations that differ in size, composition and temperature. The CALIMA model describes it with a <em>two-size, two-composition</em> scheme, plus PAHs as separate molecules: <strong>small</strong> and <strong>large</strong> amorphous carbonaceous grains, <strong>small</strong> and <strong>large</strong> silicate grains, and <strong>small</strong> and <strong>large</strong> PAHs. Within each population the grain sizes follow a modified log-normal distribution,
+  </p>
+  <div class="dx-eq-block" data-tex="n(a)\,da = \frac{C}{a^{4}}\exp\!\left(-\frac{\left[\log\left(a/a_0\right)\right]^2}{2\sigma^2}\right) da ,"></div>
+  <p class="dx-p">
+    where <span class="dx-m" data-tex="a_0">a_0</span> is the central grain radius, <span class="dx-m" data-tex="\sigma">sigma</span> the width, and the constant <span class="dx-m" data-tex="C">C</span> is set by the dust mass of the population. Two processes explain the shape of the grain-size distribution: shattering in collisions breaks big grains into a power law, <span class="dx-m" data-tex="n(a)\propto a^{-3.5}">n ~ a^-3.5</span> (the classic <em>MRN</em> distribution, Mathis, Rumpl &amp; Nordsieck 1977), while turbulent growth gives log-normal peaks. Added together, the six log-normals follow the MRN slope from the PAHs up to large grains. Hover a bar for what each population is.
+  </p>
+  <div class="dx-fig dx-fig--rel"><svg id="dx-sizes" viewBox="0 0 960 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dust grain populations by size"></svg><div class="dx-tip" id="dx-sizes-tip"></div></div>
+  <p class="dx-cap">Each bar runs from <span class="dx-m" data-tex="a_{\min}">a_min</span> to <span class="dx-m" data-tex="a_{\max}">a_max</span>, and the white tick marks the central radius <span class="dx-m" data-tex="a_0">a_0</span>. Values from Table 1 of the paper.</p>
+  <div class="dx-table-wrap">
+    <table class="dx-table dx-table--sm">
+      <thead><tr>
+        <th>Population</th>
+        <th><span class="dx-m" data-tex="s\ [\mathrm{g\,cm^{-3}}]">s</span></th>
+        <th><span class="dx-m" data-tex="N_{\mathrm C}">N_C</span></th>
+        <th><span class="dx-m" data-tex="a_0\ [\mu\mathrm{m}]">a_0</span></th>
+        <th><span class="dx-m" data-tex="a_{\min}\ [\mu\mathrm{m}]">a_min</span></th>
+        <th><span class="dx-m" data-tex="a_{\max}\ [\mu\mathrm{m}]">a_max</span></th>
+        <th><span class="dx-m" data-tex="\sigma">sigma</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Small PAHs</td><td>2.0</td><td>54</td><td>5 &times; 10<sup>&minus;4</sup></td><td>3 &times; 10<sup>&minus;4</sup></td><td>1 &times; 10<sup>&minus;3</sup></td><td>0.3</td></tr>
+        <tr><td>Large PAHs</td><td>2.0</td><td>418</td><td>1 &times; 10<sup>&minus;3</sup></td><td>3 &times; 10<sup>&minus;4</sup></td><td>9 &times; 10<sup>&minus;3</sup></td><td>0.4</td></tr>
+        <tr><td>Small carbonaceous</td><td>2.2</td><td>&ndash;</td><td>1 &times; 10<sup>&minus;2</sup></td><td>1 &times; 10<sup>&minus;3</sup></td><td>1 &times; 10<sup>&minus;1</sup></td><td>0.7</td></tr>
+        <tr><td>Large carbonaceous</td><td>2.2</td><td>&ndash;</td><td>1 &times; 10<sup>&minus;1</sup></td><td>5 &times; 10<sup>&minus;3</sup></td><td>1.0</td><td>0.8</td></tr>
+        <tr><td>Small silicates</td><td>3.3</td><td>&ndash;</td><td>5 &times; 10<sup>&minus;3</sup></td><td>5 &times; 10<sup>&minus;4</sup></td><td>1 &times; 10<sup>&minus;1</sup></td><td>0.75</td></tr>
+        <tr><td>Large silicates</td><td>3.3</td><td>&ndash;</td><td>1 &times; 10<sup>&minus;1</sup></td><td>5 &times; 10<sup>&minus;3</sup></td><td>1.0</td><td>0.75</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="dx-p">
+    Here <span class="dx-m" data-tex="s">s</span> is the density of the material and <span class="dx-m" data-tex="N_{\mathrm C}">N_C</span> the number of carbon atoms in a PAH, which sets its radius,
+  </p>
+  <div class="dx-eq-block" data-tex="a_{\mathrm{PAH}} = 10\left(\frac{N_{\mathrm C}}{418}\right)^{1/3}\text{\AA} ."></div>
+
+  <h3 class="dx-h3">What dust looks like up close</h3>
+  <p class="dx-p">
+    Dust grains come in a few basic structures, sketched below (not to scale). A grain in dense, cold gas has a refractory <em>core</em>, either a silicate (the model uses an olivine, MgFeSiO<sub>4</sub>, whose Si&ndash;O bonds produce the 9.7 and 18&nbsp;&micro;m features) or amorphous carbon, wrapped in layers that depend on where it has been: a thin carbon-rich organic mantle made by ultraviolet processing, and, where the gas is cold and dense enough, an <em>ice mantle</em> of water, CO and other molecules. PAHs are not grains at all but individual molecules, which can clump into larger stacks, and grains themselves can stick together into aggregates.
+  </p>
+  <div class="dx-fig"><svg id="dx-grain" viewBox="0 0 900 712" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Structures of dust: a layered grain, a small PAH, a coagulated aggregate and a large PAH"></svg></div>
+
+  <h3 class="dx-h3">How dust dims starlight: the extinction curve</h3>
+  <p class="dx-p">
+    Dust absorbs and scatters light, and grains of radius <span class="dx-m" data-tex="a">a</span> are most efficient at wavelengths <span class="dx-m" data-tex="\lambda">lambda</span> with <span class="dx-m" data-tex="2\pi a/\lambda \sim 1">2 pi a / lambda ~ 1</span>, so small grains dim the ultraviolet and large grains the optical. Distant stars therefore look both fainter and redder. The extinction <span class="dx-m" data-tex="A_\lambda">A_lambda</span> (in magnitudes, relative to the V band) as a function of inverse wavelength is the fingerprint of the grain population: the bump at 2175&nbsp;&Aring; comes from small carbon grains and PAHs, and the steepness of the curve depends on the grain sizes through <span class="dx-m" data-tex="R_V = A_V/(A_B - A_V)">R_V</span>, about 3.1 in the diffuse Milky Way and larger in dense clouds, where grains have grown. Matching the near-infrared and optical slope of the Milky Way curve is one of the constraints that fixes the large grains at about 0.1&nbsp;&micro;m with a sharp cut-off at larger sizes. The curve here is the empirical Cardelli, Clayton &amp; Mathis (1989) fit.
+  </p>
+  <p class="dx-p">
+    <span class="dx-m" data-tex="R_V">R_V</span> is the ratio of the <em>total</em> dimming in the V band to the <em>reddening</em>, the difference in dimming between the B and V bands: it tells you how much a given amount of reddening costs in lost light. It is a measure of how grey the dust is. A <strong>low</strong> <span class="dx-m" data-tex="R_V">R_V</span> (about 2 to 3) means small grains dominate: the ultraviolet is dimmed much more than the optical, the curve is steep, and the light is strongly reddened. A <strong>high</strong> <span class="dx-m" data-tex="R_V">R_V</span> (about 4 to 6) means the grains have grown larger, as in dense clouds: the curve is flatter, all wavelengths are dimmed more evenly, and the light is reddened less for the same total dimming. Drag the slider and watch the ultraviolet end of the curve.
+  </p>
+  <div class="dx-controls"><label for="dx-rv"><span class="dx-m" data-tex="R_V">R_V</span> <span id="dx-rv-val" class="dx-val">3.1</span></label><input type="range" id="dx-rv" min="2.2" max="5.8" step="0.05" value="3.1"></div>
+  <p class="dx-cap" id="dx-rv-note" style="margin-top:0.2rem"></p>
+  <div class="dx-fig"><svg id="dx-ext" viewBox="0 -45 900 465" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Extinction curve versus inverse wavelength"></svg></div>
+
+  <!-- ========================= 3. Processes ========================= -->
+  <h2 class="dx-h2">What happens to dust: the main processes</h2>
+  <p class="dx-p">
+    A grain&rsquo;s life is a competition between processes that make it grow and ones that wear it down. Which wins depends on the density, temperature and radiation field of its surroundings. Blue rows are not about the grain&rsquo;s own life but about what it does to the gas. The last column gives the section of the CALIMA paper that treats each process.
+  </p>
+  <div class="dx-table-wrap">
+    <table class="dx-table">
+      <thead><tr><th>Process</th><th>What happens</th><th>Where</th><th>Effect on grains</th><th>Paper</th></tr></thead>
+      <tbody>
+        <tr><td><span class="dx-dot" style="background:#34d399"></span>Seeding</td><td>Atoms in cooling stellar ejecta and winds condense into new grains</td><td>AGB winds, supernova ejecta</td><td>Creates grains, and some PAHs in carbon-rich winds</td><td>&sect;2.1, 3.2</td></tr>
+        <tr><td><span class="dx-dot" style="background:#34d399"></span>Accretion</td><td>Metals from the gas stick onto grains</td><td>Cold, dense gas, up to about 10<sup>4</sup> cm<sup>&minus;3</sup></td><td>Grows grains, fastest for small ones</td><td>&sect;2.4</td></tr>
+        <tr><td><span class="dx-dot" style="background:#34d399"></span>Coagulation</td><td>Slow grain-grain collisions make them stick together</td><td>Dense gas, from about 10 cm<sup>&minus;3</sup></td><td>Moves mass to large grains</td><td>&sect;2.9</td></tr>
+        <tr><td><span class="dx-dot" style="background:#f87171"></span>Shattering</td><td>Fast, turbulence-driven collisions break grains into fragments</td><td>Turbulent gas, from about 1 cm<sup>&minus;3</sup></td><td>Moves mass to small grains and PAHs</td><td>&sect;2.8</td></tr>
+        <tr><td><span class="dx-dot" style="background:#f87171"></span>Thermal sputtering</td><td>Fast ions in hot gas knock atoms off the grain surface</td><td>Gas above about 10<sup>5</sup> K: supernova-heated gas, halos, galaxy clusters</td><td>Erodes grains atom by atom</td><td>&sect;2.5</td></tr>
+        <tr><td><span class="dx-dot" style="background:#f87171"></span>Non-thermal sputtering and shattering in supernova shocks</td><td>Grains swept up by a blast wave collide with the gas and with each other</td><td>Gas shocked above about 100 km/s</td><td>Destroys a fraction of the dust, small grains most</td><td>&sect;2.7</td></tr>
+        <tr><td><span class="dx-dot" style="background:#fbbf24"></span>PAH processing</td><td>PAHs cluster, freeze onto grains, and are broken apart by UV photons or hot gas</td><td>Everywhere, with destruction in hard UV fields and hot gas</td><td>Creates and destroys PAHs</td><td>&sect;3.4 to 3.9</td></tr>
+        <tr><td><span class="dx-dot" style="background:#38bdf8"></span>Photoelectric heating</td><td>Far-UV photons eject electrons from grains and PAHs, and the electrons heat the gas</td><td>Neutral, UV-lit gas: diffuse ISM, edges of clouds</td><td>Heats the gas, and charges the grains; small grains and PAHs dominate</td><td>&sect;2.3, 3.5</td></tr>
+        <tr><td><span class="dx-dot" style="background:#38bdf8"></span>H<sub>2</sub> formation</td><td>H atoms meet and bind on grain and PAH surfaces, which absorb the released energy</td><td>Cold, dense, shielded gas</td><td>Catalyses molecular hydrogen; the rate follows the grain surface area</td><td>&sect;2.10, 3.10</td></tr>
+        <tr><td><span class="dx-dot" style="background:#fbbf24"></span>Sublimation</td><td>Strong heating evaporates the grain</td><td>Near luminous stars and AGN</td><td>Destroys grains (silicates above about 1500 K)</td><td>not modelled</td></tr>
+        <tr><td><span class="dx-dot" style="background:#fbbf24"></span>Astration</td><td>Dust and gas are swallowed by new stars</td><td>Star formation</td><td>Removes grains from the ISM</td><td>not modelled</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <h3 class="dx-h3">Process lab</h3>
+  <p class="dx-p">
+    Pick a process to watch how it works. The animations are schematic and sped up, but the thresholds, dependences and efficiencies follow the paper and the figures above, and the readout reports the real numbers. Move the sliders, such as the gas or grain temperature, and click on the canvas to interact.
+  </p>
+  <div class="dx-labbox">
+    <div class="dx-contexts" id="dx-lab-tabs" style="margin:0 0 0.8rem"></div>
+    <p class="dx-lab-blurb" id="dx-lab-blurb"></p>
+    <canvas id="dx-lab-cv" aria-label="Animated process demonstration"></canvas>
+    <div class="dx-lab-bar"><span id="dx-lab-hint"></span><span><button type="button" class="dx-ctx" id="dx-lab-pause">Pause</button> <button type="button" class="dx-ctx" id="dx-lab-reset">Reset</button></span></div>
+    <div class="dx-lab-grid">
+      <div class="dx-sput-controls" id="dx-lab-ctrl"></div>
+      <div class="dx-sput-read" id="dx-lab-read" style="text-align:left"></div>
+    </div>
+  </div>
+
+  <h3 class="dx-h3">Thermal sputtering: how fast does a grain erode?</h3>
+  <p class="dx-p">
+    In gas hotter than about 10<sup>5</sup> K, protons, helium nuclei and heavier ions hit a grain with enough energy to eject atoms from its surface. Averaged over the Maxwellian distribution of ion speeds, the radius shrinks at the rate
+  </p>
+  <div class="dx-eq-block" data-tex="\frac{da}{dt} = -\,\frac{\langle m^{\mathrm{atom}}\rangle}{2\,s}\sum_k n_k \langle Y_k v\rangle , \qquad \langle Y_k v\rangle = \int_0^\infty Y_k(E)\, v\, f_{\mathrm M}(v)\, dv ,"></div>
+  <p class="dx-p">
+    where <span class="dx-m" data-tex="\langle m^{\mathrm{atom}}\rangle">m</span> is the mean atomic mass of the grain, <span class="dx-m" data-tex="s">s</span> its density, <span class="dx-m" data-tex="n_k">n_k</span> the number density of ion species <span class="dx-m" data-tex="k">k</span> (mainly H and He, with C, O and heavier ions) and <span class="dx-m" data-tex="Y_k(E)">Y_k(E)</span> the <em>sputtering yield</em>, the mean number of atoms ejected per impact at energy <span class="dx-m" data-tex="E">E</span>. The yield vanishes below a threshold energy <span class="dx-m" data-tex="E_{\mathrm{sp}}">E_sp</span> and is given by
+  </p>
+  <div class="dx-eq-block" data-tex="\begin{aligned} Y_k(E) &= 4.2\times10^{14}\,\frac{S_k(E)}{U_0}\,\frac{\alpha_k(\mu_k)}{K\mu_k+1} \\[0.6em] &\quad\times\left[1-\left(\frac{E_{\mathrm{sp}}}{E}\right)^{2/3}\right]\left[1-\frac{E_{\mathrm{sp}}}{E}\right]^{2} , \end{aligned}"></div>
+  <p class="dx-p">
+    with <span class="dx-m" data-tex="S_k(E)">S_k</span> the nuclear stopping cross-section, <span class="dx-m" data-tex="U_0">U_0</span> the surface binding energy (4.0&nbsp;eV for carbon and 5.7&nbsp;eV for silicate), <span class="dx-m" data-tex="\mu_k">mu_k</span> the ratio of the grain atom mass to the ion mass and <span class="dx-m" data-tex="K">K</span> a calibration constant. The ion energy includes the electrostatic energy of the grain, <span class="dx-m" data-tex="E = \tfrac12 m_k v^2 + Z_k e Q_{\mathrm g}/a">E</span>, so charge matters. A key refinement in the paper is a <em>finite-size correction</em>: a fast ion can pass right through a grain smaller than its penetration depth and deposit only part of its energy, so small grains sputter more slowly than large ones in very hot gas.
+  </p>
+  <p class="dx-p">
+    The result is the curve below, digitized by eye from Fig. 6 of the paper (gas of metallicity 10<sup>&minus;4</sup> solar, so mostly H and He ions). Sputtering switches on near 10<sup>5</sup> K, peaks between 10<sup>7</sup> and 10<sup>8</sup> K, and then falls for small grains above a few 10<sup>7</sup> K, by more than two orders of magnitude by 10<sup>9</sup> K. Silicates erode faster than carbonaceous grains. The demo uses the small-grain curve below 10&nbsp;nm, the large-grain curve above 100&nbsp;nm and a smooth blend in between, and integrates the radius forward in time as the grain shrinks. It ignores grain charge and the metal ions, so treat the lifetimes as estimates good to a factor of a few.
+  </p>
+
+  <div class="dx-sput">
+    <div class="dx-sput-controls">
+      <div class="dx-seg" id="dx-comp" role="group" aria-label="Grain composition">
+        <button type="button" data-comp="sil" class="dx-seg-on">Silicate</button>
+        <button type="button" data-comp="car">Carbonaceous</button>
+      </div>
+      <label>Gas density <span class="dx-m" data-tex="n_{\mathrm H}">n_H</span> <span class="dx-val" id="dx-n-val"></span>
+        <input type="range" id="dx-n" min="-4" max="4" step="0.05" value="-3"></label>
+      <label>Gas temperature <span class="dx-m" data-tex="T">T</span> <span class="dx-val" id="dx-T-val"></span>
+        <input type="range" id="dx-T" min="1" max="9.5" step="0.05" value="7"></label>
+      <label>Initial grain radius <span class="dx-m" data-tex="a_0">a_0</span> <span class="dx-val" id="dx-a-val"></span>
+        <input type="range" id="dx-a" min="-2.3" max="0" step="0.05" value="-1"></label>
+      <label>Time elapsed <span class="dx-val" id="dx-t-val"></span>
+        <input type="range" id="dx-t" min="0" max="1" step="0.002" value="0"></label>
+    </div>
+    <div class="dx-sput-view">
+      <svg id="dx-grain-sim" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A dust grain being eroded by sputtering"></svg>
+      <div class="dx-sput-read" id="dx-sput-read"></div>
+    </div>
+  </div>
+  <div class="dx-contexts" id="dx-contexts"></div>
+  <div class="dx-fig" style="margin-top:1rem"><svg id="dx-rate" viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Thermal sputtering erosion rate versus gas temperature"></svg></div>
+
+  <h3 class="dx-h3">Destruction in supernova shocks</h3>
+  <p class="dx-p">
+    A supernova blast wave destroys the dust it sweeps over, through non-thermal (inertial) sputtering and grain-grain collisions. This does not depend on the temperature of the gas but on the kinetic energy of the shock. The paper counts the gas mass shocked above 100&nbsp;km/s, <span class="dx-m" data-tex="M_{100} = 6800\,E_{51}\,M_\odot">M_100</span> for a supernova of energy <span class="dx-m" data-tex="E_{51}">E_51</span> in units of 10<sup>51</sup>&nbsp;erg (McKee et al. 1989), and destroys a size-dependent fraction of the dust in it:
+  </p>
+  <div class="dx-eq-block" data-tex="\Delta M_{\mathrm{SN},j} = \varepsilon_{\mathrm{SN}}(a_j)\,\min\!\left(\frac{M_{100}}{M_{\mathrm{gas}}},\,1\right) M_{d,j},"></div>
+  <div class="dx-eq-block" data-tex="\varepsilon_{\mathrm{SN}}(a_j) = 1 - \exp\!\left(-\frac{\delta_{\mathrm{SN},j}}{a_{0.1,j}}\right) ,"></div>
+  <p class="dx-p">
+    where <span class="dx-m" data-tex="a_{0.1,j}">a</span> is the grain radius in units of 0.1&nbsp;&micro;m and the destruction efficiency <span class="dx-m" data-tex="\delta_{\mathrm{SN},j}">delta</span> is 0.10 for carbonaceous grains and 0.15 for silicates. Small grains are decelerated by drag and stay near the shock, where hot gas sputters them quickly, while large grains keep moving through it, so small grains are destroyed more efficiently. Only dust that was already in the ISM is destroyed: the dust newly formed in the supernova ejecta is not.
+  </p>
+
+  <h3 class="dx-h3">Shattering and coagulation</h3>
+  <p class="dx-p">
+    Turbulence makes grains collide at speeds that depend on their sizes and on the Mach number of the gas. What happens next depends on the speed of the collision.
+  </p>
+  <div class="dx-cards dx-cards--wide">
+    <div class="dx-card"><div class="dx-card-title" style="color:#f87171">Shattering: fast collisions</div>
+      If the impact energy is a large fraction of the grain&rsquo;s binding energy, the grain breaks up. With <span class="dx-m" data-tex="\Delta V_{ij}">DV</span> the relative speed and <span class="dx-m" data-tex="Q_D^*">Q</span> the specific energy needed to shatter a grain (8.9&nbsp;&times;&nbsp;10<sup>9</sup>&nbsp;erg/g for carbon, 4.3&nbsp;&times;&nbsp;10<sup>10</sup> for silicate), the mass ejected from grain <span class="dx-m" data-tex="i">i</span> is
+      <div class="dx-eq-block dx-eq-block--sm" data-tex="\phi_{ij} = \frac{E_{\mathrm{imp}}}{m_i Q_D^*}, \quad E_{\mathrm{imp}} = \frac12\frac{m_i m_j}{m_i+m_j}\,\Delta V_{ij}^2, \quad m_{\mathrm{ej}} = \frac{\phi_{ij}}{1+\phi_{ij}}\,m_i ."></div>
+      The fragments follow a power-law size distribution, <span class="dx-m" data-tex="n(a)\propto a^{-3.3}">n ~ a^-3.3</span>. The result is that large grains feed the small-grain and PAH populations from the top down, so shattering is a source of PAHs.</div>
+    <div class="dx-card"><div class="dx-card-title" style="color:#34d399">Coagulation: slow collisions</div>
+      Below a threshold speed, colliding grains stick together instead of bouncing. The threshold depends on the sizes and on material properties (surface energy <span class="dx-m" data-tex="\gamma">gamma</span>, elastic constant <span class="dx-m" data-tex="E">E</span>, density <span class="dx-m" data-tex="s">s</span>):
+      <div class="dx-eq-block dx-eq-block--sm" data-tex="v^{ij}_{\mathrm{coa}} = 21.4\left[\frac{a_i^3+a_j^3}{(a_i+a_j)^3}\right]^{1/2}\frac{\gamma^{5/6}}{E^{1/3}\,R_{ij}^{5/6}\,s^{1/2}}, \quad R_{ij}=\frac{a_i a_j}{a_i+a_j} ."></div>
+      Above 10<sup>4</sup> H cm<sup>&minus;3</sup>, ice mantles raise the threshold by a factor of 4, because ices are stickier. Coagulation depletes small grains in dense gas, and has been invoked to explain the missing 60&nbsp;&micro;m emission and the flattening of the extinction curve.</div>
+    <div class="dx-card"><div class="dx-card-title" style="color:#a78bfa">PAHs: a molecular life cycle</div>
+      PAHs follow their own rules. Small PAHs collide and cluster into large ones, large PAHs freeze onto bigger grains, UV photons dissociate them, and hot ions sputter them. The sputtering time of a PAH of <span class="dx-m" data-tex="N_{\mathrm C}">N_C</span> carbon atoms is the number of atoms divided by the rate at which collisions with electrons and ions remove them:
+      <div class="dx-eq-block dx-eq-block--sm" data-tex="\tau_{\mathrm{spu}}(N_{\mathrm C}) = \frac{N_{\mathrm C}}{2R_{\mathrm{elec}} + \sum_k\left(2R^{k}_{\mathrm e} + R^{k}_{\mathrm n}\right)} ."></div>
+      In the model, small PAHs are fully destroyed in gas shocked above 100&nbsp;km/s and half of the large PAHs are. Because PAHs are fragile, their abundance varies strongly from place to place, which is why the PAH bands are such a useful tracer of the radiation field.</div>
+  </div>
+
+
+  <h3 class="dx-h3">Which process matters where? The budget of a grain</h3>
+  <p class="dx-p">
+    The processes above compete, and which one wins depends on the surroundings. Pick an environment, or move the sliders, and see how fast each process acts on one grain. A <em>rate</em> is the inverse of a timescale: the bars show how many e-folding times of the grain&rsquo;s mass each process packs into a gigayear. Accretion adds mass, thermal sputtering, supernova shocks and astration remove it, and coagulation and shattering only move mass between sizes. The last chart follows the grain&rsquo;s mass in time if the environment stays the same, with and without each side of the balance.
+  </p>
+  <div class="dx-labbox" id="dx-env">
+    <div class="dx-contexts" id="dx-env-presets" style="margin:0 0 0.9rem"></div>
+    <div class="dx-lab-grid">
+      <div class="dx-sput-controls" id="dx-env-ctrl"></div>
+      <div class="dx-sput-read" id="dx-env-summary" style="text-align:left"></div>
+    </div>
+    <div class="dx-fig" style="margin-top:1rem"><svg id="dx-env-rates" viewBox="0 0 900 335" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rate of each process acting on the grain"></svg></div>
+    <div class="dx-fig"><svg id="dx-env-shares" viewBox="0 0 900 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Share of each process in destroying the grain and changing its size"></svg></div>
+    <div class="dx-fig"><svg id="dx-env-hist" viewBox="0 0 900 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mass of the grain over time"></svg></div>
+  </div>
+  <p class="dx-cap" style="max-width:none">
+    What the model assumes: a single grain of the chosen size, a fixed dust-to-metal ratio, and processes acting independently. Accretion follows equations 8 to 10 with the Coulomb factor set to 1, a sticking coefficient that falls above about 300&nbsp;K, and no accretion above 10<sup>4</sup>&nbsp;cm<sup>&minus;3</sup>. Sputtering uses the digitized Fig.&nbsp;6 rates, and its rate is the mass loss rate, three times the radius loss rate used in the lifetimes above. The supernova rate is 0.01 per solar mass of stars formed, each sweeping 6800 solar masses above 100&nbsp;km/s, so gas shocked per Gyr is 68 times the star formation per unit gas mass, but a dense cloud is partly shielded, so use a low value there. Collisions are with 0.1&nbsp;&micro;m grains making up 80% of the dust, at a speed 10&nbsp;km/s&nbsp;&times;&nbsp;<span class="dx-m" data-tex="n_{\mathrm H}^{-1/3}">n^-1/3</span> for shattering and 0.1&nbsp;km/s for coagulation, the simple scalings used in earlier versions of the model. Astration ignores the gas that stars return. It is a map of which process dominates, not a prediction.
+  </p>
+
+  <h3 class="dx-h3">Dust and the gas: heating and H<sub>2</sub> formation</h3>
+  <p class="dx-p">
+    Dust is not only shaped by its surroundings: it also controls the thermal and chemical state of the gas. Two effects matter most in the CALIMA model, and both depend on the grain size distribution, so the processes above feed back on them.
+  </p>
+
+  <h4 class="dx-h4">Photoelectric heating</h4>
+  <p class="dx-p">
+    A far-ultraviolet photon (below the 13.6&nbsp;eV hydrogen ionisation limit) absorbed by a grain or a PAH can eject an electron. If the electron reaches the surface with more energy than the work function of the material <em>and</em> than the electrostatic pull of the grain&rsquo;s charge, it escapes and shares its energy with the gas. This <em>photoelectric heating</em> is the dominant heating source of neutral diffuse gas at roughly solar metallicity, and it is balanced mainly by cooling in the [C&nbsp;II] and [O&nbsp;I] fine-structure lines. For a grain of radius <span class="dx-m" data-tex="a">a</span> the paper sums over its possible charge states <span class="dx-m" data-tex="Q_{\mathrm g}">Q_g</span>, weighted by their probability <span class="dx-m" data-tex="f">f</span>, and defines the net efficiency as the heating that is left after electrons recombine, divided by the radiation the grain absorbs:
+  </p>
+  <div class="dx-eq-block" data-tex="\Gamma_{\mathrm{PEH}}(a) = \sum_{Q_{\mathrm g}} f(Q_{\mathrm g}, a)\left[\Gamma_{\mathrm{PEH,v}} + \Gamma_{\mathrm{pd}}\right], \qquad \epsilon_{\mathrm{PEH}}(a) = \frac{\Gamma_{\mathrm{PEH}}(a) - \Lambda_{\mathrm{rec}}(a)}{P_{\mathrm{abs}}(a)} ,"></div>
+  <p class="dx-p">
+    where <span class="dx-m" data-tex="\Gamma_{\mathrm{PEH,v}}">G_v</span> and <span class="dx-m" data-tex="\Gamma_{\mathrm{pd}}">G_pd</span> come from valence electrons and from photo-detachment of electrons from negatively charged grains, <span class="dx-m" data-tex="\Lambda_{\mathrm{rec}}">L_rec</span> is the energy lost when electrons and ions recombine on the grain, and <span class="dx-m" data-tex="P_{\mathrm{abs}}">P_abs</span> is the absorbed power. The figure shows the result for the paper&rsquo;s radiation field and warm neutral medium. Small grains heat the gas best, because their electrons are close to the surface and the grains stay nearly neutral, while large grains get positively charged and hold on to their electrons. Most of the heating therefore comes from the small-grain end of the size distribution, including PAHs, so shattering, coagulation and PAH destruction all change how the gas is heated.
+  </p>
+  <div class="dx-fig"><svg id="dx-peh" viewBox="0 0 900 410" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Photoelectric heating efficiency versus grain radius"></svg></div>
+  <p class="dx-cap">Net photoelectric heating efficiency against grain radius, read off Fig. 4 of the paper by eye (graphite and silicate grains in the Mathis et al. 1983 radiation field, warm neutral medium).</p>
+
+  <h4 class="dx-h4">Molecular hydrogen formation</h4>
+  <p class="dx-p">
+    Two hydrogen atoms that meet in the gas cannot easily bind into H<sub>2</sub>, because there is nothing to carry off the energy released. A grain surface solves this: the atoms stick, find each other, bind, and the grain absorbs the energy. This <em>catalysis</em> is how nearly all molecular hydrogen in the interstellar medium forms. The paper follows two routes on grains: atoms hopping between weakly bound (physisorbed) sites until they meet, which stops working once the grain is warmer than about 20&nbsp;K because the atoms evaporate, and atoms that react from strongly bound (chemisorbed) sites, which still works on warm grains.
+  </p>
+  <div class="dx-fig"><svg id="dx-h2" viewBox="0 0 900 635" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="How molecular hydrogen forms on a grain surface and on a PAH"></svg></div>
+  <p class="dx-p">
+    It adds a third route on PAHs: a hydrogen atom already bonded to the molecule is pulled off by a second atom, with the rate coefficient
+  </p>
+  <div class="dx-eq-block" data-tex="k_{\mathrm{ER}} \simeq 8.7\times10^{-13}\sqrt{\frac{T}{100\,\mathrm K}}\left(\frac{n_{\mathrm H}}{1\,\mathrm{cm^{-3}}}\right)\ \mathrm{cm^3\,s^{-1}} ,"></div>
+  <p class="dx-p">
+    giving a peak efficiency of about 1% for PAHs. Because the atoms have to land on a surface, the total rate scales with the <em>total grain surface area</em>, not with the dust mass. For a given dust mass in grains of radius <span class="dx-m" data-tex="a">a</span> and density <span class="dx-m" data-tex="s">s</span>, the surface area is <span class="dx-m" data-tex="3M/(sa)">3M/(s a)</span>, so small grains are far more effective than large ones. Try it: the slider moves dust mass between small (10&nbsp;nm) and large (100&nbsp;nm) grains.
+  </p>
+  <div class="dx-sput" style="grid-template-columns: minmax(260px, 1fr) minmax(240px, 1fr)">
+    <div class="dx-sput-controls">
+      <label>Dust mass in small grains <span class="dx-val" id="dx-stl-val"></span>
+        <input type="range" id="dx-stl" min="0.02" max="0.6" step="0.01" value="0.2"></label>
+      <div class="dx-cap" style="margin:0">The Milky Way value is about 20%.</div>
+    </div>
+    <div>
+      <div class="dx-bars" id="dx-stl-bars"></div>
+      <div class="dx-sput-read" id="dx-stl-read" style="text-align:left"></div>
+    </div>
+  </div>
+  <p class="dx-p" style="margin-top:0.8rem">
+    The paper finds the same trend in its simulated galaxies: molecular hydrogen forms much faster where the small-to-large grain ratio is high, and more slowly where the dust is warm. In most of the simulated gas the formation coefficient is far below the canonical Milky Way value of 3.5&nbsp;&times;&nbsp;10<sup>&minus;17</sup>&nbsp;cm<sup>3</sup>&nbsp;s<sup>&minus;1</sup>, and only approaches it in shielded dense clumps, where there is a lot of small dust that stays cold.
+  </p>
+
+  <p class="dx-p dx-note">
+    This page is a start: coagulation, shattering, PAH processing and the dust budget could each get their own demo. Equations and parameters follow the CALIMA paper (Rodríguez Montero, Dubois, Katz, Slyz &amp; Devriendt 2026), simplified for the page, and the sputtering curves are read off its Fig.&nbsp;6 by eye, so they are meant for building intuition rather than for quoting.
+  </p>
+
+  <h2 class="dx-h2">References</h2>
+  <p class="dx-p" style="font-size:0.92rem">
+    The main source is the first entry; the others are the works it builds on for the equations and values used above, as listed in its bibliography. The figures are simplified redrawings, and any error in them is mine.
+  </p>
+  <ol class="dx-refs">
+    <li><strong>Rodríguez Montero, F., Dubois, Y., Katz, H., Slyz, A. &amp; Devriendt, J. (2026)</strong>, <em>CALIMA: on-the-fly dust and PAH evolution for radiation-hydrodynamics galaxy formation simulations</em>, <a href="https://arxiv.org/abs/2602.21790" style="text-decoration:underline">arXiv:2602.21790</a>.</li>
+    <li class="dx-ref-group">Grain sizes, composition and extinction</li>
+    <li>Mathis, J. S., Rumpl, W. &amp; Nordsieck, K. H. (1977), ApJ, 217, 425.</li>
+    <li>Cardelli, J. A., Clayton, G. C. &amp; Mathis, J. S. (1989), ApJ, 345, 245.</li>
+    <li>Zubko, V., Dwek, E. &amp; Arendt, R. G. (2004), ApJS, 152, 211.</li>
+    <li>Draine, B. T. (2011), <em>Physics of the Interstellar and Intergalactic Medium</em>, Princeton University Press.</li>
+    <li class="dx-ref-group">Dust production, accretion and the dust budget</li>
+    <li>Dwek, E. (1998), ApJ, 501, 643.</li>
+    <li>Dubois, Y. et al. (2024), A&amp;A, 687, A240.</li>
+    <li>Weingartner, J. C. &amp; Draine, B. T. (1999), ApJ, 517, 292.</li>
+    <li class="dx-ref-group">Sputtering and destruction in shocks</li>
+    <li>Draine, B. T. &amp; Salpeter, E. E. (1979), ApJ, 231, 77.</li>
+    <li>Tielens, A. G. G. M. et al. (1994), ApJ, 431, 321.</li>
+    <li>Nozawa, T., Kozasa, T. &amp; Habe, A. (2006), ApJ, 648, 435.</li>
+    <li>McKee, C. F. (1989), in <em>Interstellar Dust</em>, IAU Symposium 135, p. 431.</li>
+    <li>Hu, C.-Y., Zhukovska, S., Somerville, R. S. &amp; Naab, T. (2019), MNRAS, 487, 3252.</li>
+    <li>Aoyama, S., Hirashita, H. &amp; Nagamine, K. (2020), MNRAS, 491, 3844.</li>
+    <li class="dx-ref-group">Shattering and coagulation</li>
+    <li>Jones, A. P., Tielens, A. G. G. M., Hollenbach, D. J. &amp; McKee, C. F. (1996), ApJ, 469, 740.</li>
+    <li>Ormel, C. W. &amp; Cuzzi, J. N. (2007), A&amp;A, 466, 413.</li>
+    <li>Kobayashi, H. &amp; Tanaka, H. (2010), Icarus, 206, 735.</li>
+    <li>Hirashita, H. &amp; Li, Z.-Y. (2013), MNRAS, 434, L70.</li>
+    <li>Guillet, V. et al. (2020), A&amp;A, 643, A17.</li>
+    <li class="dx-ref-group">PAHs</li>
+    <li>Tielens, A. G. G. M. (2008), ARA&amp;A, 46, 289.</li>
+    <li>Micelotta, E. R., Jones, A. P. &amp; Tielens, A. G. G. M. (2010), A&amp;A, 510, A36 and A37.</li>
+    <li>Montillaud, J., Joblin, C. &amp; Toublanc, D. (2013), A&amp;A, 552, A15.</li>
+    <li>Montillaud, J. &amp; Joblin, C. (2014), A&amp;A, 567, A45.</li>
+    <li>Andrews, H., Candian, A. &amp; Tielens, A. G. G. M. (2016), A&amp;A, 595, A23.</li>
+    <li class="dx-ref-group">Photoelectric heating and H<sub>2</sub> formation</li>
+    <li>Mathis, J. S., Mezger, P. G. &amp; Panagia, N. (1983), A&amp;A, 128, 212.</li>
+    <li>Bakes, E. L. O. &amp; Tielens, A. G. G. M. (1994), ApJ, 427, 822.</li>
+    <li>Weingartner, J. C. &amp; Draine, B. T. (2001), ApJS, 134, 263.</li>
+    <li>Berné, O., Foschino, S., Jalabert, F. &amp; Joblin, C. (2022), A&amp;A, 667, A159.</li>
+    <li>Cazaux, S. &amp; Tielens, A. G. G. M. (2002), ApJ, 575, L29; (2004), ApJ, 604, 222.</li>
+  </ol>
+</div>
+
+<style>
+  .dx-wrap * { font-style: normal; }
+  .dx-wrap em, .dx-wrap i { font-style: italic; }
+  .dx-wrap { width: 100%; max-width: 900px; margin: 0 auto; padding: 0 1rem 4rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; font-size: 1rem; line-height: 1.6; }
+  .dx-title { margin: 0 0 1rem; font-size: 2.2rem; font-weight: 700; color: #e2e8f0; text-align: center; }
+  .dx-box { max-width: 760px; margin: 0 auto 2.5rem; padding: 1.1rem 1.4rem 0.5rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.75rem; background: rgba(148,163,184,0.1); }
+  .dx-box p { margin: 0 0 0.7rem; }
+  .dx-h2 { margin: 3rem 0 0.8rem; font-size: 1.7rem; font-weight: 700; color: #e2e8f0; padding-bottom: 0.4rem; border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, #fb923c, #a78bfa, transparent) 1; }
+  .dx-h4 { margin: 1.4rem 0 0.4rem; font-size: 1.08rem; font-weight: 700; color: #cbd5e1; }
+  .dx-bars { margin-bottom: 0.6rem; }
+  .dx-bar-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.25rem 0; font-size: 0.85rem; }
+  .dx-bar-row span:first-child { width: 7.5em; color: #94a3b8; }
+  .dx-bar-track { flex: 1; height: 14px; border-radius: 7px; background: rgba(148,163,184,0.15); overflow: hidden; }
+  .dx-bar-fill { height: 100%; border-radius: 7px; transition: width 0.15s ease; }
+  .dx-refs { max-width: 760px; margin: 0.5rem 0 0; padding-left: 0; list-style: none; font-size: 0.9rem; line-height: 1.5; color: #94a3b8; }
+  .dx-refs li { margin: 0.25rem 0; padding-left: 1.2rem; text-indent: -1.2rem; }
+  .dx-refs li.dx-ref-group { list-style: none; padding-left: 0; text-indent: 0; margin: 1rem 0 0.2rem 0; font-weight: 700; color: #cbd5e1; font-size: 0.95rem; }
+  .dx-labbox { padding: 1rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); margin: 0.6rem 0 1rem; }
+  .dx-lab-blurb { margin: 0 0 0.7rem; font-size: 0.93rem; line-height: 1.5; }
+  #dx-lab-cv { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; border-radius: 0.5rem; background: #0b1220; cursor: pointer; }
+  .dx-lab-bar { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin: 0.5rem 0 0.8rem; font-size: 0.85rem; color: #94a3b8; }
+  .dx-lab-grid { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr); gap: 1.2rem; align-items: start; }
+  @media (max-width: 700px) { .dx-lab-grid { grid-template-columns: 1fr; } }
+  .dx-ctx.dx-seg-on { border-color: #fbbf24; background: rgba(251,191,36,0.15); color: #fbbf24; }
+  /* ---- collapsible sections */
+  .dx-sec-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.42s ease; }
+  .dx-sec-inner { min-height: 0; }
+  .dx-sec--closed > .dx-sec-body { grid-template-rows: 0fr; }
+  .dx-sec--closed > .dx-sec-body > .dx-sec-inner, .dx-sec--anim > .dx-sec-body > .dx-sec-inner { overflow: hidden; }
+  .dx-sec--closed > .dx-sec-body > .dx-sec-inner { visibility: hidden; transition: visibility 0s 0.42s; }
+  .dx-h2[role=button], .dx-h3[role=button] { cursor: pointer; user-select: none; scroll-margin-top: 90px; display: flex; align-items: center; transition: color 0.2s ease; }
+  .dx-h2[role=button]:hover, .dx-h3[role=button]:hover { color: #fbbf24; }
+  .dx-h2[role=button]::before, .dx-h3[role=button]::before { content: ''; flex: none; width: 0.42em; height: 0.42em; margin: 0 0.75rem 0.1em 0.2rem; border-right: 3px solid currentColor; border-bottom: 3px solid currentColor; transform: rotate(45deg); transition: transform 0.3s ease; opacity: 0.7; }
+  .dx-h2[role=button][aria-expanded=false]::before, .dx-h3[role=button][aria-expanded=false]::before { transform: rotate(-45deg); }
+  .dx-h3[role=button]::before { width: 0.36em; height: 0.36em; border-width: 2.5px; }
+  .dx-h2[role=button][aria-expanded=false] { opacity: 0.8; }
+  @keyframes dx-flash { 0% { background: rgba(251,191,36,0.28); } 100% { background: rgba(251,191,36,0); } }
+  .dx-flash { animation: dx-flash 1.6s ease-out; border-radius: 0.4rem; }
+  .dx-sec-2 + .dx-sec-2 { margin-top: 0; }
+
+  /* ---- the map */
+  .dx-map { position: relative; margin: 0 auto 2.6rem; max-width: 880px; padding: 1.3rem 1.5rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 1rem; overflow: hidden;
+    background:
+      radial-gradient(1.3px 1.3px at 12% 22%, rgba(226,232,240,0.55), transparent), radial-gradient(1px 1px at 31% 71%, rgba(226,232,240,0.4), transparent),
+      radial-gradient(1.2px 1.2px at 58% 18%, rgba(226,232,240,0.5), transparent), radial-gradient(1px 1px at 77% 62%, rgba(226,232,240,0.4), transparent),
+      radial-gradient(1.4px 1.4px at 91% 28%, rgba(226,232,240,0.5), transparent), radial-gradient(1px 1px at 46% 90%, rgba(226,232,240,0.35), transparent),
+      radial-gradient(420px 220px at 12% 0%, rgba(251,146,60,0.13), transparent), radial-gradient(420px 220px at 55% 0%, rgba(56,189,248,0.11), transparent), radial-gradient(420px 240px at 100% 10%, rgba(167,139,250,0.14), transparent),
+      linear-gradient(180deg, rgba(30,41,59,0.75), rgba(15,23,42,0.7)); }
+  .dx-map-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #e2e8f0; }
+  .dx-map-title > span:first-child { background: linear-gradient(90deg, #fb923c, #38bdf8 55%, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .dx-map-btns button { margin-left: 0.4rem; padding: 0.2rem 0.75rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #cbd5e1; font-family: inherit; font-size: 0.78rem; letter-spacing: 0.02em; text-transform: none; font-weight: 400; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+  .dx-map-btns button:hover { border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .dx-map-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; position: relative; }
+  .dx-map-col { position: relative; --c: #fb923c; }
+  .dx-map-col::after { content: ''; position: absolute; top: 21px; left: calc(100% - 46px); right: -1.1rem; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--c)); opacity: 0.8; }
+  .dx-map-col:last-child::after { display: none; }
+  .dx-map-col::before { content: ''; position: absolute; top: 46px; bottom: 6px; left: 20px; width: 3px; border-radius: 2px; background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 25%, transparent)); }
+  .dx-map-chap { display: flex; align-items: center; gap: 0.7rem; text-decoration: none !important; color: #e2e8f0 !important; font-weight: 700; font-size: 1.02rem; line-height: 1.2; position: relative; z-index: 1; }
+  .dx-map-badge { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--c); background: #0f172a; color: var(--c); font-size: 1.25rem; box-shadow: 0 0 0 4px rgba(15,23,42,0.9), 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .dx-map-chap:hover .dx-map-badge { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(15,23,42,0.9), 0 0 26px color-mix(in srgb, var(--c) 75%, transparent); }
+  .dx-map-chaptxt { margin-right: 1.4rem; }
+  .dx-map-stops { list-style: none; margin: 0.9rem 0 0; padding: 0 0 0 44px; position: relative; z-index: 1; }
+  .dx-map-stops li { position: relative; margin: 0.15rem 0; }
+  .dx-map-stops li::before { content: ''; position: absolute; left: -28px; top: 50%; width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%; background: #0f172a; border: 2.5px solid var(--c); transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+  .dx-map-stops li:hover::before { transform: scale(1.35); background: var(--c); }
+  .dx-map-stops a, .dx-map-ref { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.28rem 0.5rem; border-radius: 0.4rem; text-decoration: none !important; color: #cbd5e1 !important; font-size: 0.92rem; line-height: 1.25; transition: background 0.15s ease, color 0.15s ease; }
+  .dx-map-stops a:hover, .dx-map-ref:hover { background: color-mix(in srgb, var(--c, #94a3b8) 16%, transparent); color: #f8fafc !important; }
+  .dx-map-live { font-style: normal; color: #fbbf24; font-size: 0.78rem; text-shadow: 0 0 8px rgba(251,191,36,0.7); }
+  .dx-map-stops a.dx-map-active, .dx-map-chap.dx-map-active .dx-map-chaptxt { color: #fbbf24 !important; font-weight: 700; }
+  .dx-map-stops li:has(.dx-map-active)::before { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251,191,36,0.8); }
+  .dx-map-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.9rem; padding-top: 0.7rem; border-top: 1px solid rgba(148,163,184,0.18); font-size: 0.82rem; color: #94a3b8; }
+  .dx-map-foot .dx-map-ref { display: inline-flex; font-size: 0.85rem; padding: 0.2rem 0.8rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; }
+  .dx-map-foot .dx-map-ref.dx-map-active { color: #fbbf24 !important; border-color: #fbbf24; }
+  @media (max-width: 760px) {
+    .dx-map-cols { grid-template-columns: 1fr; gap: 1.6rem; }
+    .dx-map-col::after { display: none; }
+  }
+  .dx-float { position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 40; display: flex; align-items: center; gap: 0.5rem; max-width: min(88vw, 340px); padding: 0.5rem 1rem 0.5rem 0.8rem; border: 1px solid rgba(148,163,184,0.45); border-radius: 999px; background: rgba(15,23,42,0.92); backdrop-filter: blur(6px); color: #e2e8f0; font-family: 'STIX Two Text', serif; font-size: 0.92rem; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,0.45); opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.15s ease; }
+  .dx-float--on { opacity: 1; transform: none; pointer-events: auto; }
+  .dx-float:hover { border-color: #fbbf24; }
+  .dx-float-arrow { color: #fbbf24; font-weight: 700; }
+  .dx-float-sec { color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 1px solid rgba(148,163,184,0.4); padding-left: 0.55rem; }
+  .dx-float-sec:empty { display: none; }
+  .dx-h3 { margin: 2rem 0 0.6rem; font-size: 1.25rem; font-weight: 700; color: #e2e8f0; }
+  .dx-p { margin: 0 0 0.8rem; max-width: 760px; }
+  .dx-note { color: #94a3b8; margin-top: 1.5rem; }
+  .dx-cap { margin: -0.4rem 0 0.9rem; font-size: 0.88rem; color: #94a3b8; max-width: 760px; }
+  .dx-eq-block { margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
+  .dx-eq-block--sm { margin: 0.5rem 0; font-size: 0.88rem; }
+  .dx-val { display: inline-block; min-width: 5.5em; font-weight: 700; color: #fbbf24; }
+  .dx-val .katex, .dx-sput-read .katex { font-size: 1.05em; }
+  .dx-wrap .katex { color: inherit; }
+  .dx-wrap .dx-eq-block .katex-display { margin: 0.4em 0; }
+
+  .dx-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.9rem; margin: 0.6rem 0 1rem; }
+  .dx-cards--wide { grid-template-columns: 1fr; }
+  .dx-card { padding: 0.85rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.7rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); font-size: 0.93rem; line-height: 1.5; }
+  .dx-card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+
+  .dx-fig { margin: 0.5rem 0 1rem; }
+  .dx-fig--rel { position: relative; }
+  .dx-fig svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .dx-detail { padding: 0.85rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.7rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); font-size: 0.95rem; line-height: 1.5; min-height: 4.5rem; }
+  .dx-detail strong { font-size: 1.05rem; }
+  .dx-muted { color: #64748b; }
+  .dx-tip { position: absolute; display: none; pointer-events: none; z-index: 5; max-width: 320px; padding: 0.55rem 0.8rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 0.45rem; background: rgba(15,23,42,0.97); font-size: 0.85rem; line-height: 1.45; color: #e2e8f0; }
+  .dx-tip--on { display: block; }
+
+  .dx-node { cursor: pointer; }
+  .dx-node circle.dx-node-c { transition: stroke-width 0.15s ease, fill 0.15s ease; }
+  .dx-node:hover circle.dx-node-c, .dx-node--sel circle.dx-node-c { stroke-width: 4; }
+  .dx-node-text { font-size: 17px; font-weight: 700; fill: #e2e8f0; text-anchor: middle; pointer-events: none; }
+  .dx-node-sub { font-size: 13px; fill: #94a3b8; text-anchor: middle; pointer-events: none; }
+  .dx-edge-text { font-size: 14px; fill: #94a3b8; text-anchor: middle; }
+  .dx-axis-text { font-size: 17px; fill: #94a3b8; text-anchor: middle; }
+  .dx-axis-title { font-size: 16px; fill: #cbd5e1; text-anchor: middle; }
+  .dx-grid { stroke: #1e293b; stroke-width: 1; }
+  .dx-bar { cursor: default; opacity: 0.85; transition: opacity 0.15s ease; }
+  .dx-bar:hover { opacity: 1; stroke: #f8fafc; stroke-width: 2; }
+  .dx-bar-label { font-size: 19px; fill: #e2e8f0; text-anchor: end; }
+  .dx-lab { font-size: 16px; fill: #e2e8f0; }
+  .dx-lab-sub { font-size: 15px; fill: #94a3b8; }
+  .dx-fo { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #cbd5e1; font-size: 20px; line-height: 1; white-space: nowrap; }
+  .dx-fo--sub { color: #94a3b8; font-size: 16px; }
+
+  .dx-controls { display: flex; align-items: center; gap: 0.8rem; max-width: 600px; margin: 0.4rem 0; }
+  .dx-controls input[type=range] { flex: 1; accent-color: #fbbf24; }
+
+  .dx-table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .dx-table-wrap--sm { max-width: 560px; }
+  .dx-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .dx-table--sm { font-size: 0.9rem; }
+  .dx-table:not(.dx-table--sm) { min-width: 700px; }
+  .dx-table th { text-align: left; padding: 0.5rem 0.7rem; color: #94a3b8; border-bottom: 1px solid rgba(148,163,184,0.35); }
+  .dx-table td { padding: 0.55rem 0.7rem; border-bottom: 1px solid rgba(148,163,184,0.14); vertical-align: top; }
+  .dx-table--sm th, .dx-table--sm td { padding: 0.35rem 0.5rem; }
+  .dx-table td:first-child { font-weight: 700; color: #e2e8f0; }
+  .dx-table:not(.dx-table--sm) td:first-child { white-space: normal; min-width: 9.5rem; }
+  .dx-table td:last-child { color: #94a3b8; white-space: nowrap; }
+  .dx-table--sm td:last-child { color: inherit; white-space: normal; }
+  .dx-table tbody tr:hover { background: rgba(148,163,184,0.07); }
+  .dx-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; }
+
+  .dx-sput { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(240px, 300px); gap: 1.2rem; align-items: center; padding: 1rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); }
+  .dx-sput-controls label { display: block; margin-bottom: 0.7rem; font-size: 0.95rem; }
+  .dx-sput-controls input[type=range] { display: block; width: 100%; accent-color: #fbbf24; margin-top: 0.15rem; }
+  .dx-seg { display: inline-flex; margin-bottom: 0.9rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 999px; overflow: hidden; }
+  .dx-seg button { padding: 0.3rem 1rem; border: 0; background: transparent; color: #cbd5e1; font-family: inherit; font-size: 0.9rem; cursor: pointer; }
+  .dx-seg button.dx-seg-on { background: rgba(251,191,36,0.2); color: #fbbf24; font-weight: 700; }
+  .dx-sput-view { text-align: center; }
+  #dx-grain-sim { display: block; width: 100%; max-width: 260px; height: auto; margin: 0 auto; }
+  .dx-sput-read { font-size: 0.92rem; line-height: 1.45; margin-top: 0.3rem; }
+  .dx-sput-read b { color: #fbbf24; }
+  .dx-contexts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 0; }
+  .dx-ctx { padding: 0.3rem 0.8rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #e2e8f0; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+  .dx-ctx:hover { border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  @media (max-width: 700px) { .dx-sput { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  var wrap = document.querySelector('.dx-wrap');
+  function $(id) { return wrap.querySelector(id); }
+
+  // ---------------------------------------------------------- mathematics
+  // tex() returns KaTeX markup (or the raw string if KaTeX did not load).
+  function tex(s, display) {
+    if (!window.katex) return s;
+    try { return window.katex.renderToString(s, { throwOnError: false, displayMode: !!display }); } catch (e) { return s; }
+  }
+  // Math label inside an SVG: a foreignObject so KaTeX fonts are used there too.
+  function svgMath(parent, x, y, w, h, s, cls, rot) {
+    var fo = sv('foreignObject', { x: x, y: y, width: w, height: h });
+    if (rot) fo.setAttribute('transform', rot);
+    var d = document.createElement('div');
+    d.className = 'dx-fo' + (cls ? ' ' + cls : '');
+    d.innerHTML = tex(s);
+    fo.appendChild(d); parent.appendChild(fo);
+    return fo;
+  }
+  function renderAll(attempt) {
+    if (!window.katex) { if ((attempt || 0) < 20) setTimeout(function () { renderAll((attempt || 0) + 1); }, 100); return; }
+    wrap.querySelectorAll('.dx-eq-block[data-tex]').forEach(function (el) {
+      try { window.katex.render(el.getAttribute('data-tex'), el, { throwOnError: false, displayMode: true }); } catch (e) {}
+    });
+    wrap.querySelectorAll('.dx-m[data-tex]').forEach(function (el) {
+      try { window.katex.render(el.getAttribute('data-tex'), el, { throwOnError: false, displayMode: false }); } catch (e) {}
+    });
+  }
+  renderAll(0);
+  function pow10Tex(x) {                    // 10^x as m \times 10^e
+    var e = Math.floor(x + 1e-9), m = Math.pow(10, x - e);
+    if (m >= 9.95) { m = 1; e += 1; }
+    return (Math.abs(m - 1) < 0.05 ? '' : m.toFixed(1) + '\\times') + '10^{' + e + '}';
+  }
+
+  // --------------------------------------------------------- dust cycle
+  var cycle = $('#dx-cycle'), cycleDetail = $('#dx-cycle-detail');
+  var NODES = [
+    { id: 'stars', x: 450, y: 80, lines: ['Evolved stars'], color: '#fb923c', name: 'Evolved stars', sub: 'AGB, supernovae',
+      text: 'Dust condenses in the cooling winds of AGB stars and in supernova ejecta, the only places where grains are born from atoms. Silicates form where oxygen is left over (C/O below 1) and carbon dust where carbon is left over (C/O at least 1). Core-collapse supernovae make both, and the model puts their dust in large grains. Carbon-rich AGB winds also seed a few PAHs.' },
+    { id: 'ism', x: 800, y: 235, lines: ['Diffuse ISM'], color: '#38bdf8', name: 'Diffuse ISM', sub: 'neutral gas',
+      text: 'Grains mix into the diffuse gas, where turbulence makes them collide. Fast collisions shatter large grains into small grains and PAHs, slow ones make them stick, and UV radiation destroys PAHs. The cold, warm and hot phases of the diffuse medium therefore carry different grain populations.' },
+    { id: 'clouds', x: 690, y: 440, lines: ['Molecular', 'clouds'], color: '#34d399', name: 'Molecular clouds', sub: 'cold, dense',
+      text: 'In cold, dense gas, metals accrete onto grains, small grains growing fastest. From about 10³ to 10⁴ H atoms per cm³, ice mantles form on the grains, which in the model switches off further accretion of refractory elements. Grains coagulate, small PAHs cluster and freeze onto grains, and molecular hydrogen forms on grain surfaces. This growth in the ISM is the main way dust mass builds up in metal-rich galaxies.' },
+    { id: 'sf', x: 210, y: 440, lines: ['Star and', 'planet', 'formation'], color: '#a78bfa', name: 'Star and planet formation', sub: 'astration, discs',
+      text: 'Collapsing cloud cores form stars and discs. Part of the dust is swallowed by the star (astration), and part coagulates into pebbles and eventually planetesimals and planets. Ices evaporate inside the snow line, so discs show different grains at different distances.' },
+    { id: 'shock', x: 450, y: 265, lines: ['Shocks and', 'hot gas'], color: '#f87171', name: 'Shocks and hot gas', sub: 'destruction',
+      text: 'Supernova blast waves sweep through the ISM. In gas shocked above about 100 km/s, grains are destroyed by non-thermal sputtering and by collisions with each other, small grains most efficiently. Afterwards the hot gas (above about 10⁵ K) keeps eroding grains by thermal sputtering, returning their atoms to the gas.' }
+  ];
+  var EDGES = [
+    ['stars', 'ism', 'stellar mass loss', 0, 1, 700, 128],
+    ['ism', 'clouds', 'gas cools and collapses', 0, 1, 830, 352],
+    ['clouds', 'sf', 'star formation', 0, 1],
+    ['sf', 'stars', 'stellar evolution', 0, -1, 232, 262],
+    ['ism', 'shock', 'shocks destroy grains', -26, -1, 625, 214],
+    ['shock', 'ism', 'atoms return to the gas', -26, 1, 625, 306]
+  ];
+  var byId = {}; NODES.forEach(function (n) { byId[n.id] = n; });
+  var defs = sv('defs', {});
+  var mk = sv('marker', { id: 'dx-arr', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+  mk.appendChild(sv('path', { d: 'M0,0 L10,5 L0,10 Z', fill: '#94a3b8' }));
+  defs.appendChild(mk); cycle.appendChild(defs);
+  var R = 66;
+  EDGES.forEach(function (e) {
+    var a = byId[e[0]], b = byId[e[1]], dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy);
+    var ux = dx / d, uy = dy / d, px = -uy, py = ux, bend = e[3];
+    var sx = a.x + ux * R, sy = a.y + uy * R, ex = b.x - ux * (R + 8), ey = b.y - uy * (R + 8);
+    var mx = (sx + ex) / 2 + px * bend, my = (sy + ey) / 2 + py * bend;
+    var curved = bend !== 0;
+    cycle.appendChild(sv('path', { d: 'M' + sx + ',' + sy + ' Q' + mx + ',' + my + ' ' + ex + ',' + ey, fill: 'none', stroke: curved ? '#64748b' : '#94a3b8', 'stroke-width': 2.2, 'stroke-dasharray': curved ? '6 5' : '0', 'marker-end': 'url(#dx-arr)' }));
+    // label on the outer side of the arrow (side = +1 or -1 relative to the left normal)
+    var off = (curved ? Math.abs(bend) * 0.5 : 0) + 18, qx = (sx + ex) / 2 + px * (curved ? bend * 0.5 : 0), qy = (sy + ey) / 2 + py * (curved ? bend * 0.5 : 0);
+    if (e[5]) { cycle.appendChild(sv('text', { class: 'dx-edge-text', x: e[5], y: e[6] }, e[2])); return; }
+    cycle.appendChild(sv('text', { class: 'dx-edge-text', x: qx + px * off * e[4] * (curved ? Math.sign(bend) * -1 : 1), y: qy + py * off * e[4] * (curved ? Math.sign(bend) * -1 : 1) + 4 }, e[2]));
+  });
+  NODES.forEach(function (n) {
+    var g = sv('g', { class: 'dx-node', tabindex: 0 });
+    g.appendChild(sv('circle', { class: 'dx-node-c', cx: n.x, cy: n.y, r: R, fill: '#0f172a', stroke: n.color, 'stroke-width': 2.5 }));
+    var y0 = n.y - (n.lines.length - 1) * 9 - (n.sub ? 5 : 0);
+    n.lines.forEach(function (ln, i) { g.appendChild(sv('text', { class: 'dx-node-text', x: n.x, y: y0 + i * 19 + 5 }, ln)); });
+    g.appendChild(sv('text', { class: 'dx-node-sub', x: n.x, y: y0 + n.lines.length * 19 + 6 }, n.sub));
+    g.addEventListener('click', function () { select(n); });
+    g.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') select(n); });
+    n.g = g; cycle.appendChild(g);
+  });
+  function select(n) {
+    NODES.forEach(function (m) { m.g.classList.toggle('dx-node--sel', m === n); });
+    cycleDetail.innerHTML = '<strong style="color:' + n.color + '">' + n.name + '</strong><br>' + n.text;
+  }
+  cycleDetail.innerHTML = '<span class="dx-muted">Click a stage of the cycle.</span>';
+
+  // --------------------------------------------------------- size ladder
+  // Populations and ranges from Table 1 of the CALIMA paper (micrometres).
+  var sizes = $('#dx-sizes'), sizeTip = $('#dx-sizes-tip');
+  var A_MIN = 2e-4, A_MAX = 2, SX0 = 270, SX1 = 940;
+  function sx(a) { return SX0 + (Math.log(a) - Math.log(A_MIN)) / (Math.log(A_MAX) - Math.log(A_MIN)) * (SX1 - SX0); }
+  var POP = [
+    { name: 'Small PAHs', a0: 5e-4, lo: 3e-4, hi: 1e-3, color: '#a78bfa',
+      tip: 'Circumcoronene molecules (C₅₄H₁₈): flat sheets of 54 carbon atoms with a radius of about 0.5 nm. They glow in the PAH bands between 3 and 20 µm, dominate the photoelectric heating of neutral gas, and are destroyed by hard UV and hot gas.' },
+    { name: 'Large PAHs', a0: 1e-3, lo: 3e-4, hi: 9e-3, color: '#c4b5fd',
+      tip: 'Clusters of several circumcoronene molecules (418 carbon atoms, radius about 1 nm), held together by van der Waals forces. They form when small PAHs collide in cold gas, survive UV light better than small PAHs, and produce the plateau of emission under the PAH bands.' },
+    { name: 'Small carbonaceous', a0: 1e-2, lo: 1e-3, hi: 1e-1, color: '#f472b6',
+      tip: 'Amorphous carbon grains centred on 10 nm. Their large surface for their mass makes them important for forming H₂ and for heating the gas, and grains of 5 to 30 nm contribute the mid-infrared continuum.' },
+    { name: 'Large carbonaceous', a0: 1e-1, lo: 5e-3, hi: 1.0, color: '#fb923c',
+      tip: 'Amorphous carbon grains centred on 0.1 µm. Together with the large silicates they carry most of the dust mass and the optical extinction. The sharp cut-off at larger sizes is required by the near-infrared and optical extinction slope and by the scattering of galactic light.' },
+    { name: 'Small silicates', a0: 5e-3, lo: 5e-4, hi: 1e-1, color: '#38bdf8',
+      tip: 'Olivine-like silicate grains (MgFeSiO₄) centred on 5 nm. Whether silicates exist at these sizes decides whether warm dust shows the 9.7 and 18 µm emission features of O–Si–O bending.' },
+    { name: 'Large silicates', a0: 1e-1, lo: 5e-3, hi: 1.0, color: '#7dd3fc',
+      tip: 'Olivine-like silicate grains centred on 0.1 µm. With the large carbonaceous grains they carry most of the dust mass, and they are eroded faster than carbon grains of the same size in hot gas.' }
+  ];
+  var rowH = 44, top = 40;
+  [[0.001, '1 nm'], [0.01, '10 nm'], [0.1, '100 nm'], [1, '1 µm']].forEach(function (t) {
+    sizes.appendChild(sv('line', { class: 'dx-grid', x1: sx(t[0]), y1: top - 10, x2: sx(t[0]), y2: top + POP.length * rowH }));
+    sizes.appendChild(sv('text', { class: 'dx-axis-text', x: sx(t[0]), y: top + POP.length * rowH + 20 }, t[1]));
+  });
+  svgMath(sizes, (SX0 + SX1) / 2 - 90, top + POP.length * rowH + 30, 180, 30, '\\text{Grain radius } a', 'dx-fo');
+  // visible light marker
+  sizes.appendChild(sv('line', { x1: sx(0.5), y1: top - 12, x2: sx(0.5), y2: top + POP.length * rowH, stroke: '#fbbf24', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }));
+  sizes.appendChild(sv('text', { class: 'dx-axis-text', x: sx(0.5), y: top - 18, style: 'fill:#fbbf24' }, 'wavelength of visible light'));
+  POP.forEach(function (p, i) {
+    var y = top + i * rowH + 6;
+    sizes.appendChild(sv('text', { class: 'dx-bar-label', x: SX0 - 12, y: y + 17 }, p.name));
+    var r = sv('rect', { class: 'dx-bar', x: sx(p.lo), y: y, width: Math.max(4, sx(p.hi) - sx(p.lo)), height: 26, rx: 5, fill: p.color });
+    sizes.appendChild(r);
+    sizes.appendChild(sv('rect', { x: sx(p.a0) - 1.5, y: y + 3, width: 3, height: 20, rx: 1.5, fill: '#f8fafc', 'pointer-events': 'none' }));
+    r.addEventListener('mousemove', function (ev) {
+      var box = sizes.parentNode.getBoundingClientRect();
+      sizeTip.textContent = p.tip; sizeTip.classList.add('dx-tip--on');
+      var x = ev.clientX - box.left + 14; if (x + 330 > box.width) x = ev.clientX - box.left - 334;
+      sizeTip.style.left = Math.max(0, x) + 'px'; sizeTip.style.top = (ev.clientY - box.top + 14) + 'px';
+    });
+    r.addEventListener('mouseleave', function () { sizeTip.classList.remove('dx-tip--on'); });
+  });
+
+  // --------------------------------------------------------- dust structures
+  var gr = $('#dx-grain');
+  (function () {
+    function heading(x, y, n, t) {
+      gr.appendChild(sv('text', { x: x, y: y, style: 'fill:#94a3b8;font-size:17px;font-weight:700;letter-spacing:0.04em' }, n + '   ' + t.toUpperCase()));
+    }
+    function labelBlock(x, y, col, title, subs) {
+      gr.appendChild(sv('text', { class: 'dx-lab', x: x, y: y, style: 'fill:' + col + ';font-weight:700' }, title));
+      subs.forEach(function (t, k) { var fo = svgMath(gr, x, y + 4 + k * 22, 400, 22, t, 'dx-fo dx-fo--sub'); fo.firstChild.style.justifyContent = 'flex-start'; });
+    }
+    function leader(x1, y1, x2, y2, col) {
+      gr.appendChild(sv('line', { x1: x1, y1: y1, x2: x2, y2: y2, stroke: '#64748b', 'stroke-width': 1.2 }));
+      gr.appendChild(sv('circle', { cx: x1, cy: y1, r: 3, fill: col }));
+    }
+    // horizontal divider between the two rows
+    gr.appendChild(sv('line', { x1: 0, y1: 322, x2: 900, y2: 322, stroke: '#1e293b', 'stroke-width': 1.5 }));
+
+    // 1. layered grain
+    heading(10, 26, '1', 'A layered grain');
+    var cx = 150, cy = 180, k;
+    gr.appendChild(sv('circle', { cx: cx, cy: cy, r: 118, fill: 'rgba(94,234,212,0.14)', stroke: '#5eead4', 'stroke-width': 2 }));
+    for (k = 0; k < 15; k++) {                                   // water molecules in the ice
+      var ang = k * 2.399963 + 0.4, rr = 96 + (k % 3) * 8, mx = cx + rr * Math.cos(ang), my = cy + rr * Math.sin(ang);
+      gr.appendChild(sv('circle', { cx: mx.toFixed(1), cy: my.toFixed(1), r: 4.6, fill: '#f87171' }));
+      gr.appendChild(sv('circle', { cx: (mx + 5.2 * Math.cos(ang + 2.0)).toFixed(1), cy: (my + 5.2 * Math.sin(ang + 2.0)).toFixed(1), r: 2.6, fill: '#e2e8f0' }));
+      gr.appendChild(sv('circle', { cx: (mx + 5.2 * Math.cos(ang - 0.6)).toFixed(1), cy: (my + 5.2 * Math.sin(ang - 0.6)).toFixed(1), r: 2.6, fill: '#e2e8f0' }));
+    }
+    gr.appendChild(sv('circle', { cx: cx, cy: cy, r: 84, fill: 'rgba(251,146,60,0.22)', stroke: '#fb923c', 'stroke-width': 2 }));
+    for (k = 0; k < 16; k++) {                                   // carbon-rich organic mantle
+      var a2 = k * 2.399963, r2 = 62 + (k % 3) * 7;
+      gr.appendChild(sv('circle', { cx: (cx + r2 * Math.cos(a2)).toFixed(1), cy: (cy + r2 * Math.sin(a2)).toFixed(1), r: 2.6, fill: '#fdba74' }));
+    }
+    gr.appendChild(sv('circle', { cx: cx, cy: cy, r: 54, fill: 'rgba(56,189,248,0.3)', stroke: '#38bdf8', 'stroke-width': 2 }));
+    for (k = 0; k < 22; k++) {                                   // lattice dots in the core
+      var a3 = k * 2.399963, r3 = 8 + 40 * Math.sqrt((k + 0.5) / 22);
+      gr.appendChild(sv('circle', { cx: (cx + r3 * Math.cos(a3)).toFixed(1), cy: (cy + r3 * Math.sin(a3)).toFixed(1), r: 2, fill: '#7dd3fc', opacity: 0.8 }));
+    }
+    gr.appendChild(sv('text', { class: 'dx-node-text', x: cx, y: cy + 5, style: 'font-size:15px' }, 'Core'));
+    [[-58, 118, 300, 60], [-14, 84, 300, 140], [34, 54, 300, 220]].forEach(function (l, i) {
+      var an = l[0] * Math.PI / 180;
+      leader(cx + l[1] * Math.cos(an), cy + l[1] * Math.sin(an), l[2] - 8, l[3] - 5, ['#5eead4', '#fb923c', '#38bdf8'][i]);
+    });
+    labelBlock(300, 60, '#5eead4', 'Ice mantle †', ['\\text{water, CO and other ices freeze out}', '\\text{in cold, dense gas (} 10^{3}\\,\\mathrm{cm^{-3}}\\text{ and up)}']);
+    labelBlock(300, 140, '#fb923c', 'Organic mantle †', ['\\text{carbon-rich layer made by}', '\\text{ultraviolet processing of the ices}']);
+    labelBlock(300, 220, '#38bdf8', 'Refractory core', ['\\text{olivine silicate (}\\mathrm{MgFeSiO_4}\\text{) or}', '\\text{amorphous carbon}']);
+
+    // PAH helper: circumcoronene (19 fused rings, C54H18)
+    function pah(px, py, A, parent) {
+      var S = Math.sqrt(3) * A, centers = [], verts = {}, i, j;
+      for (i = -2; i <= 2; i++) for (j = -2; j <= 2; j++) if (Math.abs(i + j) <= 2)
+        centers.push([S * (i * Math.cos(Math.PI / 6) + j * Math.cos(Math.PI / 2)), S * (i * Math.sin(Math.PI / 6) + j * Math.sin(Math.PI / 2))]);
+      centers.forEach(function (c) {
+        var pts = [];
+        for (var q = 0; q < 6; q++) {
+          var t = 60 * q * Math.PI / 180, vx = c[0] + A * Math.cos(t), vy = c[1] + A * Math.sin(t);
+          pts.push((px + vx).toFixed(1) + ',' + (py + vy).toFixed(1));
+          var key = vx.toFixed(0) + ',' + vy.toFixed(0); verts[key] = verts[key] || { x: vx, y: vy, n: 0 }; verts[key].n++;
+        }
+        gr.appendChild(sv('polygon', { points: pts.join(' '), fill: 'rgba(167,139,250,0.12)', stroke: '#c4b5fd', 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+      });
+      Object.keys(verts).forEach(function (kk) {
+        var v = verts[kk];
+        if (v.n === 1) {                       // carbon bonded to hydrogen
+          var d = Math.sqrt(v.x * v.x + v.y * v.y) || 1, hx = v.x + v.x / d * 11, hy = v.y + v.y / d * 11;
+          gr.appendChild(sv('line', { x1: px + v.x, y1: py + v.y, x2: px + hx, y2: py + hy, stroke: '#64748b', 'stroke-width': 1.4 }));
+          gr.appendChild(sv('circle', { cx: px + hx, cy: py + hy, r: 3, fill: '#e2e8f0' }));
+        }
+      });
+    }
+    // second row: three columns, drawing above and caption below
+    [300, 600].forEach(function (x) { gr.appendChild(sv('line', { x1: x, y1: 340, x2: x, y2: 680, stroke: '#1e293b', 'stroke-width': 1.5 })); });
+    function caption(cx0, col, title, lines) {
+      gr.appendChild(sv('text', { class: 'dx-lab', x: cx0, y: 556, style: 'fill:' + col + ';font-weight:700;text-anchor:middle' }, title));
+      lines.forEach(function (t, k) { svgMath(gr, cx0 - 145, 562 + k * 22, 290, 22, t, 'dx-fo dx-fo--sub'); });
+    }
+
+    // 2. small PAH
+    heading(10, 352, '2', 'A small PAH');
+    pah(150, 450, 15);
+    caption(150, '#a78bfa', 'Circumcoronene', ['\\mathrm{C_{54}H_{18}}\\text{: one flat sheet,}', '\\text{radius about 0.5 nm; the 18}', '\\text{hydrogens are drawn in white}']);
+
+    // 3. large PAH: a stack of sheets seen edge-on
+    heading(310, 352, '3', 'A large PAH');
+    var sx0 = 450, sy0 = 450;
+    [-45, -15, 15, 45].forEach(function (dy) {
+      gr.appendChild(sv('ellipse', { cx: sx0, cy: sy0 + dy, rx: 74, ry: 17, fill: 'rgba(167,139,250,0.14)', stroke: '#c4b5fd', 'stroke-width': 2 }));
+      [-1, 1].forEach(function (sgn) {
+        gr.appendChild(sv('circle', { cx: sx0 + sgn * 84, cy: sy0 + dy, r: 3, fill: '#e2e8f0' }));
+        gr.appendChild(sv('line', { x1: sx0 + sgn * 74, y1: sy0 + dy, x2: sx0 + sgn * 81, y2: sy0 + dy, stroke: '#64748b', 'stroke-width': 1.4 }));
+      });
+    });
+    caption(450, '#a78bfa', 'A cluster of PAHs', ['\\text{circumcoronene sheets stacked by}', '\\text{van der Waals forces (4 drawn);}', '\\text{model: 418 C atoms, radius 1 nm}']);
+
+    // 4. coagulated aggregate
+    heading(610, 352, '4', 'A coagulated aggregate');
+    var bx = 750, by = 445;
+    [[-72, -22, 27, 's'], [-30, -48, 21, 'c'], [10, -22, 31, 's'], [52, -52, 19, 'c'], [-48, 22, 23, 'c'], [-6, 34, 27, 'c'], [42, 14, 25, 's'], [88, -14, 21, 's'], [74, 42, 19, 'c'], [-94, 16, 17, 's'], [26, 66, 18, 's'], [-40, 68, 16, 'c'], [100, 30, 14, 'c']].forEach(function (g) {
+      var col = g[3] === 's' ? '#38bdf8' : '#fb923c';
+      gr.appendChild(sv('circle', { cx: bx + g[0], cy: by + g[1], r: g[2], fill: g[3] === 's' ? 'rgba(56,189,248,0.3)' : 'rgba(251,146,60,0.3)', stroke: col, 'stroke-width': 2 }));
+    });
+    caption(750, '#e2e8f0', 'Coagulated aggregate', ['\\text{grains stuck together in slow}', '\\text{collisions in dense gas, moving}', '\\text{mass from small to large grains;}', '\\text{in discs they become pebbles.}', '\\text{Blue: silicate, orange: carbon}']);
+    gr.appendChild(sv('text', { x: 10, y: 706, style: 'fill:#94a3b8;font-size:14px' }, '† Not followed by CALIMA, which tracks only pure silicate and pure carbon grains and uses ice only as a limit on accretion.'));
+  })();
+
+  // --------------------------------------------------------- H2 formation diagram
+  (function () {
+    var h2 = $('#dx-h2');
+    var d = sv('defs', {}), m = sv('marker', { id: 'dx-h-arr', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' });
+    m.appendChild(sv('path', { d: 'M0,0 L10,5 L0,10 Z', fill: '#cbd5e1' })); d.appendChild(m); h2.appendChild(d);
+    function heading(x, y, t) { h2.appendChild(sv('text', { x: x, y: y, style: 'fill:#94a3b8;font-size:17px;font-weight:700;letter-spacing:0.04em' }, t.toUpperCase())); }
+    function atom(x, y) {
+      h2.appendChild(sv('circle', { cx: x, cy: y, r: 10, fill: '#fbbf24', stroke: '#0f172a', 'stroke-width': 1.5 }));
+      h2.appendChild(sv('text', { x: x, y: y + 4, style: 'font-size:12px;font-weight:700;fill:#0f172a;text-anchor:middle' }, 'H'));
+    }
+    function molecule(x, y) {
+      h2.appendChild(sv('line', { x1: x - 11, y1: y, x2: x + 11, y2: y, stroke: '#fbbf24', 'stroke-width': 9, 'stroke-linecap': 'round' }));
+      atom(x - 11, y); atom(x + 11, y);
+    }
+    function arrow(x1, y1, x2, y2, dash, curve) {
+      h2.appendChild(sv('path', { d: curve ? 'M' + x1 + ',' + y1 + ' Q' + curve[0] + ',' + curve[1] + ' ' + x2 + ',' + y2 : 'M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2, fill: 'none', stroke: '#cbd5e1', 'stroke-width': 1.8, 'stroke-dasharray': dash || '0', 'marker-end': 'url(#dx-h-arr)' }));
+    }
+    function caption(cx0, y, n, title, lines, col) {
+      h2.appendChild(sv('text', { class: 'dx-lab', x: cx0, y: y, style: 'fill:' + (col || '#e2e8f0') + ';font-weight:700;text-anchor:middle' }, n + '  ' + title));
+      lines.forEach(function (t, k) { svgMath(h2, cx0 - 112, y + 6 + k * 22, 224, 22, t, 'dx-fo dx-fo--sub'); });
+    }
+    // ---- row 1: Langmuir-Hinshelwood on a grain
+    heading(10, 26, 'On a grain surface');
+    var i, cx, SY = 172;
+    for (i = 0; i < 4; i++) {
+      cx = 112 + 225 * i;
+      h2.appendChild(sv('rect', { x: cx - 100, y: SY, width: 200, height: 34, rx: 8, fill: 'rgba(56,189,248,0.22)', stroke: '#38bdf8', 'stroke-width': 2 }));
+      [-60, -20, 20, 60].forEach(function (dx) { h2.appendChild(sv('circle', { cx: cx + dx, cy: SY, r: 4.5, fill: '#0f172a', stroke: '#7dd3fc', 'stroke-width': 1.5 })); });
+    }
+    cx = 112;  atom(cx - 45, 62); atom(cx + 42, 96); arrow(cx - 45, 78, cx - 55, 138); arrow(cx + 42, 112, cx + 58, 138);
+    cx = 337;  atom(cx - 60, SY - 11); atom(cx + 60, SY - 11);
+    cx = 562;  [-60, 60].forEach(function (dx) { h2.appendChild(sv('circle', { cx: cx + dx, cy: SY - 11, r: 10, fill: 'none', stroke: '#64748b', 'stroke-dasharray': '3 3' })); });
+    atom(cx - 20, SY - 11); atom(cx + 20, SY - 11);
+    arrow(cx - 58, SY - 32, cx - 28, SY - 32, '4 3', [cx - 44, SY - 52]); arrow(cx + 58, SY - 32, cx + 28, SY - 32, '4 3', [cx + 44, SY - 52]);
+    cx = 787;  h2.appendChild(sv('circle', { cx: cx, cy: SY + 4, r: 26, fill: 'rgba(248,113,113,0.35)' }));
+    [-1, 1].forEach(function (sg) { h2.appendChild(sv('path', { d: 'M' + (cx + sg * 30) + ',' + (SY + 22) + ' q' + (sg * 6) + ',-8 ' + (sg * 12) + ',0 t' + (sg * 12) + ',0', fill: 'none', stroke: '#f87171', 'stroke-width': 1.6 })); });
+    molecule(cx, 70); arrow(cx, 138, cx, 100);
+    caption(112, 250, '1', 'Arrive', ['\\text{atoms from the gas}', '\\text{land on the grain}']);
+    caption(337, 250, '2', 'Stick', ['\\text{they bind weakly}', '\\text{(physisorbed) to sites}']);
+    caption(562, 250, '3', 'Hop and meet', ['\\text{they hop between sites}', '\\text{until two meet}']);
+    caption(787, 250, '4', 'Bond and leave', ['\\mathrm{H_2}\\text{ forms and escapes,}', '\\text{heating the grain}']);
+    svgMath(h2, 20, 316, 860, 22, '\\text{Above about 20 K the physisorbed atoms evaporate before they meet;}', 'dx-fo dx-fo--sub');
+    svgMath(h2, 20, 338, 860, 22, '\\text{strongly bound (chemisorbed) sites, not drawn, still work on warmer grains.}', 'dx-fo dx-fo--sub');
+    h2.appendChild(sv('line', { x1: 0, y1: 375, x2: 900, y2: 375, stroke: '#1e293b', 'stroke-width': 1.5 }));
+
+    // ---- row 2: Eley-Rideal abstraction on a PAH
+    heading(10, 406, 'On a PAH: abstraction');
+    var PY = 520;
+    [150, 450, 750].forEach(function (x) {
+      h2.appendChild(sv('ellipse', { cx: x, cy: PY, rx: 82, ry: 16, fill: 'rgba(167,139,250,0.14)', stroke: '#c4b5fd', 'stroke-width': 2 }));
+    });
+    cx = 150; h2.appendChild(sv('line', { x1: cx, y1: PY - 14, x2: cx, y2: PY - 40, stroke: '#64748b', 'stroke-width': 2.5 })); atom(cx, PY - 50);
+    cx = 450; h2.appendChild(sv('line', { x1: cx, y1: PY - 14, x2: cx, y2: PY - 40, stroke: '#64748b', 'stroke-width': 2.5 })); atom(cx, PY - 50);
+    atom(cx + 80, PY - 100); arrow(cx + 70, PY - 90, cx + 16, PY - 58);
+    cx = 750; molecule(cx, PY - 52); arrow(cx, PY - 66, cx, PY - 100);
+    caption(150, 578, '1', 'A bonded atom', ['\\text{an H atom is already}', '\\text{bonded to a PAH carbon}'], '#c4b5fd');
+    caption(450, 578, '2', 'A second atom arrives', ['\\text{it meets the bonded atom}', '\\text{and the two bind}'], '#c4b5fd');
+    caption(750, 578, '3', 'Bond and leave', ['\\mathrm{H_2}\\text{ escapes; the PAH}', '\\text{awaits the next atom}'], '#c4b5fd');
+  })();
+
+  // --------------------------------------------------------- extinction curve
+  var ext = $('#dx-ext'), rvEl = $('#dx-rv'), rvVal = $('#dx-rv-val'), rvNote = $('#dx-rv-note');
+  var EX0 = 80, EX1 = 860, EY0 = 360, EY1 = 40, XMIN = 0.3, XMAX = 8.2, YMAX = 5;
+  function ex(x) { return EX0 + (x - XMIN) / (XMAX - XMIN) * (EX1 - EX0); }
+  function ey(y) { return EY0 + (y / YMAX) * (EY1 - EY0); }
+  function ccm(x, Rv) {
+    var a, b, y;
+    if (x < 1.1) { a = 0.574 * Math.pow(x, 1.61); b = -0.527 * Math.pow(x, 1.61); }
+    else if (x < 3.3) {
+      y = x - 1.82;
+      a = 1 + 0.17699 * y - 0.50447 * y * y - 0.02427 * Math.pow(y, 3) + 0.72085 * Math.pow(y, 4) + 0.01979 * Math.pow(y, 5) - 0.77530 * Math.pow(y, 6) + 0.32999 * Math.pow(y, 7);
+      b = 1.41338 * y + 2.28305 * y * y + 1.07233 * Math.pow(y, 3) - 5.38434 * Math.pow(y, 4) - 0.62251 * Math.pow(y, 5) + 5.30260 * Math.pow(y, 6) - 2.09002 * Math.pow(y, 7);
+    } else {
+      var fa = 0, fb = 0;
+      if (x >= 5.9) { var d = x - 5.9; fa = -0.04473 * d * d - 0.009779 * d * d * d; fb = 0.2130 * d * d + 0.1207 * d * d * d; }
+      a = 1.752 - 0.316 * x - 0.104 / ((x - 4.67) * (x - 4.67) + 0.341) + fa;
+      b = -3.090 + 1.825 * x + 1.206 / ((x - 4.62) * (x - 4.62) + 0.263) + fb;
+    }
+    return a + b / Rv;
+  }
+  var extStatic = sv('g', {}), extCurve = sv('path', { fill: 'none', stroke: '#fb923c', 'stroke-width': 3.5, 'stroke-linejoin': 'round' });
+  ext.appendChild(extStatic); ext.appendChild(extCurve);
+  [0, 1, 2, 3, 4, 5].forEach(function (y) {
+    extStatic.appendChild(sv('line', { class: 'dx-grid', x1: EX0, y1: ey(y), x2: EX1, y2: ey(y) }));
+    extStatic.appendChild(sv('text', { class: 'dx-axis-text', x: EX0 - 10, y: ey(y) + 4, style: 'text-anchor:end' }, String(y)));
+  });
+  [1, 2, 3, 4, 5, 6, 7, 8].forEach(function (x) {
+    extStatic.appendChild(sv('line', { class: 'dx-grid', x1: ex(x), y1: EY0, x2: ex(x), y2: EY1 }));
+    extStatic.appendChild(sv('text', { class: 'dx-axis-text', x: ex(x), y: EY0 + 20 }, String(x)));
+  });
+  svgMath(extStatic, (EX0 + EX1) / 2 - 250, EY0 + 28, 500, 30, '\\text{Inverse wavelength } 1/\\lambda\\ \\ (\\mu\\mathrm{m}^{-1})');
+  // secondary axis on top: the same positions as ordinary wavelengths
+  [[1, '1 µm'], [0.5, '0.5 µm'], [0.3, '0.3 µm'], [0.2, '0.2 µm'], [0.15, '0.15 µm'], [0.125, '0.125 µm']].forEach(function (w) {
+    var xx = ex(1 / w[0]);
+    extStatic.appendChild(sv('line', { x1: xx, y1: EY1 - 6, x2: xx, y2: EY1, stroke: '#94a3b8', 'stroke-width': 1.5 }));
+    extStatic.appendChild(sv('text', { class: 'dx-axis-text', x: xx, y: EY1 - 12 }, w[1]));
+  });
+  svgMath(extStatic, (EX0 + EX1) / 2 - 100, -24, 200, 26, '\\text{Wavelength } \\lambda', 'dx-fo dx-fo--sub');
+  svgMath(extStatic, -80, -15, 160, 30, 'A_\\lambda / A_V', 'dx-fo', 'translate(24,' + (EY0 + EY1) / 2 + ') rotate(-90)');
+  [[0.85, 'near-infrared', 312], [2.4, 'visible', 338], [4.6, '2175 Å bump', 74], [7.2, 'far-ultraviolet rise', 76]].forEach(function (a) {
+    extStatic.appendChild(sv('text', { class: 'dx-lab-sub', x: ex(a[0]), y: a[2], style: 'text-anchor:middle' }, a[1]));
+  });
+  function drawExt() {
+    var Rv = parseFloat(rvEl.value); rvVal.textContent = Rv.toFixed(2);
+    var d = '';
+    for (var x = XMIN; x <= XMAX + 1e-6; x += 0.05) d += (d ? 'L' : 'M') + ex(x).toFixed(1) + ',' + ey(Math.max(0, ccm(x, Rv))).toFixed(1);
+    extCurve.setAttribute('d', d);
+    var RVt = tex('R_V');
+    rvNote.innerHTML = Rv < 2.8 ? 'Low ' + RVt + ': small grains dominate, so the ultraviolet rise is steep and the reddening is strong.' :
+      Rv < 3.6 ? 'Typical of the diffuse Milky Way (' + RVt + ' about 3.1).' :
+      Rv < 4.6 ? 'Intermediate: grains have grown somewhat, and the curve is flatter in the ultraviolet.' :
+      'High ' + RVt + ': large grains dominate, so the curve is flat and the dimming is nearly grey.';
+  }
+  rvEl.addEventListener('input', drawExt); drawExt();
+
+
+  // --------------------------------------------------------- photoelectric heating efficiency
+  // log10 of the net PEH efficiency against log10 of the radius in nm, read off Fig. 4 of the paper.
+  var peh = $('#dx-peh');
+  var PEH = {
+    car: [[0, -1.60], [0.5, -1.82], [1, -2.36], [1.3, -2.74], [1.5, -2.95], [2, -3.38], [2.5, -3.59], [3, -3.57]],
+    sil: [[0, -1.79], [0.5, -2.15], [1, -2.77], [1.3, -3.17], [1.5, -3.35], [2, -3.62], [2.5, -4.0], [3, -4.38]]
+  };
+  var PX0 = 100, PX1 = 860, PY0 = 350, PY1 = 30, PXL = -0.15, PXH = 3.15, PYL = -4.6, PYH = -1.3;
+  function px_(l) { return PX0 + (l - PXL) / (PXH - PXL) * (PX1 - PX0); }
+  function py_(l) { return PY0 + (l - PYL) / (PYH - PYL) * (PY1 - PY0); }
+  function smooth(pts) {                    // Catmull-Rom spline through the points, as an SVG path
+    var d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      d += 'C' + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + ',' + (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1) + ' ' +
+        (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + ',' + (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1) + ' ' + p2[0].toFixed(1) + ',' + p2[1].toFixed(1);
+    }
+    return d;
+  }
+  [[0, '1 nm'], [1, '10 nm'], [2, '100 nm'], [3, '1 µm']].forEach(function (t) {
+    peh.appendChild(sv('line', { class: 'dx-grid', x1: px_(t[0]), y1: PY0, x2: px_(t[0]), y2: PY1 }));
+    peh.appendChild(sv('text', { class: 'dx-axis-text', x: px_(t[0]), y: PY0 + 22 }, t[1]));
+  });
+  [-4, -3, -2].forEach(function (l) {
+    peh.appendChild(sv('line', { class: 'dx-grid', x1: PX0, y1: py_(l), x2: PX1, y2: py_(l) }));
+    var f = sv('foreignObject', { x: PX0 - 66, y: py_(l) - 13, width: 56, height: 26 }), dv = document.createElement('div');
+    dv.className = 'dx-fo dx-fo--sub'; dv.style.justifyContent = 'flex-end'; dv.innerHTML = tex('10^{' + l + '}'); f.appendChild(dv); peh.appendChild(f);
+  });
+  svgMath(peh, (PX0 + PX1) / 2 - 150, PY0 + 34, 300, 30, '\\text{Grain radius } a');
+  svgMath(peh, -150, -16, 300, 32, '\\epsilon_{\\mathrm{PEH}}\\ \\ \\text{(heating efficiency)}', 'dx-fo', 'translate(24,' + (PY0 + PY1) / 2 + ') rotate(-90)');
+  [['car', '#60a5fa', 'carbonaceous (graphite)', 0], ['sil', '#fb923c', 'silicate', 1]].forEach(function (c) {
+    peh.appendChild(sv('path', { d: smooth(PEH[c[0]].map(function (p) { return [px_(p[0]), py_(p[1])]; })), fill: 'none', stroke: c[1], 'stroke-width': 3.2, 'stroke-linecap': 'round' }));
+    peh.appendChild(sv('line', { x1: PX0 + 560, y1: PY1 + 22 + c[3] * 26, x2: PX0 + 598, y2: PY1 + 22 + c[3] * 26, stroke: c[1], 'stroke-width': 3.2 }));
+    peh.appendChild(sv('text', { class: 'dx-lab-sub', x: PX0 + 608, y: PY1 + 27 + c[3] * 26 }, c[2]));
+  });
+  peh.appendChild(sv('text', { class: 'dx-lab-sub', x: px_(0.1), y: py_(-1.4) - 4, style: 'fill:#e2e8f0' }, 'small grains and PAHs: about 1 to 2% of the absorbed light becomes heat'));
+  peh.appendChild(sv('text', { class: 'dx-lab-sub', x: px_(1.7), y: py_(-2.3), style: 'fill:#e2e8f0' }, 'micron-size grains: 100 to 400 times less efficient'));
+
+  // --------------------------------------------------------- H2 formation: surface area of small and large grains
+  var stlEl = $('#dx-stl'), stlVal = $('#dx-stl-val'), stlBars = $('#dx-stl-bars'), stlRead = $('#dx-stl-read');
+  var A_S = 0.01, A_L = 0.1;                // small and large grain radii in micrometres
+  function surfPerMass(f) { return f / A_S + (1 - f) / A_L; }
+  function bar(label, frac, col) {
+    return '<div class="dx-bar-row"><span>' + label + '</span><span class="dx-bar-track"><span class="dx-bar-fill" style="display:block;width:' + (100 * frac).toFixed(0) + '%;background:' + col + '"></span></span><span style="width:3em;text-align:right">' + (100 * frac).toFixed(0) + '%</span></div>';
+  }
+  function updateStl() {
+    var f = parseFloat(stlEl.value), S = surfPerMass(f), fs = (f / A_S) / S;
+    stlVal.textContent = (100 * f).toFixed(0) + '%';
+    stlBars.innerHTML = bar('Share of mass', f, '#a78bfa') + bar('Share of surface', fs, '#fbbf24');
+    stlRead.innerHTML = 'Small grains hold <b>' + (100 * f).toFixed(0) + '%</b> of the dust mass but <b>' + (100 * fs).toFixed(0) + '%</b> of its surface area.<br>H<sub>2</sub> formation rate: <b>&times;' + (S / surfPerMass(0.2)).toFixed(1) + '</b> relative to the Milky Way value.';
+  }
+  stlEl.addEventListener('input', updateStl); updateStl();
+
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  // --------------------------------------------------------- sputtering demo
+  // log10 of (1/n_H) da/dt in um cm^3 / yr, read off Fig. 6 of the CALIMA paper
+  // at log10 T = 5, 5.5, ..., 9, for small (about 10 nm) and large (about 0.1 um) grains.
+  var G0 = 5, GSTEP = 0.5;
+  var LOGR = {
+    sil: { small: [-9.0, -7.4, -6.3, -5.92, -5.88, -6.35, -6.8, -7.4, -8.15],
+           large: [-9.0, -7.45, -6.35, -5.9, -5.75, -5.6, -5.4, -5.55, -5.9] },
+    car: { small: [-9.0, -7.45, -6.5, -6.1, -5.85, -6.1, -6.45, -7.2, -8.0],
+           large: [-9.0, -7.5, -6.5, -6.2, -6.1, -5.9, -5.77, -5.85, -6.3] }
+  };
+  function cr(arr, x) {                     // smooth (Catmull-Rom) interpolation in log T
+    var u = (x - G0) / GSTEP, n = arr.length - 1;
+    if (u <= 0) return arr[0] + 6 * (x - G0);                       // steep switch-on below 10^5 K
+    if (u >= n) return arr[n] + (arr[n] - arr[n - 1]) / GSTEP * (x - G0 - n * GSTEP);
+    var i = Math.min(Math.floor(u), n - 1), t = u - i;
+    var p0 = i > 0 ? arr[i - 1] : 2 * arr[0] - arr[1], p1 = arr[i], p2 = arr[i + 1], p3 = i + 2 <= n ? arr[i + 2] : 2 * arr[n] - arr[n - 1];
+    return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+  }
+  function wOf(a) { return Math.min(1, Math.max(0, Math.log10(a) + 2)); }   // 0 below 10 nm, 1 above 100 nm
+  function logRate(comp, logT, a) {
+    var w = wOf(a);
+    return (1 - w) * cr(LOGR[comp].small, logT) + w * cr(LOGR[comp].large, logT);
+  }
+
+  var nEl = $('#dx-n'), TEl = $('#dx-T'), aEl = $('#dx-a'), tEl = $('#dx-t');
+  var nVal = $('#dx-n-val'), TVal = $('#dx-T-val'), aVal = $('#dx-a-val'), tVal = $('#dx-t-val');
+  var sim = $('#dx-grain-sim'), read = $('#dx-sput-read'), comp = 'sil';
+  function sig2(x) {                       // two significant digits, no exponent
+    var f = Math.pow(10, Math.floor(Math.log10(x)) - 1);
+    return String(parseFloat((Math.round(x / f) * f).toPrecision(3)));
+  }
+  function fmtTime(yr) {
+    if (!isFinite(yr) || yr > 1e12) return 'longer than 10<sup>12</sup> yr';
+    if (yr < 1e3) return Math.round(yr) + ' yr';
+    if (yr < 1e6) return sig2(yr / 1e3) + ' thousand yr';
+    if (yr < 1e9) return sig2(yr / 1e6) + ' million yr';
+    return sig2(yr / 1e9) + ' billion yr';
+  }
+  function fmtSize(um) { return um < 0.01 ? (um * 1000).toFixed(1) + ' nm' : (um >= 1 ? um.toPrecision(2) + ' µm' : (um * 1000).toFixed(0) + ' nm'); }
+  var simGrain = sv('circle', { cx: 130, cy: 130, fill: '#38bdf8', 'fill-opacity': 0.35, stroke: '#38bdf8', 'stroke-width': 2 }), simRef = sv('circle', { cx: 130, cy: 130, fill: 'none', stroke: '#64748b', 'stroke-dasharray': '4 4', 'stroke-width': 1.5 });
+  var simAtoms = sv('g', {});
+  sim.appendChild(simRef); sim.appendChild(simAtoms); sim.appendChild(simGrain);
+  function drawSim(frac, a0) {
+    var maxR = 105, r0 = 20 + 85 * (Math.log10(a0) + 2.3) / 2.3;     // visual size, compressed
+    var col = comp === 'sil' ? '#fb923c' : '#60a5fa';
+    simGrain.setAttribute('fill', col); simGrain.setAttribute('stroke', col);
+    simRef.setAttribute('r', r0.toFixed(1));
+    simGrain.setAttribute('r', Math.max(0.5, r0 * frac).toFixed(1));
+    simGrain.setAttribute('opacity', frac > 0 ? 1 : 0.15);
+    simAtoms.innerHTML = '';
+    var lost = 1 - frac, n = Math.round(Math.min(40, lost * 60)), i;
+    for (i = 0; i < n; i++) {
+      var ang = (i * 2.399963) % (2 * Math.PI), rr = r0 * frac + 8 + ((i * 37) % 100) / 100 * (maxR - r0 * frac - 8) * Math.min(1, lost * 1.2);
+      simAtoms.appendChild(sv('circle', { cx: (130 + rr * Math.cos(ang)).toFixed(1), cy: (130 + rr * Math.sin(ang)).toFixed(1), r: 2.2, fill: '#fbbf24', opacity: 0.8 }));
+    }
+  }
+
+  // integrate da/dt = -n R(a) from a0 to 0: tables of radius against elapsed time
+  function trajectory(n, logT, a0, cmp) {
+    cmp = cmp || comp;
+    var N = 1500, da = a0 / N, t = 0, aa = [a0], tt = [0];
+    for (var i = 0; i < N; i++) {
+      var amid = a0 - (i + 0.5) * da;
+      t += da / (n * Math.pow(10, logRate(cmp, logT, amid)));
+      aa.push(a0 - (i + 1) * da); tt.push(t);
+    }
+    return { a: aa, t: tt };
+  }
+  function radiusAt(tr, t) {
+    var lo = 0, hi = tr.t.length - 1;
+    if (t >= tr.t[hi]) return 0;
+    while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (tr.t[mid] <= t) lo = mid; else hi = mid; }
+    var f = (t - tr.t[lo]) / ((tr.t[hi] - tr.t[lo]) || 1);
+    return tr.a[lo] + f * (tr.a[hi] - tr.a[lo]);
+  }
+
+  // --- rate-vs-temperature figure (after Fig. 6 of the paper)
+  var rate = $('#dx-rate');
+  var RX0 = 90, RX1 = 870, RY0 = 380, RY1 = 30, TLO = 4, THI = 9.5, YLO = -9, YHI = -5;
+  function rx(lt) { return RX0 + (lt - TLO) / (THI - TLO) * (RX1 - RX0); }
+  function ry(lr) { return RY0 + (lr - YLO) / (YHI - YLO) * (RY1 - RY0); }
+  var CURVES = [
+    { c: 'sil', s: 'large', col: '#fb923c', dash: '0', label: 'large silicates' },
+    { c: 'sil', s: 'small', col: '#fb923c', dash: '9 3 2 3', label: 'small silicates' },
+    { c: 'car', s: 'large', col: '#60a5fa', dash: '0', label: 'large carbonaceous' },
+    { c: 'car', s: 'small', col: '#60a5fa', dash: '9 3 2 3', label: 'small carbonaceous' }
+  ];
+  var rateStatic = sv('g', {}), rateCurves = [], rateMark = sv('g', {});
+  rate.appendChild(rateStatic);
+  [5, 6, 7, 8, 9].forEach(function (lt) {
+    rateStatic.appendChild(sv('line', { class: 'dx-grid', x1: rx(lt), y1: RY0, x2: rx(lt), y2: RY1 }));
+    var t = sv('foreignObject', { x: rx(lt) - 30, y: RY0 + 6, width: 60, height: 26 }), d = document.createElement('div');
+    d.className = 'dx-fo dx-fo--sub'; d.innerHTML = tex('10^{' + lt + '}'); t.appendChild(d); rateStatic.appendChild(t);
+  });
+  [-9, -8, -7, -6, -5].forEach(function (lr) {
+    rateStatic.appendChild(sv('line', { class: 'dx-grid', x1: RX0, y1: ry(lr), x2: RX1, y2: ry(lr) }));
+    var t = sv('foreignObject', { x: RX0 - 66, y: ry(lr) - 13, width: 56, height: 26 }), d = document.createElement('div');
+    d.className = 'dx-fo dx-fo--sub'; d.style.justifyContent = 'flex-end'; d.innerHTML = tex('10^{' + lr + '}'); t.appendChild(d); rateStatic.appendChild(t);
+  });
+  svgMath(rateStatic, (RX0 + RX1) / 2 - 80, RY0 + 34, 160, 30, 'T\\ \\ [\\mathrm{K}]');
+  svgMath(rateStatic, -150, -16, 300, 32, '(1/n_{\\mathrm H})\\,da/dt\\ \\ [\\mathrm{cm^3\\,\\mu m\\,yr^{-1}}]', 'dx-fo', 'translate(22,' + (RY0 + RY1) / 2 + ') rotate(-90)');
+  CURVES.forEach(function (cv) {
+    var p = sv('path', { fill: 'none', stroke: cv.col, 'stroke-width': 2.8, 'stroke-dasharray': cv.dash, 'stroke-linejoin': 'round' }), d = '';
+    for (var lt = 5; lt <= THI + 1e-6; lt += 0.05) d += (d ? 'L' : 'M') + rx(lt).toFixed(1) + ',' + ry(cr(LOGR[cv.c][cv.s], lt)).toFixed(1);
+    p.setAttribute('d', d); rate.appendChild(p); cv.p = p;
+  });
+  CURVES.forEach(function (cv, i) {
+    var lx = RX0 + 14 + (i % 2) * 220, ly = RY1 + 16 + Math.floor(i / 2) * 24;
+    rate.appendChild(sv('line', { x1: lx, y1: ly, x2: lx + 38, y2: ly, stroke: cv.col, 'stroke-width': 2.8, 'stroke-dasharray': cv.dash }));
+    rate.appendChild(sv('text', { class: 'dx-lab-sub', x: lx + 46, y: ly + 5 }, cv.label));
+  });
+  rate.appendChild(rateMark);
+
+  function updateSput() {
+    var logn = parseFloat(nEl.value), logT = parseFloat(TEl.value), loga = parseFloat(aEl.value), tt = parseFloat(tEl.value);
+    var n = Math.pow(10, logn), a0 = Math.pow(10, loga);
+    var lr0 = logRate(comp, logT, a0), r0 = n * Math.pow(10, lr0);          // um / yr
+    var tr = trajectory(n, logT, a0), tau = tr.t[tr.t.length - 1];
+    var inert = !(tau < 1e12);
+    var tNow = (inert ? 1e10 : tau * 1.2) * tt;
+    var a = inert ? a0 : radiusAt(tr, tNow);
+    nVal.innerHTML = tex(pow10Tex(logn) + '\\,\\mathrm{cm^{-3}}');
+    TVal.innerHTML = tex(pow10Tex(logT) + '\\,\\mathrm{K}');
+    aVal.textContent = fmtSize(a0);
+    tVal.innerHTML = fmtTime(tNow).replace('longer than 10<sup>12</sup> yr', '> 10<sup>12</sup> yr');
+    drawSim(a / a0, a0);
+    read.innerHTML = 'Lifetime of this grain: <b>' + fmtTime(tau) + '</b><br>Radius now: <b>' + fmtSize(a) + '</b> (' + Math.round(100 * a / a0) + '% of the original)<br>' +
+      (inert ? '<span class="dx-muted">Too cold for thermal sputtering: such grains survive, or grow by accretion.</span>' : 'Initial erosion rate: ' + tex('\\dot a = -' + pow10Tex(logn + lr0) + '\\ \\mu\\mathrm{m\\,yr^{-1}}'));
+    // markers on the rate figure: dashed line at the gas temperature, dot on the grain's curve
+    rateMark.innerHTML = '';
+    var inRange = logT >= TLO && logT <= THI, xm = rx(clamp(logT, TLO, THI));
+    rateMark.appendChild(sv('line', { x1: xm, y1: RY0, x2: xm, y2: RY1, stroke: '#fbbf24', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }));
+    if (!inRange) {
+      var off = sv('text', { class: 'dx-lab-sub', x: xm, y: RY1 - 10, style: 'fill:#fbbf24' }, '← T = ' + Math.round(Math.pow(10, logT)) + ' K is below the left edge of the plot: no sputtering');
+      rateMark.appendChild(off);
+    }
+    if (inRange && lr0 > YLO && lr0 < YHI) rateMark.appendChild(sv('circle', { cx: rx(logT), cy: ry(lr0), r: 6, fill: '#fbbf24', stroke: '#0f172a', 'stroke-width': 2 }));
+    CURVES.forEach(function (cv) { cv.p.setAttribute('opacity', cv.c === comp ? 1 : 0.35); });
+  }
+  [nEl, TEl, aEl, tEl].forEach(function (e) { e.addEventListener('input', updateSput); });
+  wrap.querySelectorAll('#dx-comp button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      comp = b.getAttribute('data-comp');
+      wrap.querySelectorAll('#dx-comp button').forEach(function (o) { o.classList.toggle('dx-seg-on', o === b); });
+      updateSput();
+    });
+  });
+  var CONTEXTS = [
+    ['Supernova remnant', -0.5, 6.5], ['Hot galactic halo', -3.5, 6], ['Galaxy cluster gas', -3, 7.7], ['Warm ionized medium', -0.5, 4], ['Molecular cloud', 3, 1.2]
+  ];
+  var ctxBox = $('#dx-contexts');
+  CONTEXTS.forEach(function (c) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'dx-ctx'; b.textContent = c[0];
+    b.addEventListener('click', function () { nEl.value = c[1]; TEl.value = c[2]; tEl.value = 0; updateSput(); });
+    ctxBox.appendChild(b);
+  });
+  updateSput();
+
+  // --------------------------------------------------------- environment budget of a grain
+  (function () {
+    var box = $('#dx-env'); if (!box) return;
+    var presetsEl = $('#dx-env-presets'), ctrlEl = $('#dx-env-ctrl'), sumEl = $('#dx-env-summary');
+    var svR = $('#dx-env-rates'), svS = $('#dx-env-shares'), svH = $('#dx-env-hist');
+    var GYR = 3.156e16, KB = 1.381e-16, AMU = 1.66e-24;
+    var CL = { acc: '#34d399', sput: '#f87171', sn: '#fbbf24', astr: '#a78bfa', coag: '#38bdf8', shat: '#f472b6' };
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+    function short(yr) {                       // timescale in a readable unit
+      if (!isFinite(yr) || yr > 1e13) return 'never';
+      if (yr >= 1e9) return sig2(yr / 1e9) + ' Gyr';
+      if (yr >= 1e6) return sig2(yr / 1e6) + ' Myr';
+      if (yr >= 1e3) return sig2(yr / 1e3) + ' kyr';
+      return sig2(Math.max(yr, 1)) + ' yr';
+    }
+
+    // ---------------------------------------------------------- the physics
+    function rates(P) {
+      var n = Math.pow(10, P.logn), T = Math.pow(10, P.logT), S = Math.pow(10, P.logS), Zr = Math.pow(10, P.logZ), Z = 0.0134 * Zr;
+      var aNm = Math.pow(10, P.loga), a = aNm * 1e-7, aum = aNm / 1000, sil = P.comp === 'sil';
+      var rho = 1.4 * 1.673e-24 * n, s = sil ? 3.3 : 2.2, m = 4 / 3 * Math.PI * a * a * a * s;
+      var R = {};
+      // accretion (eqs. 8 to 10): limiting element, Maxwellian speed, sticking falling above about 300 K
+      var els = sil ? [[0.049, 0.141, 24.3], [0.096, 0.324, 55.85], [0.050, 0.163, 28.09], [0.43, 0.372, 16]] : [[0.177, 1, 12]], lim = Infinity;
+      els.forEach(function (e) { var rl = (1 - P.DTM) * Z * e[0] * rho, v = Math.sqrt(8 * KB * Math.pow(10, P.logT) / (Math.PI * e[2] * AMU)); lim = Math.min(lim, rl * v / e[1]); });
+      var alpha = P.alpha / (1 + Math.pow(T / 300, 2));
+      R.acc = n >= 1e4 ? 0 : alpha * Math.PI * a * a * lim / m * GYR;
+      // thermal sputtering: mass loss rate 3 (da/dt)/a, with the rate table of Fig. 6
+      R.sput = 3 * n * Math.pow(10, logRate(P.comp, P.logT, aum)) / aum * 1e9;
+      // supernova shocks: 0.01 SN per solar mass formed, 6800 solar masses swept above 100 km/s per SN
+      var delta = sil ? 0.15 : 0.10, eps = 1 - Math.exp(-delta / (aNm / 100));
+      R.sn = 68 * S * eps;
+      // astration: gas, and the dust in it, consumed by star formation
+      R.astr = S;
+      // grain-grain collisions with a population of large (0.1 um) grains
+      var aL = 1e-5, mL = 4 / 3 * Math.PI * aL * aL * aL * s, nL = 0.8 * P.DTM * Z * rho / mL, sig = Math.PI * (a + aL) * (a + aL);
+      var dVs = Math.min(30, 10 * Math.pow(n, -1 / 3)) * 1e5, Q = sil ? 4.3e10 : 8.9e9;
+      var phi = 0.5 * (mL / (m + mL)) * dVs * dVs / Q, fr = phi / (1 + phi);
+      R.shat = nL * sig * dVs * fr * GYR;
+      var dVc = 0.1e5, vcoa = 0.1e5 * Math.pow(aNm / 100, -5 / 6) * (n >= 1e4 ? 4 : 1);
+      R.coag = dVc <= vcoa ? nL * sig * dVc * GYR : 0;
+      R.eps = eps; R.fr = fr;
+      return R;
+    }
+
+    // ---------------------------------------------------------- state and controls
+    var P = {};
+    var PARAMS = [
+      { id: 'logn', label: 'Gas density ' + tex('n_{\\mathrm H}'), min: -4, max: 5, step: 0.05, fmt: function (v) { return tex(pow10Tex(v) + '\\,\\mathrm{cm^{-3}}'); } },
+      { id: 'logT', label: 'Gas temperature ' + tex('T'), min: 1, max: 8.5, step: 0.05, fmt: function (v) { return tex(pow10Tex(v) + '\\,\\mathrm K'); } },
+      { id: 'logS', label: 'Star formation per unit gas mass ' + tex('\\mathrm{SFR}/M_{\\mathrm{gas}}'), min: -3, max: 2, step: 0.05, fmt: function (v) { return tex(pow10Tex(v) + '\\,\\mathrm{Gyr^{-1}}'); } },
+      { id: 'logZ', label: 'Metallicity ' + tex('Z/Z_\\odot'), min: -2, max: 0.5, step: 0.05, fmt: function (v) { return Math.pow(10, v).toFixed(Math.pow(10, v) < 0.1 ? 2 : 1); } },
+      { id: 'loga', label: 'Grain radius ' + tex('a'), min: 0, max: 3, step: 0.05, fmt: function (v) { var nm = Math.pow(10, v); return nm >= 1000 ? '1 µm' : (nm < 10 ? nm.toFixed(1) : Math.round(nm)) + ' nm'; } },
+      { id: 'DTM', label: 'Dust-to-metal ratio', min: 0.1, max: 0.9, step: 0.05, fmt: function (v) { return v.toFixed(2); } },
+      { id: 'alpha', label: 'Sticking coefficient ' + tex('\\alpha'), min: 0.1, max: 1, step: 0.05, fmt: function (v) { return v.toFixed(2); } }
+    ];
+    var PRESETS = [
+      ['Cold neutral medium', { logn: 1.5, logT: 1.9, logS: -0.4, logZ: 0 }],
+      ['Warm ionized medium', { logn: -0.5, logT: 3.9, logS: -0.4, logZ: 0 }],
+      ['Molecular cloud', { logn: 3, logT: 1.2, logS: -1.4, logZ: 0 }],
+      ['Dense core', { logn: 5, logT: 1.0, logS: -1.4, logZ: 0 }],
+      ['Supernova-heated gas', { logn: -2, logT: 6.3, logS: 0.6, logZ: 0 }],
+      ['Hot halo', { logn: -3.5, logT: 6, logS: -2, logZ: -0.5 }],
+      ['Galaxy cluster gas', { logn: -3, logT: 7.7, logS: -3, logZ: -0.5 }],
+      ['Starburst', { logn: 2, logT: 2, logS: 1.5, logZ: 0.3 }]
+    ];
+    var inputs = {}, vals = {}, compBtns = [];
+    P = { logn: 1.5, logT: 1.9, logS: -0.4, logZ: 0, loga: 1.7, comp: 'sil', DTM: 0.4, alpha: 1 };
+    PARAMS.forEach(function (p) {
+      var wrapEl = document.createElement('label');
+      var lab = document.createElement('span'); lab.innerHTML = p.label + ' '; var val = document.createElement('span'); val.className = 'dx-val';
+      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step; inp.value = P[p.id];
+      inp.addEventListener('input', function () { P[p.id] = parseFloat(inp.value); update(); });
+      wrapEl.appendChild(lab); wrapEl.appendChild(val); wrapEl.appendChild(inp); ctrlEl.appendChild(wrapEl);
+      inputs[p.id] = inp; vals[p.id] = val;
+    });
+    var seg = document.createElement('div'); seg.className = 'dx-seg'; seg.style.marginBottom = '0.7rem';
+    [['sil', 'Silicate'], ['car', 'Carbonaceous']].forEach(function (o) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = o[1]; if (P.comp === o[0]) b.className = 'dx-seg-on';
+      b.addEventListener('click', function () { P.comp = o[0]; compBtns.forEach(function (x) { x.className = x === b ? 'dx-seg-on' : ''; }); update(); });
+      seg.appendChild(b); compBtns.push(b);
+    });
+    ctrlEl.insertBefore(seg, ctrlEl.firstChild);
+    PRESETS.forEach(function (pr) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'dx-ctx'; b.textContent = pr[0];
+      b.addEventListener('click', function () {
+        for (var k in pr[1]) { P[k] = pr[1][k]; inputs[k].value = P[k]; }
+        presetsEl.querySelectorAll('button').forEach(function (x) { x.classList.toggle('dx-seg-on', x === b); }); update(true);
+      });
+      presetsEl.appendChild(b);
+    });
+
+    // ---------------------------------------------------------- drawing
+    var ROWS = [
+      { grp: 'Grows the grain', col: CL.acc },
+      { id: 'acc', name: 'Accretion', col: CL.acc },
+      { grp: 'Destroys the grain', col: CL.sput },
+      { id: 'sput', name: 'Thermal sputtering', col: CL.sput },
+      { id: 'sn', name: 'Supernova shocks', col: CL.sn },
+      { id: 'astr', name: 'Astration', col: CL.astr },
+      { grp: 'Changes its size, keeps the mass', col: CL.coag },
+      { id: 'coag', name: 'Coagulation', col: CL.coag },
+      { id: 'shat', name: 'Shattering', col: CL.shat }
+    ];
+    var NS = 'http://www.w3.org/2000/svg';
+    function svEl(tag, attrs, text) { return sv(tag, attrs, text); }
+    function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+
+    function drawRates(R) {
+      clear(svR);
+      var X0 = 270, X1 = 770, LO = -2, HI = 4, dec = (X1 - X0) / (HI - LO), y = 54;
+      function xr(l) { return X0 + (l - LO) * dec; }
+      var tick = [[-2, '100 Gyr'], [-1, '10 Gyr'], [0, '1 Gyr'], [1, '100 Myr'], [2, '10 Myr'], [3, '1 Myr'], [4, '100 kyr']];
+      tick.forEach(function (t) {
+        svR.appendChild(svEl('line', { class: 'dx-grid', x1: xr(t[0]), y1: 40, x2: xr(t[0]), y2: 318 }));
+        svR.appendChild(svEl('text', { class: 'dx-axis-text', x: xr(t[0]), y: 32, style: 'font-size:15px' }, t[1]));
+      });
+      svR.appendChild(svEl('text', { x: 10, y: 14, style: 'fill:#94a3b8;font-size:15px' }, 'Bar length = rate of the process; the labels give its mass e-folding time, 1 / rate'));
+      ROWS.forEach(function (r) {
+        if (r.grp) { y += 6; svR.appendChild(svEl('text', { x: 10, y: y + 12, style: 'fill:' + r.col + ';font-size:15px;font-weight:700;letter-spacing:0.03em' }, r.grp.toUpperCase())); y += 22; return; }
+        var v = R[r.id], l = v > 0 ? Math.log10(v) : -9, w = clamp(xr(clamp(l, LO, HI)) - X0, 0, X1 - X0);
+        svR.appendChild(svEl('text', { class: 'dx-bar-label', x: X0 - 12, y: y + 17, style: 'font-size:17px' }, r.name));
+        svR.appendChild(svEl('rect', { x: X0, y: y + 3, width: Math.max(w, v > 0 && l >= LO ? 3 : 0), height: 22, rx: 4, fill: r.col, opacity: 0.88 }));
+        if (l > HI) svR.appendChild(svEl('text', { x: X1 + 4, y: y + 19, style: 'fill:' + r.col + ';font-size:16px;font-weight:700' }, '\u25B6'));
+        svR.appendChild(svEl('text', { class: 'dx-lab-sub', x: X1 + 24, y: y + 19, style: 'fill:' + (v > 0.01 ? '#e2e8f0' : '#64748b') }, v < 0.01 ? 'negligible' : short(1e9 / v)));
+        y += 30;
+      });
+    }
+
+    function drawShares(R) {
+      clear(svS);
+      var X0 = 270, X1 = 770, W = X1 - X0;
+      function stack(y, title, items) {
+        svS.appendChild(svEl('text', { class: 'dx-bar-label', x: X0 - 12, y: y + 17, style: 'font-size:17px' }, title));
+        var tot = items.reduce(function (s, i) { return s + i.v; }, 0), x = X0;
+        if (tot <= 0) { svS.appendChild(svEl('rect', { x: X0, y: y, width: W, height: 26, rx: 4, fill: '#1e293b' })); svS.appendChild(svEl('text', { class: 'dx-lab-sub', x: X0 + W / 2, y: y + 18, style: 'text-anchor:middle' }, 'nothing acts on the grain')); return; }
+        items.forEach(function (it) {
+          var w = W * it.v / tot; if (w < 0.5) return;
+          svS.appendChild(svEl('rect', { x: x, y: y, width: w, height: 26, fill: it.col, opacity: 0.9 }));
+          if (w > 70) svS.appendChild(svEl('text', { x: x + w / 2, y: y + 18, style: 'fill:#0f172a;font-size:14px;font-weight:700;text-anchor:middle' }, it.name + ' ' + Math.round(100 * it.v / tot) + '%'));
+          else if (w > 28) svS.appendChild(svEl('text', { x: x + w / 2, y: y + 18, style: 'fill:#0f172a;font-size:13px;font-weight:700;text-anchor:middle' }, Math.round(100 * it.v / tot) + '%'));
+          x += w;
+        });
+      }
+      stack(8, 'Who destroys it', [{ name: 'Sputtering', v: R.sput, col: CL.sput }, { name: 'SN shocks', v: R.sn, col: CL.sn }, { name: 'Astration', v: R.astr, col: CL.astr }]);
+      stack(50, 'Who changes its size', [{ name: 'Coagulation', v: R.coag, col: CL.coag }, { name: 'Shattering', v: R.shat, col: CL.shat }]);
+      // growth against destruction on a log ratio axis
+      var g = R.acc, d = R.sput + R.sn + R.astr, y = 96;
+      svS.appendChild(svEl('text', { class: 'dx-bar-label', x: X0 - 12, y: y + 17, style: 'font-size:17px' }, 'Growth against loss'));
+      svS.appendChild(svEl('rect', { x: X0, y: y + 6, width: W / 2, height: 14, fill: 'rgba(248,113,113,0.35)' }));
+      svS.appendChild(svEl('rect', { x: X0 + W / 2, y: y + 6, width: W / 2, height: 14, fill: 'rgba(52,211,153,0.35)' }));
+      var ratio = (g > 0 && d > 0) ? Math.log10(g / d) : (g > 0 ? 3 : (d > 0 ? -3 : 0)), mx = X0 + W / 2 + clamp(ratio, -3, 3) / 3 * W / 2;
+      svS.appendChild(svEl('line', { x1: X0 + W / 2, y1: y, x2: X0 + W / 2, y2: y + 26, stroke: '#94a3b8', 'stroke-width': 1.5 }));
+      svS.appendChild(svEl('path', { d: 'M' + mx + ',' + (y + 4) + ' l-7,-9 h14 z', fill: '#fbbf24' }));
+      svS.appendChild(svEl('text', { class: 'dx-lab-sub', x: X0, y: y + 38, style: 'font-size:13px' }, 'loss 1000\u00D7 faster'));
+      svS.appendChild(svEl('text', { class: 'dx-lab-sub', x: X1, y: y + 38, style: 'font-size:13px;text-anchor:end' }, 'growth 1000\u00D7 faster'));
+      svS.appendChild(svEl('text', { class: 'dx-lab-sub', x: X0 + W / 2, y: y + 38, style: 'font-size:13px;text-anchor:middle' }, 'balance'));
+    }
+
+    function drawHist(R) {
+      clear(svH);
+      var X0 = 90, X1 = 860, Y0 = 290, Y1 = 20, TL = 6, TH = 10, YL = -3, YH = 3;
+      function xt(lt) { return X0 + (lt - TL) / (TH - TL) * (X1 - X0); }
+      function yv(lm) { return Y0 + (lm - YL) / (YH - YL) * (Y1 - Y0); }
+      [[6, '1 Myr'], [7, '10 Myr'], [8, '100 Myr'], [9, '1 Gyr'], [10, '10 Gyr']].forEach(function (t) {
+        svH.appendChild(svEl('line', { class: 'dx-grid', x1: xt(t[0]), y1: Y0, x2: xt(t[0]), y2: Y1 }));
+        svH.appendChild(svEl('text', { class: 'dx-axis-text', x: xt(t[0]), y: Y0 + 22 }, t[1]));
+      });
+      [-3, -2, -1, 0, 1, 2, 3].forEach(function (l) {
+        svH.appendChild(svEl('line', { class: 'dx-grid', x1: X0, y1: yv(l), x2: X1, y2: yv(l), style: l === 0 ? 'stroke:#475569' : '' }));
+        var f = svEl('foreignObject', { x: X0 - 70, y: yv(l) - 13, width: 60, height: 26 }), dv = document.createElement('div');
+        dv.className = 'dx-fo dx-fo--sub'; dv.style.justifyContent = 'flex-end'; dv.innerHTML = tex('10^{' + l + '}'); f.appendChild(dv); svH.appendChild(f);
+      });
+      svMath(svH, (X0 + X1) / 2 - 130, Y0 + 30, 260, 26, '\\text{Time elapsed}');
+      svMath(svH, -90, -16, 180, 32, 'm(t)/m_0', 'translate(20,' + (Y0 + Y1) / 2 + ') rotate(-90)');
+      var g = R.acc, d = R.sput + R.sn + R.astr;
+      [[g - d, '#f8fafc', 3.4, 'net: ' ], [g, CL.acc, 2.2, 'growth only'], [-d, CL.sput, 2.2, 'loss only']].forEach(function (c, i) {
+        var path = '';
+        for (var lt = TL; lt <= TH + 1e-6; lt += 0.03) {
+          var tg = Math.pow(10, lt) / 1e9, lm = c[0] * tg / Math.LN10;      // log10 of exp(rate t)
+          if (lm > YH || lm < YL) { path += (path ? 'L' : 'M') + xt(lt).toFixed(1) + ',' + yv(lm > YH ? YH : YL).toFixed(1); break; }
+          path += (path ? 'L' : 'M') + xt(lt).toFixed(1) + ',' + yv(lm).toFixed(1);
+        }
+        svH.appendChild(svEl('path', { d: path, fill: 'none', stroke: c[1], 'stroke-width': c[2], 'stroke-dasharray': i === 0 ? '0' : '7 5', 'stroke-linejoin': 'round' }));
+      });
+      [['net change', '#f8fafc', '0'], ['growth only', CL.acc, '7 5'], ['loss only', CL.sput, '7 5']].forEach(function (l, i) {
+        var lx = X0 + 14 + i * 200, ly = Y1 + 14;
+        svH.appendChild(svEl('line', { x1: lx, y1: ly, x2: lx + 36, y2: ly, stroke: l[1], 'stroke-width': 3, 'stroke-dasharray': l[2] }));
+        svH.appendChild(svEl('text', { class: 'dx-lab-sub', x: lx + 44, y: ly + 5 }, l[0]));
+      });
+    }
+    function svMath(parent, x, y, w, h, s, rot) { return svgMath(parent, x, y, w, h, s, 'dx-fo', rot); }
+
+    function update(fromPreset) {
+      PARAMS.forEach(function (p) { vals[p.id].innerHTML = p.fmt(P[p.id]); });
+      var R = rates(P), g = R.acc, d = R.sput + R.sn + R.astr, net = g - d, dom = '';
+      var mx = Math.max(R.sput, R.sn, R.astr);
+      if (d > 0) dom = mx === R.sput ? 'thermal sputtering' : mx === R.sn ? 'supernova shocks' : 'astration';
+      var sz = R.coag + R.shat, szdom = R.coag >= R.shat ? 'coagulation' : 'shattering';
+      var txt = '';
+      txt += '<b>Growth</b> (accretion): ' + (g > 0.01 ? 'mass e-folding time <b>' + short(1e9 / g) + '</b>' : '<b>negligible</b>' + (Math.pow(10, P.logn) >= 1e4 ? ' (ice covers the grain)' : '')) + '.<br>';
+      txt += '<b>Destruction</b>: ' + (d > 0.01 ? 'mass e-folding time <b>' + short(1e9 / d) + '</b>, mostly by <b>' + dom + '</b> (' + Math.round(100 * mx / d) + '%).' : '<b>negligible</b> in this environment.') + '<br>';
+      txt += '<b>Net</b>: ' + (Math.abs(net) < 0.01 ? 'the mass is nearly constant' : (net > 0 ? 'the grain <b>grows</b>' : 'the grain <b>shrinks</b>') + ' on a time of <b>' + short(1e9 / Math.abs(net)) + '</b>') + '.<br>';
+      txt += '<b>Size</b>: ' + (sz > 0.01 ? 'it is moved out of this size in <b>' + short(1e9 / sz) + '</b>, mainly by ' + szdom + '.' : 'its size is essentially fixed.');
+      sumEl.innerHTML = txt;
+      drawRates(R); drawShares(R); drawHist(R);
+    }
+    presetsEl.firstChild.classList.add('dx-seg-on');
+    update();
+  })();
+
+  // --------------------------------------------------------- process lab (animated, interactive)
+  (function () {
+    var cv = $('#dx-lab-cv'), ctx = cv.getContext('2d'), W = 760, H = 380;
+    cv.width = W * 2; cv.height = H * 2;
+    var tabsEl = $('#dx-lab-tabs'), blurbEl = $('#dx-lab-blurb'), ctrlEl = $('#dx-lab-ctrl'), readEl = $('#dx-lab-read'), hintEl = $('#dx-lab-hint');
+    var COL = { sil: '#fb923c', car: '#60a5fa' }, PI2 = Math.PI * 2;
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+    function circ(x, y, r, fill, stroke, lw) {
+      ctx.beginPath(); ctx.arc(x, y, Math.max(0.1, r), 0, PI2);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
+    }
+    function line(x1, y1, x2, y2, col, lw, dash) {
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.strokeStyle = col; ctx.lineWidth = lw || 1.5;
+      ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function txt(t, x, y, col, size, align, bold) {
+      ctx.fillStyle = col || '#cbd5e1'; ctx.font = (bold ? 'bold ' : '') + Math.round((size || 15) * 1.2) + 'px "STIX Two Text", serif'; ctx.textAlign = align || 'left'; ctx.fillText(t, x, y);
+    }
+    function wave(x1, y1, x2, y2, col, amp, t) {   // short sine wave for a photon
+      var dx = x2 - x1, dy = y2 - y1, L = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / L, uy = dy / L, k;
+      ctx.beginPath();
+      for (k = 0; k <= 14; k++) {
+        var s = k / 14, off = Math.sin(s * 18 - t * 12) * amp;
+        var px = x1 + dx * s - uy * off, py = y1 + dy * s + ux * off;
+        if (k) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+      }
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+    }
+    function wall(a) {
+      if ((a.x < 4 && a.vx < 0) || (a.x > W - 4 && a.vx > 0)) a.vx = -a.vx;
+      if ((a.y < 4 && a.vy < 0) || (a.y > H - 4 && a.vy > 0)) a.vy = -a.vy;
+    }
+    function numFmt(x) { return x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2); }
+    function tm(yr) { return fmtTime(yr).replace('<sup>12</sup>', '¹²'); }
+    function powTex(x) { return tex(pow10Tex(x)); }
+    function bg() {
+      ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, W, H);
+    }
+
+    // ============ 1. Accretion ============
+    var accretion = {
+      id: 'acc', name: 'Accretion',
+      blurb: 'Atoms from the gas hit a grain and may stick, adding mass. Denser gas means more hits, hotter gas means faster atoms and more hits, and the sticking coefficient sets the fraction that stay. Above about 10<sup>4</sup> cm<sup>&minus;3</sup> ices cover the grain and refractory accretion stops in the model.',
+      hint: 'Click anywhere to fire an extra atom at the grain.',
+      params: [
+        { id: 'logn', label: 'Gas density ' + tex('n_{\\mathrm H}'), min: 0, max: 4.5, step: 0.05, val: 2, fmt: function (v) { return tex(pow10Tex(v) + '\\,\\mathrm{cm^{-3}}'); } },
+        { id: 'logT', label: 'Gas temperature ' + tex('T'), min: 1, max: 3, step: 0.05, val: 1.5, fmt: function (v) { return Math.round(Math.pow(10, v)) + ' K'; } },
+        { id: 'alpha', label: 'Sticking coefficient ' + tex('\\alpha'), min: 0.1, max: 1, step: 0.05, val: 1, fmt: function (v) { return v.toFixed(2); } }
+      ],
+      init: function (S) { S.atoms = []; S.dots = []; S.mass = 1; S.ice = 0; S.hits = 0; S.sticks = 0; },
+      spawn: function (S, P, toward) {
+        var T = Math.pow(10, P.logT), v = 115 * Math.pow(T / 10, 0.25), side = Math.floor(Math.random() * 4), x, y;
+        if (side === 0) { x = 0; y = rand(0, H); } else if (side === 1) { x = W; y = rand(0, H); } else if (side === 2) { x = rand(0, W); y = 0; } else { x = rand(0, W); y = H; }
+        var a = Math.atan2(190 - y, 380 - x) + (toward ? 0 : rand(-1.2, 1.2));
+        return { x: x, y: y, vx: v * Math.cos(a), vy: v * Math.sin(a) };
+      },
+      step: function (dt, S, P) {
+        var N = Math.round(10 + 14 * P.logn), T = Math.pow(10, P.logT), v = 115 * Math.pow(T / 10, 0.25), self = this;
+        while (S.atoms.length < N) S.atoms.push(self.spawn(S, P));
+        while (S.atoms.length > N) S.atoms.pop();
+        var R = 44 * Math.cbrt(S.mass + S.ice), cx = 380, cy = 190;
+        S.atoms.forEach(function (a, i) {
+          var sp = Math.sqrt(a.vx * a.vx + a.vy * a.vy) || 1; a.vx *= v / sp; a.vy *= v / sp;
+          a.x += a.vx * dt; a.y += a.vy * dt;
+          wall(a);
+          var dx = a.x - cx, dy = a.y - cy, d = Math.sqrt(dx * dx + dy * dy);
+          if (d < R + 5) {
+            S.hits++;
+            if (Math.random() < P.alpha) {
+              S.sticks++;
+              if (P.logn < 4) S.mass += 0.03; else S.ice += 0.03;
+              S.dots.push({ ang: Math.atan2(dy, dx), ice: P.logn >= 4 }); if (S.dots.length > 140) S.dots.shift();
+              S.atoms[i] = self.spawn(S, P);
+            } else {
+              var nx = dx / d, ny = dy / d, dot = a.vx * nx + a.vy * ny;
+              if (dot < 0) { a.vx -= 2 * dot * nx; a.vy -= 2 * dot * ny; }
+              a.x = cx + nx * (R + 6); a.y = cy + ny * (R + 6);
+            }
+          }
+        });
+      },
+      draw: function (S, P) {
+        var rc = 44 * Math.cbrt(S.mass), R = 44 * Math.cbrt(S.mass + S.ice), cx = 380, cy = 190;
+        if (S.ice > 0) circ(cx, cy, R, 'rgba(94,234,212,0.25)', '#5eead4', 2);
+        circ(cx, cy, rc, 'rgba(251,146,60,0.35)', '#fb923c', 2.5);
+        S.dots.forEach(function (d) { circ(cx + (R + 3) * Math.cos(d.ang), cy + (R + 3) * Math.sin(d.ang), 3, d.ice ? '#5eead4' : '#fbbf24'); });
+        var ice = P.logn >= 4;
+        S.atoms.forEach(function (a) { circ(a.x, a.y, 4.5, ice ? '#5eead4' : '#fbbf24'); });
+        txt(ice ? 'Dense gas: ices coat the grain, refractory accretion is shut off' : 'Gas atoms stick to the grain surface', 14, 24, '#94a3b8', 15);
+      },
+      read: function (S, P) {
+        var T = Math.pow(10, P.logT), rel = P.alpha * Math.pow(10, P.logn) * Math.sqrt(T) / (1 * 100 * Math.sqrt(31.6));
+        return 'Refractory mass gained: <b>+' + ((S.mass - 1) * 100).toFixed(0) + '%</b>' + (S.ice > 0 ? ', ice added: <b>+' + (S.ice * 100).toFixed(0) + '%</b>' : '') + '<br>Atoms that hit: <b>' + S.hits + '</b>, that stuck: <b>' + S.sticks + '</b><br>Relative growth rate, ' + tex('\\propto \\alpha\\, n_{\\mathrm H}\\sqrt{T}') + ': <b>&times;' + numFmt(rel) + '</b> (1 at the default settings)';
+      },
+      click: function (x, y, S, P) { var a = this.spawn(S, P, true); a.x = x; a.y = y; var T = Math.pow(10, P.logT), v = 115 * Math.pow(T / 10, 0.25), g = Math.atan2(190 - y, 380 - x); a.vx = v * Math.cos(g); a.vy = v * Math.sin(g); S.atoms.push(a); }
+    };
+
+    // ============ 2/3. Grain-grain collisions ============
+    function collisions(id, name, blurb, logv) {
+      return {
+        id: id, name: name, blurb: blurb,
+        hint: 'Click the canvas to repeat the collision. The bar at the bottom shows which outcome each speed gives.',
+        params: [
+          { id: 'logv', label: 'Collision speed ' + tex('\\Delta V'), min: -2, max: 1.5, step: 0.05, val: logv, fmt: function (v) { var k = Math.pow(10, v); return (k < 1 ? k.toFixed(2) : k.toFixed(1)) + ' km/s'; } },
+          { id: 'loga', label: 'Grain radius ' + tex('a'), min: 1, max: 2.5, step: 0.05, val: 2, fmt: function (v) { return Math.round(Math.pow(10, v)) + ' nm'; } },
+          { id: 'comp', type: 'seg', label: 'Material', val: 'sil', opts: [['sil', 'Silicate'], ['car', 'Carbonaceous']] },
+          { id: 'ice', type: 'check', label: 'Ice mantle (dense gas)', val: false }
+        ],
+        calc: function (P) {
+          var a = Math.pow(10, P.loga), vcoa = 0.1 * Math.pow(a / 100, -5 / 6) * (P.ice ? 4 : 1), Q = P.comp === 'sil' ? 4.3e10 : 8.9e9;
+          var v = Math.pow(10, P.logv), phi = Math.pow(v * 1e5, 2) / (4 * Q), vch = Math.sqrt(0.003 * 4 * Q) / 1e5;
+          var out = v <= vcoa ? 'stick' : (phi < 0.003 ? 'bounce' : 'shatter');
+          return { a: a, v: v, vcoa: vcoa, vch: Math.max(vch, vcoa), phi: phi, frac: phi / (1 + phi), out: out };
+        },
+        init: function (S, P) { this.restart(S, P); },
+        restart: function (S, P) { S.t = 0; S.c = this.calc(P); S.R = 18 + 40 * (P.loga - 1) / 1.5; S.frags = []; S.contact = false; },
+        step: function (dt, S, P) {
+          S.t += dt; var c = S.c, R = S.R;
+          if (!S.contact && S.t >= 160 / 220) {
+            S.contact = true; S.tc = S.t;
+            if (c.out === 'shatter') {
+              var n = Math.round(10 + 60 * c.frac), sp = 60 + 40 * (P.logv + 2);
+              for (var i = 0; i < n; i++) { var g = rand(0, PI2); S.frags.push({ x: 380, y: 170, vx: Math.cos(g) * rand(0.3, 1) * sp, vy: Math.sin(g) * rand(0.3, 1) * sp, r: rand(1.5, 4) }); }
+            }
+          }
+          if (S.contact) S.frags.forEach(function (f) { f.x += f.vx * dt; f.y += f.vy * dt; });
+          if (S.t > 160 / 220 + 2.4) this.restart(S, P);
+        },
+        draw: function (S, P) {
+          var c = S.c, R = S.R, y = 170, col = COL[P.comp], t = S.t, tc = 160 / 220, xA, xB, Rr = R;
+          if (!S.contact) { xA = 380 - R - 160 + 220 * t; xB = 380 + R + 160 - 220 * t; }
+          else {
+            var u = t - tc;
+            if (c.out === 'stick') { xA = 380 - R + 15 * u; xB = 380 + R + 15 * u; }
+            else if (c.out === 'bounce') { xA = 380 - R - 70 * u; xB = 380 + R + 70 * u; }
+            else { Rr = R * Math.cbrt(Math.max(0.001, 1 - c.frac)); xA = 380 - Rr - 40 * u; xB = 380 + Rr + 40 * u; }
+          }
+          function grain(x, r) {
+            if (r < 1.5) return;
+            circ(x, y, r, col + '55', col, 2.5);
+            if (P.ice) circ(x, y, r + 4, null, '#5eead4', 3);
+          }
+          grain(xA, Rr); grain(xB, Rr);
+          S.frags.forEach(function (f) { circ(f.x, f.y, f.r, col + 'cc'); });
+          var msg = c.out === 'stick' ? 'Stick: coagulation, the grains merge' : c.out === 'bounce' ? 'Bounce: too fast to stick, too slow to break' : 'Shatter: ' + (c.frac * 100).toFixed(c.frac < 0.1 ? 1 : 0) + '% of the mass is ejected as fragments';
+          txt(msg, 14, 24, c.out === 'stick' ? '#34d399' : c.out === 'bounce' ? '#cbd5e1' : '#f87171', 16, 'left', true);
+          // threshold bar on a log speed axis
+          var cn = this.calc(P), X0 = 70, X1 = 690, BY = 322;
+          function bx(v) { return X0 + (Math.log10(v) + 2) / 3.5 * (X1 - X0); }
+          var xc = clamp(bx(cn.vcoa), X0, X1), xh = clamp(bx(cn.vch), X0, X1);
+          ctx.fillStyle = 'rgba(52,211,153,0.55)'; ctx.fillRect(X0, BY, xc - X0, 12);
+          ctx.fillStyle = 'rgba(148,163,184,0.5)'; ctx.fillRect(xc, BY, xh - xc, 12);
+          ctx.fillStyle = 'rgba(248,113,113,0.55)'; ctx.fillRect(xh, BY, X1 - xh, 12);
+          [0.01, 0.1, 1, 10].forEach(function (v) { line(bx(v), BY + 12, bx(v), BY + 18, '#94a3b8', 1.5); txt(v + '', bx(v), BY + 33, '#94a3b8', 13, 'center'); });
+          txt('km/s', X1 + 8, BY + 33, '#94a3b8', 13);
+          if (xc - X0 > 50) txt('stick', X0 + 6, BY - 6, '#34d399', 13);
+          if (X1 - xh > 50) txt('shatter', X1 - 6, BY - 6, '#f87171', 13, 'right');
+          var mx = bx(cn.v); ctx.beginPath(); ctx.moveTo(mx, BY - 2); ctx.lineTo(mx - 6, BY - 12); ctx.lineTo(mx + 6, BY - 12); ctx.closePath(); ctx.fillStyle = '#fbbf24'; ctx.fill();
+        },
+        read: function (S, P) {
+          var c = this.calc(P);
+          return 'Sticking threshold ' + tex('v_{\\mathrm{coa}}') + ': <b>' + (c.vcoa < 1 ? c.vcoa.toFixed(2) : c.vcoa.toFixed(1)) + ' km/s</b>' + (P.ice ? ' (ice mantle, &times;4)' : '') + '<br>Impact energy over shattering energy, ' + tex('\\phi = \\Delta V^2/4Q^*') + ': <b>' + (c.phi < 0.1 ? c.phi.toExponential(1).replace('e', '&times;10<sup>') + '</sup>' : c.phi.toFixed(1)) + '</b><br>Mass ejected, ' + tex('\\phi/(1+\\phi)') + ': <b>' + (c.frac * 100).toFixed(c.frac < 0.1 ? 1 : 0) + '%</b>';
+        },
+        onparam: function (S, P) { this.restart(S, P); },
+        click: function (x, y, S, P) { this.restart(S, P); }
+      };
+    }
+    var coag = collisions('coag', 'Coagulation', 'Two grains meet head-on at a chosen speed. Below a threshold speed they stick together, which is how grains grow in dense gas; the threshold falls with grain size and rises by a factor of 4 when they carry ice mantles. The numbers here are scaled to about 0.1 km/s for a 100 nm grain, following the size dependence of the paper&rsquo;s threshold.', -1.4);
+    var shat = collisions('shat', 'Shattering', 'The same collision at higher speed. Beyond the sticking threshold grains bounce, and once the impact energy becomes a noticeable fraction of the energy that binds the grain, material is ejected as small fragments. Silicates need faster impacts than carbon grains to break. Turn the speed up to see the mass ejected grow.', 0.55);
+
+    // ============ 4. Thermal sputtering ============
+    var sput = {
+      id: 'sput', name: 'Thermal sputtering',
+      blurb: 'Fast ions in hot gas hit a grain. Each impact has a small chance, the sputtering yield, of knocking an atom off its surface. Below about 10<sup>5</sup> K the ions are too slow and bounce off; the rate peaks near 10<sup>7</sup> to 10<sup>8</sup> K and then falls for small grains. The animation is sped up, while the real lifetime is shown below.',
+      hint: 'Click to fire an extra ion at the grain.',
+      params: [
+        { id: 'logT', label: 'Gas temperature ' + tex('T'), min: 3, max: 9.5, step: 0.05, val: 7, fmt: function (v) { return tex(pow10Tex(v) + '\\,\\mathrm K'); } },
+        { id: 'logn', label: 'Gas density ' + tex('n_{\\mathrm H}'), min: -4, max: 2, step: 0.05, val: -1, fmt: function (v) { return tex(pow10Tex(v) + '\\,\\mathrm{cm^{-3}}'); } },
+        { id: 'loga', label: 'Grain radius ' + tex('a'), min: -2, max: 0, step: 0.05, val: -1, fmt: function (v) { return fmtSize(Math.pow(10, v)); } },
+        { id: 'comp', type: 'seg', label: 'Material', val: 'sil', opts: [['sil', 'Silicate'], ['car', 'Carbonaceous']] }
+      ],
+      init: function (S) { S.ions = []; S.ej = []; S.mass = 1; S.hits = 0; S.ejected = 0; S.gone = 0; },
+      prob: function (P) { return Math.min(1, Math.pow(10, logRate(P.comp, P.logT, Math.pow(10, P.loga)) + 5.4)); },
+      spawn: function (P) {
+        var v = 130 + 55 * (P.logT - 3), a = rand(0, PI2), side = Math.floor(Math.random() * 4), x, y;
+        if (side === 0) { x = 0; y = rand(0, H); } else if (side === 1) { x = W; y = rand(0, H); } else if (side === 2) { x = rand(0, W); y = 0; } else { x = rand(0, W); y = H; }
+        a = Math.atan2(190 - y, 380 - x) + rand(-0.9, 0.9);
+        return { x: x, y: y, vx: v * Math.cos(a), vy: v * Math.sin(a) };
+      },
+      step: function (dt, S, P) {
+        var N = Math.round(10 + 14 * (P.logn + 4)), v = 130 + 55 * (P.logT - 3), p = this.prob(P), self = this;
+        if (S.gone > 0) { S.gone -= dt; if (S.gone <= 0) { S.mass = 1; S.ejected = 0; S.hits = 0; } return; }
+        while (S.ions.length < N) S.ions.push(self.spawn(P));
+        while (S.ions.length > N) S.ions.pop();
+        var R0 = 30 + 40 * (P.loga + 2.3) / 2.3, R = R0 * Math.cbrt(S.mass), cx = 380, cy = 190;
+        S.ions.forEach(function (a, i) {
+          var sp = Math.sqrt(a.vx * a.vx + a.vy * a.vy) || 1; a.vx *= v / sp; a.vy *= v / sp;
+          a.x += a.vx * dt; a.y += a.vy * dt;
+          wall(a);
+          var dx = a.x - cx, dy = a.y - cy, d = Math.sqrt(dx * dx + dy * dy);
+          if (d < R + 4) {
+            S.hits++; var nx = dx / d, ny = dy / d, dot = a.vx * nx + a.vy * ny;
+            if (dot < 0) { a.vx -= 2 * dot * nx; a.vy -= 2 * dot * ny; }
+            a.x = cx + nx * (R + 5); a.y = cy + ny * (R + 5);
+            if (Math.random() < p) {
+              S.ejected++; S.mass -= 0.03; var g = Math.atan2(dy, dx);
+              S.ej.push({ x: cx + nx * R, y: cy + ny * R, vx: Math.cos(g) * rand(50, 110), vy: Math.sin(g) * rand(50, 110), life: 1.4 });
+            }
+          }
+        });
+        S.ej.forEach(function (e) { e.x += e.vx * dt; e.y += e.vy * dt; e.life -= dt; });
+        S.ej = S.ej.filter(function (e) { return e.life > 0; });
+        if (S.mass < 0.03) S.gone = 1.6;
+      },
+      draw: function (S, P) {
+        var R0 = 30 + 40 * (P.loga + 2.3) / 2.3, col = COL[P.comp], p = this.prob(P);
+        circ(380, 190, R0, null, '#475569', 1.5); ctx.setLineDash([]);
+        if (S.gone <= 0) circ(380, 190, R0 * Math.cbrt(S.mass), col + '55', col, 2.5);
+        else txt('Grain destroyed', 380, 195, '#f87171', 18, 'center', true);
+        S.ions.forEach(function (a) { var sp = Math.sqrt(a.vx * a.vx + a.vy * a.vy) || 1; line(a.x, a.y, a.x - a.vx / sp * 10, a.y - a.vy / sp * 10, 'rgba(244,114,182,0.5)', 2); circ(a.x, a.y, 3.5, '#f472b6'); });
+        S.ej.forEach(function (e) { circ(e.x, e.y, 3, 'rgba(251,191,36,' + clamp(e.life, 0, 1) + ')'); });
+        txt(P.logT < 5 ? 'Too cold: the ions bounce off without removing atoms' : 'Fast ions knock atoms off the grain', 14, 24, P.logT < 5 ? '#94a3b8' : '#f472b6', 15);
+      },
+      read: function (S, P) {
+        var a0 = Math.pow(10, P.loga), n = Math.pow(10, P.logn), tr = trajectory(n, P.logT, a0, P.comp), tau = tr.t[tr.t.length - 1];
+        return 'Chance that an impact removes an atom (relative to the maximum): <b>' + (this.prob(P) < 0.001 ? '< 0.1' : (this.prob(P) * 100).toFixed(this.prob(P) < 0.1 ? 1 : 0)) + '%</b><br>Real lifetime of this grain: <b>' + tm(tau) + '</b><br>Atoms removed so far: <b>' + S.ejected + '</b> from <b>' + S.hits + '</b> impacts';
+      },
+      click: function (x, y, S, P) { var v = 130 + 55 * (P.logT - 3), g = Math.atan2(190 - y, 380 - x); S.ions.push({ x: x, y: y, vx: v * Math.cos(g), vy: v * Math.sin(g) }); }
+    };
+
+    // ============ 5. Supernova shock ============
+    var snshock = {
+      id: 'sn', name: 'Supernova shock',
+      blurb: 'A blast wave sweeps through a patch of dust. In the paper&rsquo;s model, gas shocked above about 100 km/s destroys a size-dependent fraction of the grains: small grains are destroyed much more often than large ones, and silicates a little more than carbon. Below 100 km/s the grains survive. Each pass has a random outcome; the tally builds up over passes.',
+      hint: 'Click to send another shock through the field.',
+      params: [
+        { id: 'v', label: 'Shock speed ' + tex('v_{\\mathrm s}'), min: 30, max: 500, step: 5, val: 200, fmt: function (v) { return v + ' km/s'; } },
+        { id: 'loga', label: 'Grain radius ' + tex('a'), min: 1, max: 2.5, step: 0.05, val: 1.5, fmt: function (v) { return Math.round(Math.pow(10, v)) + ' nm'; } },
+        { id: 'comp', type: 'seg', label: 'Material', val: 'sil', opts: [['sil', 'Silicate'], ['car', 'Carbonaceous']] }
+      ],
+      eps: function (P) { var d = P.comp === 'sil' ? 0.15 : 0.10; return P.v < 100 ? 0 : 1 - Math.exp(-d / (Math.pow(10, P.loga) / 100)); },
+      init: function (S, P) { S.tot = 0; S.dead = 0; this.reset(S, P); },
+      reset: function (S, P) {
+        S.front = -20; S.wait = 0; S.grains = []; S.atoms = []; S.pass = { n: 0, d: 0 };
+        for (var i = 0; i < 40; i++) S.grains.push({ x: rand(50, 720), y: rand(50, 330), hit: false, alive: true });
+        S.gas = []; for (i = 0; i < 70; i++) S.gas.push({ x: rand(0, W), y: rand(0, H) });
+      },
+      step: function (dt, S, P) {
+        var self = this; S.front += 170 * dt;
+        S.grains.forEach(function (g) {
+          if (!g.hit && g.x < S.front) {
+            g.hit = true; S.tot++; S.pass.n++;
+            if (Math.random() < self.eps(P)) { g.alive = false; S.dead++; S.pass.d++; for (var k = 0; k < 9; k++) { var a = rand(0, PI2); S.atoms.push({ x: g.x, y: g.y, vx: Math.cos(a) * rand(30, 90), vy: Math.sin(a) * rand(30, 90), life: 1.6 }); } }
+            else g.flash = 0.4;
+          }
+          if (g.flash) g.flash -= dt;
+        });
+        S.atoms.forEach(function (a) { a.x += a.vx * dt; a.y += a.vy * dt; a.life -= dt; });
+        S.atoms = S.atoms.filter(function (a) { return a.life > 0; });
+        S.gas.forEach(function (g) { if (g.x < S.front) { g.x += rand(-1, 1) * 40 * dt; g.y += rand(-1, 1) * 40 * dt; } });
+        if (S.front > W + 60) { S.wait += dt; if (S.wait > 1.2) this.reset(S, P); }
+      },
+      draw: function (S, P) {
+        var col = COL[P.comp], R = 5 + 9 * (P.loga - 1) / 1.5, hot = P.v >= 100;
+        if (S.front > 0) { ctx.fillStyle = hot ? 'rgba(248,113,113,0.13)' : 'rgba(148,163,184,0.08)'; ctx.fillRect(0, 0, Math.min(S.front, W), H); }
+        S.gas.forEach(function (g) { circ(g.x, g.y, 2, g.x < S.front ? (hot ? '#fca5a5' : '#cbd5e1') : '#475569'); });
+        if (S.front > 0 && S.front < W) { var gr = ctx.createLinearGradient(S.front - 40, 0, S.front + 4, 0); gr.addColorStop(0, 'rgba(251,191,36,0)'); gr.addColorStop(1, hot ? 'rgba(251,191,36,0.85)' : 'rgba(203,213,225,0.7)'); ctx.fillStyle = gr; ctx.fillRect(S.front - 40, 0, 44, H); }
+        S.grains.forEach(function (g) { if (g.alive) circ(g.x, g.y, R + (g.flash > 0 ? 3 : 0), col + '66', g.flash > 0 ? '#f8fafc' : col, 2); });
+        S.atoms.forEach(function (a) { circ(a.x, a.y, 2.5, 'rgba(251,191,36,' + clamp(a.life, 0, 1) + ')'); });
+        txt(hot ? 'Shock above 100 km/s: grains may be destroyed' : 'Shock below 100 km/s: no destruction in the model', 14, 24, hot ? '#f87171' : '#94a3b8', 15);
+        txt('Destroyed this pass: ' + S.pass.d + ' of ' + S.pass.n + ' reached', 14, H - 14, '#cbd5e1', 14);
+      },
+      read: function (S, P) {
+        var e = this.eps(P);
+        return 'Destruction probability, ' + tex('\\varepsilon = 1-e^{-\\delta/a_{0.1}}') + ': <b>' + (e * 100).toFixed(e < 0.1 ? 1 : 0) + '%</b><br>Over all passes so far: <b>' + S.dead + '</b> of <b>' + S.tot + '</b> grains destroyed (' + (S.tot ? (100 * S.dead / S.tot).toFixed(0) : 0) + '%)<br>Material constant ' + tex('\\delta') + ' = ' + (P.comp === 'sil' ? '0.15' : '0.10') + ', radius in units of 0.1 &micro;m: ' + tex('a_{0.1}') + ' = ' + (Math.pow(10, P.loga) / 100).toFixed(2);
+      },
+      click: function (x, y, S, P) { this.reset(S, P); }
+    };
+
+    // ============ 6. Photoelectric heating ============
+    function epsPEH(comp, logaNm) {
+      var pts = PEH[comp], i;
+      if (logaNm <= pts[0][0]) return Math.pow(10, pts[0][1]);
+      for (i = 1; i < pts.length; i++) if (logaNm <= pts[i][0]) { var f = (logaNm - pts[i - 1][0]) / (pts[i][0] - pts[i - 1][0]); return Math.pow(10, pts[i - 1][1] + f * (pts[i][1] - pts[i - 1][1])); }
+      return Math.pow(10, pts[pts.length - 1][1]);
+    }
+    var peh_lab = {
+      id: 'peh', name: 'Photoelectric heating',
+      blurb: 'Far-ultraviolet photons hit a grain and some of them knock out an electron, which then collides with gas atoms and heats them. The fraction that ends up as gas heat, the efficiency, is much higher for small grains than for large ones, and higher for carbon than for silicate. The gas also cools back toward a base temperature, so the gauge shows a balance between heating and cooling.',
+      hint: 'Click to send an extra ultraviolet photon at the grain.',
+      params: [
+        { id: 'loga', label: 'Grain radius ' + tex('a'), min: 0, max: 3, step: 0.05, val: 0.3, fmt: function (v) { var nm = Math.pow(10, v); return nm >= 1000 ? '1 µm' : nm.toFixed(nm < 10 ? 1 : 0) + ' nm'; } },
+        { id: 'comp', type: 'seg', label: 'Material', val: 'car', opts: [['car', 'Carbonaceous'], ['sil', 'Silicate']] },
+        { id: 'logG', label: 'Radiation field ' + tex('G_0'), min: -1, max: 3, step: 0.05, val: 1, fmt: function (v) { return tex(pow10Tex(v)); } }
+      ],
+      init: function (S) { S.atoms = []; S.ph = []; S.el = []; S.abs = 0; S.esc = 0; S.acc = 0; S.t = 0; for (var i = 0; i < 46; i++) { var a = rand(0, PI2); S.atoms.push({ x: rand(330, 740), y: rand(20, 360), vx: 70 * Math.cos(a), vy: 70 * Math.sin(a), heat: 0 }); } },
+      step: function (dt, S, P) {
+        var GX = 220, GY = 190, R = 24 + 11 * P.loga, eps = epsPEH(P.comp, P.loga), pe = Math.min(1, eps / 0.03);
+        S.t += dt; S.acc += 2.5 * Math.pow(10, P.logG / 2) * dt;
+        while (S.acc >= 1) { S.acc -= 1; var a = rand(-1.3, 1.3); S.ph.push({ x: GX - 260 * Math.cos(a) * 1.0, y: GY - 260 * Math.sin(a), tx: GX, ty: GY }); }
+        S.ph.forEach(function (p) {
+          var dx = p.tx - p.x, dy = p.ty - p.y, d = Math.sqrt(dx * dx + dy * dy) || 1; p.x += dx / d * 330 * dt; p.y += dy / d * 330 * dt; p.ux = dx / d; p.uy = dy / d;
+          if (d < R) {
+            p.dead = true; S.abs++; S.flash = 0.15;
+            if (Math.random() < pe) { var g = rand(0, PI2); S.esc++; S.el.push({ x: GX + Math.cos(g) * R, y: GY + Math.sin(g) * R, vx: Math.cos(g) * 230, vy: Math.sin(g) * 230 }); }
+          }
+        });
+        S.ph = S.ph.filter(function (p) { return !p.dead; });
+        S.el.forEach(function (e) {
+          e.x += e.vx * dt; e.y += e.vy * dt;
+          S.atoms.forEach(function (a) { if (!e.dead && Math.abs(a.x - e.x) < 9 && Math.abs(a.y - e.y) < 9) { e.dead = true; var s = Math.sqrt(a.vx * a.vx + a.vy * a.vy) || 1, s2 = Math.min(s * 1.7, 70 * 3); a.vx *= s2 / s; a.vy *= s2 / s; a.heat = 1; } });
+          if (e.x < -10 || e.x > W + 10 || e.y < -10 || e.y > H + 10) e.dead = true;
+        });
+        S.el = S.el.filter(function (e) { return !e.dead; });
+        S.atoms.forEach(function (a) {
+          a.x += a.vx * dt; a.y += a.vy * dt;
+          wall(a);
+          var dx = a.x - GX, dy = a.y - GY, d = Math.sqrt(dx * dx + dy * dy);
+          if (d < R + 5) { var nx = dx / d, ny = dy / d, dot = a.vx * nx + a.vy * ny; if (dot < 0) { a.vx -= 2 * dot * nx; a.vy -= 2 * dot * ny; } a.x = GX + nx * (R + 6); a.y = GY + ny * (R + 6); }
+          var s = Math.sqrt(a.vx * a.vx + a.vy * a.vy) || 1, s2 = s + (70 - s) * 0.12 * dt; a.vx *= s2 / s; a.vy *= s2 / s; a.heat = Math.max(0, (s2 / 70 - 1) / 1.2);
+        });
+        if (S.flash > 0) S.flash -= dt;
+      },
+      draw: function (S, P) {
+        var GX = 220, GY = 190, R = 24 + 11 * P.loga, col = COL[P.comp];
+        circ(GX, GY, R, S.flash > 0 ? '#f8fafc66' : col + '55', col, 2.5);
+        S.ph.forEach(function (p) { wave(p.x, p.y, p.x + (p.ux || 1) * 30, p.y + (p.uy || 0) * 30, '#fde047', 4, S.t); });
+        S.el.forEach(function (e) { circ(e.x, e.y, 3, '#60a5fa'); });
+        var tsum = 0; S.atoms.forEach(function (a) { var h = clamp(a.heat, 0, 1); circ(a.x, a.y, 4.5, 'rgb(' + Math.round(251 - 3 * h) + ',' + Math.round(191 - 100 * h) + ',' + Math.round(36 + 50 * h) + ')'); tsum += a.vx * a.vx + a.vy * a.vy; });
+        S.trel = tsum / S.atoms.length / (70 * 70);
+        // gas temperature gauge
+        var gx = 728, gy0 = 70, gh = 240, f = clamp((S.trel - 1) / 2.5, 0, 1);
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(gx, gy0, 14, gh); ctx.fillStyle = f > 0.5 ? '#f87171' : '#fbbf24'; ctx.fillRect(gx, gy0 + gh * (1 - f), 14, gh * f);
+        txt('Gas T', gx + 7, gy0 - 10, '#94a3b8', 13, 'center');
+        txt('Far-UV photons eject electrons that heat the gas', 14, 24, '#94a3b8', 15);
+      },
+      read: function (S, P) {
+        var eps = epsPEH(P.comp, P.loga);
+        return 'Heating efficiency ' + tex('\\epsilon_{\\mathrm{PEH}}') + ': <b>' + (eps * 100 < 0.1 ? eps * 100 : (eps * 100)).toFixed(eps < 0.001 ? 3 : eps < 0.01 ? 2 : 1) + '%</b><br>Photons absorbed: <b>' + S.abs + '</b>, electrons that escaped: <b>' + S.esc + '</b><br>Gas heating, relative to its base temperature: <b>&times;' + (S.trel || 1).toFixed(2) + '</b>';
+      },
+      click: function (x, y, S, P) { S.ph.push({ x: x, y: y, tx: 220, ty: 190 }); }
+    };
+
+    // ============ 7. H2 formation on a grain ============
+    var NS = 12, SX0 = 90, SXS = 580 / 11, SY = 290;
+    var h2form = {
+      id: 'h2', name: 'H\u2082 formation',
+      blurb: 'Hydrogen atoms land on a cold grain, bind weakly to surface sites, hop between them and, when two meet, form H<sub>2</sub>, which leaves with the grain absorbing the energy. The grain temperature controls the race: warmer grains let atoms hop faster, but above about 20 K they also evaporate before they meet, so the efficiency collapses.',
+      hint: 'Click to drop an extra hydrogen atom onto the surface.',
+      params: [
+        { id: 'Td', label: 'Grain temperature ' + tex('T_{\\mathrm d}'), min: 5, max: 60, step: 1, val: 12, fmt: function (v) { return v + ' K'; } },
+        { id: 'logn', label: 'Gas density ' + tex('n_{\\mathrm H}'), min: 0, max: 3, step: 0.05, val: 1.5, fmt: function (v) { return tex(pow10Tex(v) + '\\,\\mathrm{cm^{-3}}'); } }
+      ],
+      init: function (S) { S.sites = []; for (var i = 0; i < NS; i++) S.sites.push(null); S.fall = []; S.h2 = []; S.esc = []; S.landed = 0; S.formed = 0; S.evap = 0; S.acc = 0; S.t = 0; },
+      rates: function (P) { return { hop: 1.2 * Math.exp((P.Td - 10) / 5), ev: 0.02 * Math.exp((P.Td - 10) / 3.5) }; },
+      step: function (dt, S, P) {
+        var r = this.rates(P), i; S.t += dt;
+        S.acc += 0.5 * Math.pow(10, P.logn * 0.4) * dt;
+        while (S.acc >= 1) { S.acc -= 1; i = Math.floor(Math.random() * NS); S.fall.push({ i: i, x: SX0 + i * SXS, y: 20 }); }
+        function makeH2(i, j) { S.formed++; S.h2.push({ x: SX0 + i * SXS, y: SY - 12, vy: -90, life: 1.8 }); S.sites[i] = null; if (j !== undefined) S.sites[j] = null; }
+        S.fall.forEach(function (f) {
+          f.y += 260 * dt;
+          if (f.y >= SY - 12) { f.dead = true; S.landed++; if (S.sites[f.i]) makeH2(f.i); else S.sites[f.i] = { }; }
+        });
+        S.fall = S.fall.filter(function (f) { return !f.dead; });
+        var ph = Math.min(1, r.hop * dt), pe = Math.min(1, r.ev * dt);
+        for (i = 0; i < NS; i++) {
+          if (!S.sites[i]) continue;
+          if (Math.random() < pe) { S.sites[i] = null; S.evap++; S.esc.push({ x: SX0 + i * SXS, y: SY - 12, vy: -70, life: 1.2 }); continue; }
+          if (Math.random() < ph) {
+            var j = i + (Math.random() < 0.5 ? -1 : 1);
+            if (j >= 0 && j < NS) { if (S.sites[j]) makeH2(i, j); else { S.sites[j] = S.sites[i]; S.sites[i] = null; } }
+          }
+        }
+        [S.h2, S.esc].forEach(function (arr) { arr.forEach(function (m) { m.y += m.vy * dt; m.life -= dt; }); });
+        S.h2 = S.h2.filter(function (m) { return m.life > 0; }); S.esc = S.esc.filter(function (m) { return m.life > 0; });
+      },
+      draw: function (S, P) {
+        var amp = 0.7 * Math.sqrt(P.Td), i;
+        ctx.fillStyle = 'rgba(56,189,248,0.2)'; ctx.fillRect(40, SY, 680, 56); ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.strokeRect(40, SY, 680, 56);
+        var warm = clamp((P.Td - 5) / 55, 0, 1); ctx.fillStyle = 'rgba(248,113,113,' + (0.05 + 0.3 * warm) + ')'; ctx.fillRect(40, SY, 680, 56);
+        for (i = 0; i < NS; i++) circ(SX0 + i * SXS, SY, 5, '#0b1220', '#7dd3fc', 1.5);
+        function atom(x, y) { circ(x, y, 9, '#fbbf24'); txt('H', x, y + 4, '#0f172a', 11, 'center', true); }
+        S.fall.forEach(function (f) { atom(f.x, f.y); });
+        for (i = 0; i < NS; i++) if (S.sites[i]) atom(SX0 + i * SXS + rand(-amp, amp) * 0.5, SY - 12 + rand(-amp, amp) * 0.3);
+        S.h2.forEach(function (m) { ctx.globalAlpha = clamp(m.life, 0, 1); line(m.x - 11, m.y, m.x + 11, m.y, '#fbbf24', 8); atom(m.x - 11, m.y); atom(m.x + 11, m.y); ctx.globalAlpha = 1; });
+        S.esc.forEach(function (m) { ctx.globalAlpha = clamp(m.life, 0, 1); atom(m.x, m.y); ctx.globalAlpha = 1; });
+        txt(P.Td > 20 ? 'Warm grain: atoms evaporate before they can meet' : 'Cold grain: atoms stay put, hop, and meet', 14, 24, P.Td > 20 ? '#f87171' : '#34d399', 15, 'left', true);
+      },
+      read: function (S, P) {
+        var r = this.rates(P), eff = S.landed ? 2 * S.formed / S.landed : 0;
+        return 'Hop rate: <b>' + numFmt(r.hop) + ' s<sup>&minus;1</sup></b>, evaporation rate: <b>' + numFmt(r.ev) + ' s<sup>&minus;1</sup></b> (per atom)<br>Atoms landed: <b>' + S.landed + '</b>, evaporated: <b>' + S.evap + '</b>, H<sub>2</sub> formed: <b>' + S.formed + '</b><br>Fraction of atoms ending up in H<sub>2</sub>: <b>' + (100 * eff).toFixed(0) + '%</b>';
+      },
+      click: function (x, y, S, P) { var i = clamp(Math.round((x - SX0) / SXS), 0, NS - 1); S.fall.push({ i: i, x: SX0 + i * SXS, y: 20 }); }
+    };
+
+    var LABS = [accretion, coag, shat, sput, snshock, peh_lab, h2form];
+
+    // ============ framework ============
+    var cur = null, S = null, P = null, playing = true, visible = true, raf = 0, last = 0, lastRead = 0;
+    function buildCtrls() {
+      ctrlEl.innerHTML = '';
+      cur.params.forEach(function (p) {
+        var wrapEl = document.createElement('div');
+        if (p.type === 'seg') {
+          wrapEl.className = 'dx-seg'; wrapEl.style.marginBottom = '0.7rem';
+          p.opts.forEach(function (o) {
+            var b = document.createElement('button'); b.type = 'button'; b.textContent = o[1]; if (P[p.id] === o[0]) b.className = 'dx-seg-on';
+            b.addEventListener('click', function () { P[p.id] = o[0]; wrapEl.querySelectorAll('button').forEach(function (x) { x.className = x === b ? 'dx-seg-on' : ''; }); changed(); });
+            wrapEl.appendChild(b);
+          });
+        } else if (p.type === 'check') {
+          wrapEl = document.createElement('label'); wrapEl.style.cursor = 'pointer';
+          var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!P[p.id]; cb.style.marginRight = '0.5rem'; cb.style.accentColor = '#fbbf24';
+          cb.addEventListener('change', function () { P[p.id] = cb.checked; changed(); });
+          wrapEl.appendChild(cb); wrapEl.appendChild(document.createTextNode(p.label));
+        } else {
+          wrapEl = document.createElement('label');
+          var lab = document.createElement('span'); lab.innerHTML = p.label + ' '; var val = document.createElement('span'); val.className = 'dx-val';
+          var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step; inp.value = P[p.id];
+          function upd() { P[p.id] = parseFloat(inp.value); val.innerHTML = p.fmt(P[p.id]); }
+          inp.addEventListener('input', function () { upd(); changed(); });
+          upd(); wrapEl.appendChild(lab); wrapEl.appendChild(val); wrapEl.appendChild(inp);
+        }
+        ctrlEl.appendChild(wrapEl);
+      });
+    }
+    function changed() { if (cur.onparam) cur.onparam(S, P); }
+    function select(l) {
+      cur = l; P = {}; l.params.forEach(function (p) { P[p.id] = p.val; }); S = {}; l.init(S, P);
+      blurbEl.innerHTML = l.blurb; hintEl.textContent = l.hint; buildCtrls();
+      tabsEl.querySelectorAll('button').forEach(function (b) { b.classList.toggle('dx-seg-on', b.getAttribute('data-id') === l.id); });
+      readEl.innerHTML = l.read(S, P);
+    }
+    LABS.forEach(function (l) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'dx-ctx'; b.setAttribute('data-id', l.id); b.innerHTML = l.name;
+      b.addEventListener('click', function () { select(l); }); tabsEl.appendChild(b);
+    });
+    function frame(t) {
+      raf = 0; if (!playing || !visible) return;
+      var dt = Math.min(0.05, (t - last) / 1000); last = t;
+      cur.step(dt, S, P); bg(); cur.draw(S, P);
+      if (t - lastRead > 200) { lastRead = t; readEl.innerHTML = cur.read(S, P); }
+      raf = requestAnimationFrame(frame);
+    }
+    function kick() { if (!raf && playing && visible) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+    $('#dx-lab-pause').addEventListener('click', function () { playing = !playing; this.textContent = playing ? 'Pause' : 'Play'; kick(); });
+    $('#dx-lab-reset').addEventListener('click', function () { l_reset(); });
+    function l_reset() { S = {}; cur.init(S, P); bg(); cur.draw(S, P); kick(); }
+    cv.addEventListener('click', function (ev) {
+      var r = cv.getBoundingClientRect(); cur.click((ev.clientX - r.left) / r.width * W, (ev.clientY - r.top) / r.height * H, S, P);
+    });
+    if (window.IntersectionObserver) new IntersectionObserver(function (en) { visible = en[0].isIntersecting; kick(); }).observe(cv);
+    select(accretion); bg(); cur.draw(S, P); kick();
+  })();
+
+  // --------------------------------------------------------- collapsible sections and the map
+  (function () {
+    function slug(t) { return 'dx-' + t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40); }
+    function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+
+    // ---- 1. wrap every h2 and h3 together with its content into a collapsible section
+    function build(container, level) {
+      var cls = level === 2 ? 'dx-h2' : 'dx-h3', kids = Array.prototype.slice.call(container.children), idx = [];
+      kids.forEach(function (k, j) { if (k.classList.contains(cls)) idx.push(j); });
+      idx.forEach(function (j, n) {
+        var head = kids[j], end = n + 1 < idx.length ? idx[n + 1] : kids.length, body = [];
+        for (var k = j + 1; k < end; k++) { if (kids[k].classList.contains('dx-note')) break; body.push(kids[k]); }
+        var sec = el('section', 'dx-sec dx-sec-' + level), bodyEl = el('div', 'dx-sec-body'), inner = el('div', 'dx-sec-inner');
+        head.id = slug(head.textContent); head.setAttribute('role', 'button'); head.setAttribute('tabindex', '0'); head.setAttribute('aria-expanded', 'true');
+        sec.dataset.title = head.textContent;
+        container.insertBefore(sec, head); sec.appendChild(head); sec.appendChild(bodyEl); bodyEl.appendChild(inner);
+        body.forEach(function (b) { inner.appendChild(b); });
+        head.addEventListener('click', function () { toggle(sec); });
+        head.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(sec); } });
+      });
+    }
+    build(wrap, 2);
+    wrap.querySelectorAll('.dx-sec-2 > .dx-sec-body > .dx-sec-inner').forEach(function (inner) { build(inner, 3); });
+
+    function headOf(sec) { return sec.firstElementChild; }
+    function setOpen(sec, open) {
+      var closed = sec.classList.contains('dx-sec--closed');
+      if (open === !closed) return false;
+      sec.classList.add('dx-sec--anim'); clearTimeout(sec._t); sec._t = setTimeout(function () { sec.classList.remove('dx-sec--anim'); }, 460);
+      sec.classList.toggle('dx-sec--closed', !open); headOf(sec).setAttribute('aria-expanded', open ? 'true' : 'false');
+      return true;
+    }
+    function toggle(sec) { setOpen(sec, sec.classList.contains('dx-sec--closed')); }
+    function openAncestors(node) { var changed = false, s = node.closest ? node.closest('.dx-sec') : null; while (s) { if (setOpen(s, true)) changed = true; s = s.parentElement ? s.parentElement.closest('.dx-sec') : null; } return changed; }
+    var allSecs = Array.prototype.slice.call(wrap.querySelectorAll('.dx-sec'));
+    function go(head) {
+      var changed = openAncestors(head);          // wait for the section to finish opening before scrolling to it
+      setTimeout(function () {
+        head.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        head.classList.remove('dx-flash'); void head.offsetWidth; head.classList.add('dx-flash');
+        if (history.replaceState) history.replaceState(null, '', '#' + head.id);
+      }, changed ? 480 : 0);
+    }
+
+    // ---- 2. the map
+    var SHORT = [['How much dust', 'Dust from stars'], ['Growth in the interstellar', 'Growth in the ISM'], ['The dust budget', 'The dust budget'], ['The dust cycle', 'The dust cycle'],
+      ['What dust looks like', 'Grain structures'], ['How dust dims', 'Extinction curve'], ['Process lab', 'Process lab'], ['Thermal sputtering', 'Thermal sputtering'], ['Destruction in supernova', 'Supernova shocks'],
+      ['Shattering and coagulation', 'Shattering and coagulation'], ['Which process matters', 'Budget of a grain'], ['Dust and the gas', 'Dust and the gas'],
+      ['How dust forms', 'How dust forms'], ['The kinds of dust', 'The kinds of dust'], ['What happens to dust', 'What happens to dust'], ['References', 'References']];
+    function short(t) { for (var i = 0; i < SHORT.length; i++) if (t.indexOf(SHORT[i][0]) === 0) return SHORT[i][1]; return t; }
+    var COLS = ['#fb923c', '#38bdf8', '#a78bfa'];
+    var map = $('#dx-map'), cols = el('div', 'dx-map-cols'), headings = [];
+    map.appendChild(el('div', 'dx-map-title', '<span>Map of this page</span><span class="dx-map-btns"><button type="button" id="dx-map-collapse">Collapse all</button><button type="button" id="dx-map-expand">Expand all</button></span>'));
+    var chapters = Array.prototype.slice.call(wrap.querySelectorAll(':scope > .dx-sec-2')), refSec = null, ci = 0;
+    chapters.forEach(function (ch) {
+      var h = headOf(ch);
+      if (/^References/.test(h.textContent)) { refSec = ch; return; }
+      var col = el('div', 'dx-map-col'); col.style.setProperty('--c', COLS[ci % COLS.length]);
+      var chap = el('a', 'dx-map-chap', '<span class="dx-map-badge">' + (ci + 1) + '</span><span class="dx-map-chaptxt">' + short(h.textContent) + '</span>'); chap.href = '#' + h.id;
+      chap.addEventListener('click', function (ev) { ev.preventDefault(); go(h); });
+      col.appendChild(chap); headings.push({ head: h, a: chap });
+      var ul = el('ul', 'dx-map-stops');
+      Array.prototype.slice.call(ch.querySelectorAll(':scope > .dx-sec-body > .dx-sec-inner > .dx-sec-3')).forEach(function (s3) {
+        var h3 = headOf(s3), live = s3.querySelector('input[type=range], canvas, .dx-node, .dx-seg, .dx-ctx');
+        var li = el('li'), a = el('a', null, '<span>' + short(h3.textContent) + '</span>' + (live ? '<i class="dx-map-live" title="Interactive">✦</i>' : '')); a.href = '#' + h3.id;
+        a.addEventListener('click', function (ev) { ev.preventDefault(); go(h3); });
+        li.appendChild(a); ul.appendChild(li); headings.push({ head: h3, a: a });
+      });
+      col.appendChild(ul); cols.appendChild(col); ci++;
+    });
+    map.appendChild(cols);
+    var foot = el('div', 'dx-map-foot', '<span><i class="dx-map-live">✦</i> interactive figure</span>'), refLink = el('a', 'dx-map-ref', 'References'); refLink.href = '#';
+    if (refSec) { refLink.href = '#' + headOf(refSec).id; refLink.addEventListener('click', function (ev) { ev.preventDefault(); go(headOf(refSec)); }); headings.push({ head: headOf(refSec), a: refLink }); }
+    foot.appendChild(refLink); map.appendChild(foot);
+    if (refSec) setOpen(refSec, false);
+    $('#dx-map-collapse').addEventListener('click', function () { allSecs.forEach(function (s) { setOpen(s, false); }); });
+    $('#dx-map-expand').addEventListener('click', function () { allSecs.forEach(function (s) { setOpen(s, true); }); });
+
+    // ---- 3. floating shortcut that tracks the current section
+    var fl = el('button', 'dx-float', '<span class="dx-float-arrow">↑</span><span>Map</span><span class="dx-float-sec"></span>'); fl.type = 'button'; fl.setAttribute('aria-label', 'Back to the map');
+    document.body.appendChild(fl);
+    fl.addEventListener('click', function () { map.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    var secLabel = fl.querySelector('.dx-float-sec'), ticking = false;
+    function update() {
+      ticking = false;
+      var mr = map.getBoundingClientRect(), pastMap = mr.bottom < 60, curr = null;
+      fl.classList.toggle('dx-float--on', pastMap);
+      headings.forEach(function (h) {
+        h.a.classList.remove('dx-map-active');
+        var p = h.head.parentElement.parentElement ? h.head.parentElement.parentElement.closest('.dx-sec') : null, hidden = false;
+        while (p) { if (p.classList.contains('dx-sec--closed')) { hidden = true; break; } p = p.parentElement ? p.parentElement.closest('.dx-sec') : null; }
+        if (hidden) return;
+        var r = h.head.getBoundingClientRect(); if (r.height && r.top < 160) curr = h;
+      });
+      if (curr) { curr.a.classList.add('dx-map-active'); secLabel.textContent = short(curr.head.textContent); } else secLabel.textContent = '';
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+
+    // ---- 4. a link with a hash opens and scrolls to its section
+    if (location.hash) { var t = document.getElementById(location.hash.slice(1)); if (t && wrap.contains(t) && (t.classList.contains('dx-h2') || t.classList.contains('dx-h3'))) go(t); }
+  })();
+})();
+</script>

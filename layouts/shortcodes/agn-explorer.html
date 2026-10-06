@@ -340,7 +340,7 @@
   </div>
   <div class="ax-pit"><b>Forbidden lines in the broad-line region are suppressed, not absorbed.</b> And AGN line widths are kinematic: for hydrogen at $10^4$ K the thermal speed $v_{\rm th}=\sqrt{2kT/m_{\rm H}}\approx13$ km/s is far below the observed widths. The Voigt profile (a Gaussian from Doppler broadening, thermal plus turbulent or bulk motions, convolved with a Lorentzian from natural and pressure broadening) is dominated by the Gaussian, so the line shape traces the gas motion.</div>
   <p class="ax-p">
-    <strong>Dust</strong> (see the <a class="ax-ext" href="/dust-explorer/">Dust Explorer</a>) matters in several ways. It reprocesses radiation, absorbing UV and optical photons from stars and the AGN and re-emitting them thermally in the infrared; it cools gas through gas–grain collisions when $T_{\rm gas}>T_{\rm dust}$, efficient only in dense gas; it heats gas through the photoelectric effect, when FUV photons (6 to 13.6 eV) eject electrons from small grains and PAHs; it catalyses H$_2$ formation on grain surfaces and shields molecules from dissociating UV; it depletes refractory elements (Fe, Si, Mg) from the gas phase; and it causes extinction and reddening, measured for instance by the <strong>Balmer decrement</strong> H$\alpha$/H$\beta$, whose intrinsic value is $\approx2.86$ for Case B at $10^4$ K and $\approx3.1$ often adopted for AGN narrow-line regions.
+    <strong>Dust</strong> (see the <a class="ax-ext" href="/dust-explorer/">Dust physics</a> page) matters in several ways. It reprocesses radiation, absorbing UV and optical photons from stars and the AGN and re-emitting them thermally in the infrared; it cools gas through gas–grain collisions when $T_{\rm gas}>T_{\rm dust}$, efficient only in dense gas; it heats gas through the photoelectric effect, when FUV photons (6 to 13.6 eV) eject electrons from small grains and PAHs; it catalyses H$_2$ formation on grain surfaces and shields molecules from dissociating UV; it depletes refractory elements (Fe, Si, Mg) from the gas phase; and it causes extinction and reddening, measured for instance by the <strong>Balmer decrement</strong> H$\alpha$/H$\beta$, whose intrinsic value is $\approx2.86$ for Case B at $10^4$ K and $\approx3.1$ often adopted for AGN narrow-line regions.
   </p>
 
   <h3 class="ax-h3" id="sec-xray">X-ray emission</h3>
@@ -613,7 +613,7 @@
     <li>High-redshift quasars: Wang et al. (2021); Bogdán et al. (2024).</li>
     <li>Little red dots: Matthee et al. (2024); Greene et al. (2024); Inayoshi and Maiolino (2025); Naidu et al. (2025); de Graaff et al. (2025); Sun et al. (2026); Rusakov et al. (2026).</li>
   </ul>
-  <p class="ax-note">Other explorers: the <a class="ax-ext" href="/dust-explorer/">Dust Explorer</a> covers the grains that make the infrared torus emission, and the <a class="ax-ext" href="/jwst-explorer/">JWST Explorer</a> the instruments used to observe distant AGN and little red dots.</p>
+  <p class="ax-note">Related pages: the <a class="ax-ext" href="/dust-explorer/">Dust physics</a> page covers the grains that make the infrared torus emission, and the <a class="ax-ext" href="/jwst-explorer/">JWST Explorer</a> the instruments used to observe distant AGN and little red dots.</p>
 
 
 </div>
@@ -855,6 +855,10 @@
   @media (max-width: 720px) { .ax-scroll > svg, .ax-scroll > canvas { min-width: 640px; } .ax-scroll::after { content: 'scroll sideways for the full figure'; display: block; margin: 0.2rem 0 0.4rem; font-size: 0.78rem; color: #64748b; } }
   .ax-sec-body, .ax-sec-inner { min-width: 0; }
   @media (max-width: 600px) { .ax-eq { font-size: 0.86em; } }
+
+  /* dark halo behind every label in the figures, so text stays legible over curves and lines */
+  .ax-fo { text-shadow: 0 0 2px #0b1220, 0 0 3px #0b1220, 0 0 4px #0b1220, 1px 1px 2px #0b1220, -1px -1px 2px #0b1220, 1px -1px 2px #0b1220, -1px 1px 2px #0b1220; }
+  .ax-svg text, .ax-sedsvg text { paint-order: stroke; stroke: #0b1220; stroke-width: 3.5px; stroke-linejoin: round; stroke-opacity: 0.9; }
 
 </style>
 
@@ -2028,6 +2032,7 @@
   (function () {
     var cv = $('#ax-rm'), ctx = cv.getContext('2d'), out = $('#ax-rm-out'), sL = $('#ax-s-rml'), sM = $('#ax-s-rmm'), vis = { vis: true };
     var dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = 900 * dpr; cv.height = 440 * dpr; ctx.scale(dpr, dpr);
+    var _ft = ctx.fillText.bind(ctx); ctx.fillText = function (t, x, y) { ctx.save(); ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(11,18,32,0.9)'; ctx.lineJoin = 'round'; ctx.strokeText(t, x, y); ctx.restore(); _ft(t, x, y); };
     var seed = 5; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
     function nrm() { var u = rnd() || 1e-9, v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.2832 * v); }
     var NC = 56, clouds = []; for (var i = 0; i < NC; i++) clouds.push({ f: 0.8 + 0.4 * rnd(), th: rnd() * 6.2832 });

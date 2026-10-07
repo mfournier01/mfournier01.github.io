@@ -1,7 +1,7 @@
 <div class="xp-wrap" id="xp" data-world="{{ "data/world-50m.json" | relURL }}">
   <div class="xp-head">
     <h1 class="xp-title">Experience</h1>
-    <p class="xp-lead">A path across Europe, from Mulhouse to Paris. Press play to follow it step by step, pick a stop on the map or in the list, or switch to the conferences layer.</p>
+    <p class="xp-lead">A path across Europe, from Mulhouse to Paris. Press play to follow it step by step, pick a stop on the map or in the list, or switch to the conferences and seminars layers.</p>
   </div>
 
   <div class="xp-app">
@@ -12,6 +12,7 @@
       <div class="xp-seg" role="tablist" aria-label="Map layer">
         <button type="button" role="tab" class="xp-seg-b is-on" data-layer="path" aria-selected="true">Academic path</button>
         <button type="button" role="tab" class="xp-seg-b" data-layer="conf" aria-selected="false">Conferences</button>
+        <button type="button" role="tab" class="xp-seg-b" data-layer="talk" aria-selected="false">Seminars</button>
       </div>
 
       <div class="xp-zoom">
@@ -116,6 +117,7 @@
   .xp-seg-b { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-size: 0.83rem; font-weight: 600; color: var(--xp-mut); transition: background 0.25s, color 0.25s; }
   .xp-seg-b:hover { color: var(--xp-text); }
   .xp-seg-b.is-on { background: rgba(94, 234, 212, 0.16); color: #99f6e4; }
+  .xp-seg-b[data-layer="talk"].is-on { background: rgba(163, 230, 53, 0.14); color: #d9f99d; }
   .xp-seg-b[data-layer="conf"].is-on { background: rgba(251, 191, 36, 0.16); color: #fde68a; }
 
   .xp-zoom { position: absolute; top: 14px; right: 14px; z-index: 4; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: rgba(12, 19, 36, 0.92); border: 1px solid var(--xp-line); }
@@ -154,8 +156,8 @@
   .xp-num { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--c); font-size: 0.72rem; font-weight: 700; background: var(--xp-panel); position: relative; z-index: 1; transition: background 0.25s, color 0.25s; }
   .xp-item.is-active .xp-num { background: var(--c); color: #07101e; }
   .xp-item.is-future .xp-num { opacity: 0.55; }
-  .xp-list.is-flat .xp-num { width: 12px; height: 12px; border-width: 0; background: var(--c); margin: 0 8px; font-size: 0; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.16); }
-  .xp-list.is-flat .xp-item.is-active .xp-num { box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.32); }
+  .xp-list.is-flat .xp-num { width: 12px; height: 12px; border-width: 0; background: var(--c); margin: 0 8px; font-size: 0; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); }
+  .xp-list.is-flat .xp-item.is-active .xp-num { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 36%, transparent); }
   .xp-item.is-online .xp-list .xp-num { border-style: dashed; }
   .xp-place { display: block; font-size: 0.93rem; font-weight: 650; line-height: 1.25; }
   .xp-sub { display: block; font-size: 0.78rem; color: var(--xp-mut); line-height: 1.3; margin-top: 1px; }
@@ -224,21 +226,34 @@
       text: 'Back in Paris to keep studying the multiphase intracluster medium with magnetohydrodynamical simulations.' }
   ];
 
+  // Locations are city-level everywhere: lab = city shown on the map, org = "City, Country".
+  // A specific venue, when known, goes in `venue` and appears in the details only.
   var CONF = [
-    { site: 'Marseille', lab: 'Marseille', ll: [5.3698, 43.2965], yr: 2024, title: 'SF2A – Journées de la Société Française d’Astronomie et d’Astrophysique', org: 'Marseille, France', kind: 'Contributed talk' },
-    { site: 'Cambridge', lab: 'Cambridge, MA', ll: [-71.1281, 42.3814], yr: 2024, title: 'Galaxy Clusters and Radio Relics II', org: 'Cambridge, Massachusetts, USA', kind: 'Contributed talk' },
-    { site: 'Toulouse', lab: 'Toulouse', ll: [1.4442, 43.6047], yr: 2025, title: 'SF2A – Journées de la Société Française d’Astronomie et d’Astrophysique', org: 'Toulouse, France', kind: 'Contributed talk' },
-    { site: 'Cargese', lab: 'Cargèse', ll: [8.5963, 42.1356], yr: 2025, title: 'MIST2025 – Cosmic Turbulence and Magnetic Fields', org: 'Cargèse, Corsica, France', kind: 'Contributed talk' },
-    { site: 'Ringberg', lab: 'Ringberg', ll: [11.7656, 47.7117], yr: 2025, title: 'Modelling of Multiphase Astrophysical Media', org: 'Schloss Ringberg, Germany', kind: 'Contributed talk' },
+    { site: 'Marseille', lab: 'Marseille', ll: [5.3698, 43.2965], yr: 2024, title: 'SF2A \u2013 Journ\u00e9es de la Soci\u00e9t\u00e9 Fran\u00e7aise d\u2019Astronomie et d\u2019Astrophysique', org: 'Marseille, France', kind: 'Contributed talk' },
+    { site: 'Cambridge', lab: 'Cambridge, MA', ll: [-71.1281, 42.3814], yr: 2024, title: 'Galaxy Clusters and Radio Relics II', org: 'Cambridge, MA, USA', kind: 'Contributed talk' },
+    { site: 'Toulouse', lab: 'Toulouse', ll: [1.4442, 43.6047], yr: 2025, title: 'SF2A \u2013 Journ\u00e9es de la Soci\u00e9t\u00e9 Fran\u00e7aise d\u2019Astronomie et d\u2019Astrophysique', org: 'Toulouse, France', kind: 'Contributed talk' },
+    { site: 'Cargese', lab: 'Carg\u00e8se', ll: [8.5963, 42.1356], yr: 2025, title: 'MIST2025 \u2013 Cosmic Turbulence and Magnetic Fields', org: 'Carg\u00e8se, France', kind: 'Contributed talk' },
+    { site: 'Tegernsee', lab: 'Tegernsee', ll: [11.7656, 47.7117], yr: 2025, title: 'Modelling of Multiphase Astrophysical Media', org: 'Tegernsee, Germany', venue: 'Schloss Ringberg', kind: 'Contributed talk' },
     { site: 'Sexten', lab: 'Sexten', ll: [12.3500, 46.7000], yr: 2025, title: 'BlackHoleWeather: Toward a Unified Theory of Feeding and Feedback', org: 'Sexten, Italy', kind: 'Invited talk' },
-    { site: 'Brno', lab: 'Brno', ll: [16.5888, 49.2046], yr: 2026, title: '8th ICM Theory and Computation Workshop', org: 'Brno Observatory and Planetarium, Czechia', kind: 'Poster talk' },
-    { site: 'Boston', lab: 'Boston (online)', ll: [-71.0589, 42.3601], yr: 2026, title: 'Parthenon User Meeting', org: 'Boston, USA (online)', kind: 'Invited talk', online: true }
+    { site: 'Brno', lab: 'Brno', ll: [16.5888, 49.2046], yr: 2026, title: '8th ICM Theory and Computation Workshop', org: 'Brno, Czechia', venue: 'Brno Observatory and Planetarium', kind: 'Poster talk' },
+    { site: 'Cambridge', lab: 'Cambridge, MA', ll: [-71.1281, 42.3814], yr: 2026, title: 'Parthenon User Meeting', org: 'Cambridge, MA, USA (online)', venue: 'Black Hole Initiative, Harvard University', kind: 'Invited talk', online: true }
   ];
 
-  var HILITE = { path: ['250', '276', '756'], conf: ['250', '276', '380', '203', '840'] };
+  var TALK = [
+    { site: 'Cambridge', lab: 'Cambridge, MA', ll: [-71.1281, 42.3814], yr: 2024, yrs: [2024, 2025], per: '2024, 2025', title: 'Harvard\u2013Smithsonian Center for Astrophysics', org: 'Cambridge, MA, USA', kind: 'Seminar' },
+    { site: 'Newcastle', lab: 'Newcastle', ll: [-1.6178, 54.9783], yr: 2024, per: '2024', title: 'Newcastle University', org: 'Newcastle, UK', kind: 'Seminar' },
+    { site: 'Heidelberg', lab: 'Heidelberg', ll: [8.7228, 49.3975], yr: 2024, per: '2024', title: 'Institut f\u00fcr Theoretische Astrophysik', org: 'Heidelberg, Germany', venue: 'Universit\u00e4t Heidelberg', kind: 'Seminar' },
+    { site: 'Heidelberg', lab: 'Heidelberg', ll: [8.7228, 49.3975], yr: 2024, per: '2024', title: 'Max-Planck-Institut f\u00fcr Astronomie', org: 'Heidelberg, Germany', kind: 'Seminar' },
+    { site: 'Lyon', lab: 'Lyon', ll: [4.8225, 45.7298], yr: 2024, per: '2024', title: '\u00c9cole Normale Sup\u00e9rieure de Lyon', org: 'Lyon, France', kind: 'Seminar' },
+    { site: 'Princeton', lab: 'Princeton, NJ', ll: [-74.6672, 40.3573], yr: 2025, per: '2025', title: 'Princeton University', org: 'Princeton, NJ, USA', kind: 'Seminar' },
+    { site: 'Hamburg', lab: 'Hamburg', ll: [9.9755, 53.5670], yr: 2025, per: '2025', title: 'Max-Planck-Institut f\u00fcr Meteorologie', org: 'Hamburg, Germany', kind: 'Seminar' },
+    { site: 'Paris', lab: 'Paris', ll: [2.3365, 48.8365], yr: 2025, yrs: [2025, 2026], per: '2025, 2026', title: 'Observatoire de Paris', org: 'Paris, France', kind: 'Seminar' }
+  ];
+
+  var HILITE = { path: ['250', '276', '756'], conf: ['250', '276', '380', '203', '840'], talk: ['250', '276', '826', '840'] };
   var RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var RAMP = d3.interpolateRgbBasis(['#5eead4', '#38bdf8', '#818cf8', '#c084fc', '#f472b6']);
-  var AMBER = '#fbbf24';
+  var AMBER = '#fbbf24', LIME = '#a3e635';
 
   // ----------------------------------------------------------------- state
   var layer = 'path', items = [], cur = -1, playing = false, playTimer = null, hover = -1;
@@ -280,18 +295,34 @@
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
   // ------------------------------------------------------------- layer set
-  var arcs = [], nodes = [], labs = [], edges = [];
+  var arcs = [], nodes = [], labs = [], edges = [], places = [];
   var pos = [];
 
+  // A place is one marker on the map. On the path every stop is its own place (two stops in the
+  // same city sit side by side); on the other layers all events in one city share a single marker.
+  function curPl() { return cur < 0 ? -1 : items[cur].pl; }
+
   function buildLayer() {
-    items = layer === 'path' ? PATH : CONF;
-    var n = items.length, cnt = {}, seen = {};
+    items = layer === 'path' ? PATH : layer === 'conf' ? CONF : TALK;
+    var n = items.length, cnt = {}, seen = {}, bySite = {};
+    places = [];
     items.forEach(function (it) { cnt[it.site] = (cnt[it.site] || 0) + 1; });
     items.forEach(function (it, i) {
-      seen[it.site] = seen[it.site] || 0;
-      it.off = cnt[it.site] > 1 ? (seen[it.site] - (cnt[it.site] - 1) / 2) * 27 : 0;
-      seen[it.site]++;
-      it.col = layer === 'path' ? RAMP(n > 1 ? i / (n - 1) : 0) : AMBER;
+      it.col = layer === 'path' ? RAMP(n > 1 ? i / (n - 1) : 0) : (layer === 'conf' ? AMBER : LIME);
+      if (layer === 'path') {
+        seen[it.site] = seen[it.site] || 0;
+        var off = cnt[it.site] > 1 ? (seen[it.site] - (cnt[it.site] - 1) / 2) * 27 : 0;
+        seen[it.site]++;
+        it.pl = places.length;
+        places.push({ idx: [i], lab: it.lab, sub: it.per, ll: it.ll, off: off, col: it.col, online: false });
+      } else {
+        if (bySite[it.site] == null) { bySite[it.site] = places.length; places.push({ idx: [], lab: it.lab, ll: it.ll, off: 0, col: it.col, yrs: [], online: true }); }
+        var pl = places[bySite[it.site]];
+        it.pl = bySite[it.site]; pl.idx.push(i);
+        (it.yrs || [it.yr]).forEach(function (y) { if (pl.yrs.indexOf(y) < 0) pl.yrs.push(y); });
+        pl.online = pl.online && !!it.online;
+        pl.sub = pl.yrs.slice().sort().join(', ');
+      }
     });
     gArcs.selectAll('*').remove(); gNodes.selectAll('*').remove(); gLabs.selectAll('*').remove(); gEdge.selectAll('*').remove();
     arcs = []; nodes = []; labs = []; edges = [];
@@ -311,31 +342,37 @@
       });
     }
 
-    items.forEach(function (it, i) {
-      var g = gNodes.append('g').attr('class', 'xp-node' + (layer === 'conf' ? ' is-conf' : '') + (it.online ? ' is-online' : ''))
-        .attr('tabindex', 0).attr('role', 'button').attr('aria-label', it.lab + (it.per ? ', ' + it.per : it.yr ? ', ' + it.yr : ''))
-        .style('--c', it.col);
-      var r = layer === 'path' ? 11 : 8;
-      g.append('circle').attr('class', 'xp-halo').attr('r', r + 7).attr('fill', it.col);
-      g.append('circle').attr('class', 'xp-core').attr('r', r).attr('stroke', it.col);
-      if (layer === 'path') g.append('text').attr('class', 'xp-n').text(i + 1);
-      else g.append('circle').attr('class', 'xp-dot').attr('r', 3.2).attr('fill', it.col);
-      g.on('click', function (ev) { ev.stopPropagation(); userGo(i); });
-      g.on('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); userGo(i); } });
-      g.on('mouseenter', function () { hover = i; renderLabels(); }).on('mouseleave', function () { hover = -1; renderLabels(); });
-      g.on('focus', function () { hover = i; renderLabels(); }).on('blur', function () { hover = -1; renderLabels(); });
+    places.forEach(function (pl, k) {
+      var multi = pl.idx.length > 1;
+      var g = gNodes.append('g').attr('class', 'xp-node' + (layer !== 'path' ? ' is-conf' : '') + (pl.online ? ' is-online' : ''))
+        .attr('tabindex', 0).attr('role', 'button').attr('aria-label', pl.lab + ', ' + pl.sub + (multi ? ' (' + pl.idx.length + ' events)' : ''))
+        .style('--c', pl.col);
+      var r = layer === 'path' ? 11 : (multi ? 10 : 8);
+      g.append('circle').attr('class', 'xp-halo').attr('r', r + 7).attr('fill', pl.col);
+      g.append('circle').attr('class', 'xp-core').attr('r', r).attr('stroke', pl.col);
+      if (layer === 'path') g.append('text').attr('class', 'xp-n').text(k + 1);
+      else if (multi) g.append('text').attr('class', 'xp-n').text(pl.idx.length);
+      else g.append('circle').attr('class', 'xp-dot').attr('r', 3.2).attr('fill', pl.col);
+      var pick = function () {
+        var at = pl.idx.indexOf(cur);               // clicking a shared marker steps through its events
+        userGo(at < 0 ? pl.idx[0] : pl.idx[(at + 1) % pl.idx.length]);
+      };
+      g.on('click', function (ev) { ev.stopPropagation(); pick(); });
+      g.on('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick(); } });
+      g.on('mouseenter', function () { hover = k; renderLabels(); }).on('mouseleave', function () { hover = -1; renderLabels(); });
+      g.on('focus', function () { hover = k; renderLabels(); }).on('blur', function () { hover = -1; renderLabels(); });
       nodes.push(g);
 
       var t = gLabs.append('text').attr('class', 'xp-lab');
-      t.append('tspan').attr('class', 'xp-la').text(it.lab);
-      t.append('tspan').attr('class', 'xp-lb').text(layer === 'path' ? it.per : String(it.yr));
+      t.append('tspan').attr('class', 'xp-la').text(pl.lab);
+      t.append('tspan').attr('class', 'xp-lb').text(pl.sub);
       labs.push(t);
 
-      var eg = gEdge.append('g').attr('class', 'xp-edge').style('--c', it.col).style('display', 'none');
+      var eg = gEdge.append('g').attr('class', 'xp-edge').style('--c', pl.col).style('display', 'none');
       eg.append('rect').attr('rx', 11).attr('height', 22).attr('y', -11);
-      eg.append('text').attr('x', 10).text(it.lab);
+      eg.append('text').attr('x', 10).text(pl.lab);
       eg.append('path');
-      eg.on('click', function (ev) { ev.stopPropagation(); userGo(eg.node().__more ? -1 : i); });
+      eg.on('click', function (ev) { ev.stopPropagation(); if (eg.node().__more) userGo(-1); else pick(); });
       edges.push(eg);
     });
 
@@ -347,7 +384,7 @@
   // ------------------------------------------------------------------ list
   function buildList() {
     while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
-    listEl.classList.toggle('is-flat', layer === 'conf');
+    listEl.classList.toggle('is-flat', layer !== 'path');
     var lastYr = null;
     items.forEach(function (it, i) {
       if (layer === 'conf' && it.yr !== lastYr) { lastYr = it.yr; listEl.appendChild(el('li', 'xp-yr', String(it.yr))); }
@@ -360,7 +397,7 @@
       mid.appendChild(el('span', 'xp-place', layer === 'path' ? it.lab : it.title));
       mid.appendChild(el('span', 'xp-sub', layer === 'path' ? it.title : it.org));
       row.appendChild(mid);
-      row.appendChild(el('span', 'xp-per', layer === 'path' ? it.per : ''));
+      row.appendChild(el('span', 'xp-per', it.per || ''));
       row.addEventListener('click', function () { userGo(cur === i ? -1 : i); });
       li.appendChild(row);
       var more = el('div', 'xp-more'), inn = el('div', 'xp-more-in');
@@ -373,7 +410,8 @@
         it.tags.forEach(function (t) { tg.appendChild(el('span', 'xp-tag' + (t === 'Current' ? ' is-now' : ''), t)); });
         inn.appendChild(tg);
       } else {
-        inn.appendChild(el('div', 'xp-org', it.kind + ' · ' + it.yr));
+        inn.appendChild(el('div', 'xp-org', it.kind + ' · ' + (it.per || it.yr)));
+        if (it.venue) inn.appendChild(el('p', 'xp-txt', 'Venue: ' + it.venue));
       }
       more.appendChild(inn); li.appendChild(more);
       listEl.appendChild(li);
@@ -386,15 +424,19 @@
       var act = i === cur, fut = cur >= 0 && i > cur && layer === 'path';
       it.li.classList.toggle('is-active', act); it.li.classList.toggle('is-future', fut);
       it.row.setAttribute('aria-expanded', act ? 'true' : 'false');
-      nodes[i].classed('is-active', act).classed('is-future', fut);
-      labs[i].classed('is-future', fut);
+    });
+    var cp = curPl();
+    places.forEach(function (pl, k) {
+      var fut = cur >= 0 && k > cur && layer === 'path';
+      nodes[k].classed('is-active', k === cp).classed('is-future', fut);
+      labs[k].classed('is-future', fut);
     });
     var n = items.length;
-    countEl.textContent = cur < 0 ? n + (layer === 'path' ? ' stops' : ' conferences') : (cur + 1) + ' / ' + n;
+    countEl.textContent = cur < 0 ? n + (layer === 'path' ? ' stops' : layer === 'conf' ? ' conferences' : ' seminars') : (cur + 1) + ' / ' + n;
     prevBtn.disabled = cur <= 0; nextBtn.disabled = cur >= n - 1;
     playBtn.classList.toggle('is-playing', playing);
     playTxt.textContent = playing ? 'Pause' : (cur < 0 ? 'Play the journey' : (cur >= n - 1 ? 'Replay' : 'Resume'));
-    if (layer === 'conf') playTxt.textContent = playing ? 'Pause' : (cur < 0 ? 'Play through them' : (cur >= n - 1 ? 'Replay' : 'Resume'));
+    if (layer !== 'path') playTxt.textContent = playing ? 'Pause' : (cur < 0 ? 'Play through them' : (cur >= n - 1 ? 'Replay' : 'Resume'));
     updateCaption();
     if (cur >= 0 && items[cur].li) {
       var li = items[cur].li, top = li.offsetTop - 70;
@@ -408,7 +450,7 @@
     var it = items[cur];
     capEl.classList.remove('is-empty'); capEl.style.setProperty('--c', it.col);
     var k = el('div', 'xp-cap-k'); k.appendChild(el('i'));
-    k.appendChild(el('span', null, layer === 'path' ? ('Stop ' + (cur + 1) + ' of ' + items.length + (it.per ? ' · ' + it.per : '')) : (it.kind + ' · ' + it.yr)));
+    k.appendChild(el('span', null, layer === 'path' ? ('Stop ' + (cur + 1) + ' of ' + items.length + (it.per ? ' · ' + it.per : '')) : (it.kind + ' · ' + (it.per || it.yr))));
     capEl.appendChild(k);
     capEl.appendChild(el('div', 'xp-cap-t', layer === 'path' ? it.lab : it.title));
     capEl.appendChild(el('div', 'xp-cap-s', layer === 'path' ? it.title + ' · ' + it.org : it.org));
@@ -447,14 +489,14 @@
   }
   function overviewT() {
     var pts = items.map(function (it) { return it.ll; });
-    if (layer === 'conf') pts = pts.filter(function (p) { return p[0] > -20; });
+    if (layer !== 'path') pts = pts.filter(function (p) { return p[0] > -20; });
     return fitT(pts, layer === 'path' ? 0.2 : 0.16, 64, 4200);
   }
   function focusT(i) {
     var it = items[i], pts = [it.ll];
     if (layer === 'path' && i > 0 && items[i - 1].site !== it.site) pts.push(items[i - 1].ll);
     var bottom = Math.max(capEl.offsetHeight + 14 + 52, 110);
-    return fitT(pts, 0.16, bottom, pts.length > 1 ? 30000 : (layer === 'conf' ? 16000 : 7500), true);
+    return fitT(pts, 0.16, bottom, pts.length > 1 ? 30000 : (layer !== 'path' ? 16000 : 7500), true);
   }
   function fly(T2, dur) {
     if (!ready) return;
@@ -487,7 +529,7 @@
     if (need) geoFull();
     else { clearTimeout(idleT); idleT = setTimeout(geoFull, 150); }
 
-    items.forEach(function (it, i) { var p = proj(it.ll); pos[i] = [p[0] + it.off, p[1]]; });
+    places.forEach(function (pl, i) { var p = proj(pl.ll); pos[i] = [p[0] + pl.off, p[1]]; });
     nodes.forEach(function (g, i) { g.attr('transform', 'translate(' + pos[i][0] + ',' + pos[i][1] + ')'); });
 
     if (layer === 'path') {
@@ -535,12 +577,13 @@
     if (!ready) return;
     var occ = [], order = [];
     pos.forEach(function (p, i) { occ.push([p[0] - 14, p[1] - 14, p[0] + 14, p[1] + 14]); });
-    items.forEach(function (it, i) { order.push(i); });
+    places.forEach(function (pl, i) { order.push(i); });
     order.sort(function (a, b) { return pri(a) - pri(b); });
-    function pri(i) { return (i === cur ? 0 : i === hover ? 1 : 10 + i); }
+    var cp = curPl();
+    function pri(i) { return (i === cp ? 0 : i === hover ? 1 : 10 + i); }
     var m = 6;
     order.forEach(function (i) {
-      var t = labs[i], p = pos[i], it = items[i];
+      var t = labs[i], p = pos[i], it = places[i];
       var fut = layer === 'path' && cur >= 0 && i > cur;
       if (fut || p[0] < -20 || p[0] > W + 20 || p[1] < -20 || p[1] > H + 20) { t.attr('display', 'none'); return; }
       var w = Math.max(it.lab.length * 6.9, 40) + 4, h = 28;
@@ -566,7 +609,7 @@
 
   function renderEdges() {
     var off = [], cx = W / 2, cy = H / 2;
-    items.forEach(function (it, i) {
+    places.forEach(function (it, i) {
       var p = pos[i], fut = layer === 'path' && cur >= 0 && i > cur;
       var out = p[0] < 8 || p[0] > W - 8 || p[1] < 8 || p[1] > H - 8;
       edges[i].style('display', 'none'); edges[i].node().__more = 0;
@@ -583,7 +626,7 @@
     });
   }
   function drawEdge(i, placed, more) {
-    var it = items[i], p = pos[i], g = edges[i], cx = W / 2, cy = H / 2, dx = p[0] - cx, dy = p[1] - cy, ins = 34;
+    var it = places[i], p = pos[i], g = edges[i], cx = W / 2, cy = H / 2, dx = p[0] - cx, dy = p[1] - cy, ins = 34;
     var s = Math.min((W / 2 - ins) / Math.max(Math.abs(dx), 1e-6), (H / 2 - ins - 14) / Math.max(Math.abs(dy), 1e-6));
     var x = cx + dx * s, y = cy + dy * s, ang = Math.atan2(dy, dx) * 180 / Math.PI;
     placed.forEach(function (q) { if (Math.abs(q[0] - x) < 150 && Math.abs(q[1] - y) < 26) y += 28 * (y < cy ? 1 : -1); });
@@ -665,7 +708,7 @@
       var on = b.getAttribute('data-layer') === L; b.classList.toggle('is-on', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     buildLayer(); buildList();
-    items.forEach(function (it, i) { var p = proj(it.ll); pos[i] = [p[0] + it.off, p[1]]; });
+    places.forEach(function (pl, i) { var p = proj(pl.ll); pos[i] = [p[0] + pl.off, p[1]]; });
     syncArcs(-1, true);
     updateUI();
     fly(overviewT(), animate ? 1400 : 0);

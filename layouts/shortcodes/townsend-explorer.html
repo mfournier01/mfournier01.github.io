@@ -1,0 +1,750 @@
+<!--
+  The Townsend cooling integrator: a short explorer. Vanilla JS + inline SVG; KaTeX from a CDN.
+  Hugo parses this file as a template: never write a double opening curly brace in it.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+
+<div class="tw-wrap">
+
+  <h1 class="tw-title">The Townsend cooling integrator</h1>
+  <div class="tw-box">
+    <p>
+      Radiative cooling is the stiffest source term in simulations of galaxies and clusters. Around $10^5$ K the gas can cool in a time that is orders of magnitude shorter than the hydrodynamical timestep, and an ordinary explicit update then overshoots, or forces the code to take tiny substeps. Townsend (2009) noticed that if the cooling curve is a <strong>piecewise power law</strong>, the cooling equation can be integrated <strong>exactly</strong>, in a single evaluation per cell, for any timestep.
+    </p>
+    <p>
+      This short page shows how. The two figures are interactive. It is the scheme behind the <code>townsend</code> option of AthenaPK's tabular cooling.
+    </p>
+  </div>
+
+  <!-- ====================================================== 1. the problem -->
+  <h2 class="tw-h2" id="sec-problem">The problem: a stiff ordinary equation</h2>
+  <p class="tw-p">
+    In an operator-split code the cooling is applied after the hydrodynamical update, cell by cell, with the density held fixed during the step. With hydrogen number density $n_{\rm H}$, the specific internal energy $e$ obeys $\rho\,\dot e=-n_{\rm H}^2\Lambda(T)$, and since $T=(\gamma-1)\,\bar m\,e/k_B$ this is an ordinary differential equation for the temperature alone:
+  </p>
+  <div class="tw-eq">\frac{\mathrm{d}T}{\mathrm{d}t}=-\mathcal{K}\,\Lambda(T),\qquad \mathcal{K}=\frac{(\gamma-1)\,\bar m}{k_B}\,\frac{n_{\rm H}^2}{\rho}</div>
+  <p class="tw-p">
+    Here $\Lambda(T)$ is the cooling function tabulated from atomic physics, and $\mathcal K$ is a constant for the step. The local cooling time is $t_{\rm cool}=T/(\mathcal K\Lambda)$. The difficulty is that $\Lambda$ changes by two orders of magnitude between $10^4$ and $2\times10^5$ K: a cell that cools slowly at the start of the step can become a runaway a fraction of a step later. A forward-Euler update uses the cooling rate at the <em>start</em> of the step, so it either subcycles at a cost, or, when $\Delta t$ approaches $t_{\rm cool}$, it takes the gas too far down the curve.
+  </p>
+
+  <div class="tw-labbox">
+    <div class="tw-figtitle">Explicit stepping against the exact solution <span class="tw-badge">interactive</span></div>
+    <div class="tw-grid2 tw-g-wide">
+      <svg class="tw-svg" id="tw-a" viewBox="0 0 560 400" role="img" aria-label="Temperature against time for the exact solution, forward Euler and the Townsend step"></svg>
+      <div>
+        <div class="tw-sl"><label>Starting temperature: <output id="tw-o-aT"></output></label><input type="range" id="tw-s-aT" min="5" max="7.6" step="0.05" value="6.3"></div>
+        <div class="tw-sl"><label>Timestep: <output id="tw-o-aD"></output></label><input type="range" id="tw-s-aD" min="-1.5" max="0.6" step="0.02" value="-0.35"></div>
+        <div class="tw-out" id="tw-a-out"></div>
+      </div>
+    </div>
+    <p class="tw-note2">One cell cooling at constant density, with a schematic cooling curve (hydrogen peak near $10^{4.3}$ K, metal peaks near $10^{5.3}$ and $10^{6.3}$ K, bremsstrahlung above) sampled on 17 temperatures. The timestep is in units of the cooling time at the starting temperature. The three methods take the same fixed steps; the green line is the exact solution of the equation above. Cooling stops at the bottom of the table, $10^4$ K.</p>
+  </div>
+
+  <!-- ====================================================== 2. the idea -->
+  <h2 class="tw-h2" id="sec-tef">A clock that runs in temperature</h2>
+  <p class="tw-p">
+    The equation separates, $\mathrm dT/\Lambda(T)=-\mathcal K\,\mathrm dt$. Pick a reference temperature $T_{\rm ref}$ (the top of the table) and define the <strong>temporal evolution function</strong>
+  </p>
+  <div class="tw-eq">Y(T)=\frac{\Lambda_{\rm ref}}{T_{\rm ref}}\int_{T}^{T_{\rm ref}}\frac{\mathrm{d}T'}{\Lambda(T')}</div>
+  <p class="tw-p">
+    $Y(T)$ is the time the gas needs to cool from $T_{\rm ref}$ down to $T$, measured in units of the cooling time at the reference, $t_{\rm ref}=T_{\rm ref}/(\mathcal K\Lambda_{\rm ref})$. It decreases monotonically with $T$, so it can be inverted. And because the equation is autonomous, evolving the gas for a time $\Delta t$ simply moves its position on this clock forward by $\Delta t$:
+  </p>
+  <div class="tw-eq">Y(T_{\rm new})=Y(T_{\rm old})+\frac{\Delta t}{t_{\rm ref}}</div>
+  <p class="tw-p">
+    No iteration is needed provided $Y$ and its inverse $Y^{-1}$ are known in closed form. That is where the piecewise power law comes in. Tabulate $\Lambda$ at temperatures $T_0&lt;T_1&lt;\dots&lt;T_N$ and interpolate linearly in log-log, so that in each bin
+  </p>
+  <div class="tw-eq">\Lambda(T)=\Lambda_k\left(\frac{T}{T_k}\right)^{\alpha_k},\qquad \alpha_k=\frac{\ln(\Lambda_{k+1}/\Lambda_k)}{\ln(T_{k+1}/T_k)},\qquad T_k\le T&lt;T_{k+1}</div>
+  <p class="tw-p">
+    The integral is then elementary. Writing $Y_k\equiv Y(T_k)$, which is accumulated once at start-up from the top of the table downwards, one has for $T$ in bin $k$
+  </p>
+  <div class="tw-eq">Y(T)=Y_k+\frac{1}{1-\alpha_k}\,\frac{\Lambda_{\rm ref}}{\Lambda_k}\,\frac{T_k}{T_{\rm ref}}\left[1-\left(\frac{T_k}{T}\right)^{\alpha_k-1}\right]</div>
+  <p class="tw-p">
+    and, solving for $T$ in the bin that contains the new value $Y^\ast$,
+  </p>
+  <div class="tw-eq">Y^{-1}(Y^\ast)=T_k\left[1-(1-\alpha_k)\,\frac{\Lambda_k}{\Lambda_{\rm ref}}\,\frac{T_{\rm ref}}{T_k}\,\bigl(Y^\ast-Y_k\bigr)\right]^{1/(1-\alpha_k)}</div>
+
+  <!-- ====================================================== 2b. set-up -->
+  <h2 class="tw-h2" id="sec-setup">What is computed once, at start-up</h2>
+  <p class="tw-p">
+    Everything above that depends only on the cooling table, and not on the state of any cell, is prepared before the first timestep. The table is a plain text file with two numbers per line, $\log_{10}T$ in K and $\log_{10}\Lambda$ in ${\rm erg\,cm^3\,s^{-1}}$, with increasing temperature. The code converts $\Lambda$ to code units and then builds three arrays, which are copied once to the device and only read afterwards:
+  </p>
+  <ol class="tw-steps">
+    <li><b>The knots</b> $T_k$ and $\Lambda_k$ for $k=0,\dots,N$, in linear (not logarithmic) form. The last row is the reference, $T_{\rm ref}=T_N$ and $\Lambda_{\rm ref}=\Lambda_N$.</li>
+    <li><b>The slopes</b> $\alpha_k$, one per bin ($N$ values for $N+1$ knots), from the log-log slope between neighbouring rows.</li>
+    <li><b>The clock values</b> $Y_k=Y(T_k)$, accumulated from the top of the table downwards with the same closed form as before, applied from one knot to the next:</li>
+  </ol>
+  <div class="tw-eq">Y_k=Y_{k+1}+\frac{1}{1-\alpha_k}\,\frac{\Lambda_{\rm ref}}{\Lambda_k}\,\frac{T_k}{T_{\rm ref}}\left[\left(\frac{T_k}{T_{k+1}}\right)^{\alpha_k-1}-1\right],\qquad Y_N=0</div>
+  <p class="tw-p">
+    (AthenaPK puts the zero of the clock at the lower knot of the last bin instead of at the top knot. That shifts every $Y$ by the same constant and changes nothing, since only differences of $Y$ are ever used.) After this, a step needs only the bin search and two power laws. The one quantity that depends on the cell, $\mathcal K\propto n_{\rm H}^2/\rho$, is a single multiplication at run time. The whole set-up is a loop over the rows of the table, so its cost is negligible and its memory is a few numbers per row, shared by every cell.
+  </p>
+
+  <div class="tw-labbox">
+    <div class="tw-figtitle">What the tabulation looks like</div>
+    <div class="tw-tabbox">
+      <table class="tw-table tw-table--sm tw-tab" id="tw-tab">
+        <thead>
+          <tr><th rowspan="2">$k$</th><th colspan="2" class="tw-th-grp">read from the file</th><th colspan="2" class="tw-th-grp">computed at start-up</th></tr>
+          <tr><th>$\log_{10}T_k$ [K]</th><th>$\log_{10}\Lambda_k$ [cgs]</th><th>$\alpha_k$</th><th>$Y_k$ [$t_{\rm ref}$]</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="tw-note2">The schematic 17-row table used in the figures (a real table has its own spacing and a different number of rows). The last row has no bin above it, so it has no slope, and $Y_N=0$ by construction. $Y_k$ barely changes below $10^7$ K: the reference time $t_{\rm ref}$ is the cooling time of the hottest gas, which is far longer than at any lower temperature, so almost all of the clock is spent in the last few bins. The figure below therefore plots the time <em>left</em> instead. When you move the sliders there, the bin holding $T_{\rm old}$ is highlighted in blue here and the bin holding $T_{\rm new}$ in orange.</p>
+  </div>
+
+  <!-- ====================================================== 3. one step -->
+  <h2 class="tw-h2" id="sec-step">One step, in four moves</h2>
+  <ol class="tw-steps">
+    <li><b>Find the bin</b> of the current temperature $T_{\rm old}$ and evaluate $Y(T_{\rm old})$ from the first formula.</li>
+    <li><b>Advance the clock:</b> $Y^\ast=Y(T_{\rm old})+\Delta t/t_{\rm ref}$.</li>
+    <li><b>Find the new bin.</b> $Y$ grows as the gas cools, so this is a short walk down the table from the old bin. It may cross many bins, and that costs nothing extra.</li>
+    <li><b>Invert</b> with the second formula to get $T_{\rm new}$, and put the corresponding energy back into the cell.</li>
+  </ol>
+
+  <div class="tw-labbox">
+    <div class="tw-figtitle">The clock and the jump along it <span class="tw-badge">interactive</span></div>
+    <div class="tw-grid2 tw-g-half2">
+      <svg class="tw-svg" id="tw-b1" viewBox="0 0 460 340" role="img" aria-label="The tabulated cooling function and its piecewise power-law fit"></svg>
+      <svg class="tw-svg" id="tw-b2" viewBox="0 0 460 340" role="img" aria-label="The temporal evolution function and one Townsend step"></svg>
+    </div>
+    <div class="tw-grid2 tw-g-sl">
+      <div class="tw-sl"><label>Temperature before the step: <output id="tw-o-bT"></output></label><input type="range" id="tw-s-bT" min="4.05" max="7.9" step="0.01" value="6.4"></div>
+      <div class="tw-sl"><label>Timestep: <output id="tw-o-bD"></output></label><input type="range" id="tw-s-bD" min="-2" max="2" step="0.02" value="-0.35"></div>
+    </div>
+    <div class="tw-out" id="tw-b-out"></div>
+    <p class="tw-note2">Left: the tabulated $\Lambda$ (diamonds) and the power-law segments between them; the bin that holds $T_{\rm old}$ is blue and the bin that holds $T_{\rm new}$ is orange. Right: the same clock drawn as the time still to run before the gas reaches the bottom of the table, $R(T)=Y(10^4\,{\rm K})-Y(T)$, on logarithmic axes. A step uses up $\Delta t$ of it (arrow down), and the new temperature is read off the curve. The timestep is in units of the cooling time at $T_{\rm old}$.</p>
+  </div>
+
+  <!-- ====================================================== 4. limits -->
+  <h2 class="tw-h2" id="sec-limits">What it buys, and what it does not</h2>
+  <div class="tw-table-wrap">
+    <table class="tw-table tw-table--sm">
+      <thead><tr><th>Property</th><th>Comment</th></tr></thead>
+      <tbody>
+        <tr><td>Cost</td><td>One bin search and two power laws per cell, whatever $\Delta t$. There is no iteration and no subcycling: every cell takes the same short path.</td></tr>
+        <tr><td>Accuracy</td><td>Exact for the tabulated $\Lambda$ read as a piecewise power law. The remaining error is that of the interpolation (a finer table helps), and the first-order error of splitting the cooling from the hydrodynamics.</td></tr>
+        <tr><td>Stability</td><td>Unconditional: the gas is carried down the cooling curve and never overshoots, however large $\Delta t$ is. It cannot go below the bottom of the table.</td></tr>
+        <tr><td>Heating</td><td>Not included. The ODE must depend on $T$ only through $\Lambda$, so a heating term that does not scale like cooling has to be applied separately, or folded into a net cooling curve.</td></tr>
+        <tr><td>Fixed density</td><td>$\mathcal K$ is constant during the step. That is the usual operator-splitting assumption, and it is exact for a cell that cools isochorically.</td></tr>
+        <tr><td>Special case</td><td>A bin with slope exactly $\alpha_k=1$ turns the power into a logarithm in both formulas. AthenaPK does not implement that case and refuses such a table.</td></tr>
+        <tr><td>Timestep</td><td>The integrator does not need a cooling timestep limit, but AthenaPK can still cap the step at a fraction of the shortest cooling time (a cooling CFL) so that cooling and hydrodynamics stay coupled.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="tw-p">
+    In AthenaPK the table is read at start-up, converted to code units, and the slopes $\alpha_k$ and the values $Y_k$ are computed once. During the run a cell below the temperature floor is reset to the floor, and a cell below the first table temperature is left alone: it does not cool at all, rather than cooling with an extrapolated curve.
+  </p>
+
+  <h2 class="tw-h2">References</h2>
+  <ul class="tw-refs">
+    <li>Townsend, R. H. D. 2009, ApJS, 181, 391. An exact integration scheme for radiative cooling in hydrodynamical simulations.</li>
+    <li>Sutherland, R. S. and Dopita, M. A. 1993, ApJS, 88, 253. Cooling functions for low-density astrophysical plasmas.</li>
+  </ul>
+</div>
+
+
+<style>
+  .tw-wrap * { font-style: normal; }
+  .tw-wrap em, .tw-wrap i { font-style: italic; }
+  .tw-wrap { width: 100%; max-width: 900px; margin: 0 auto; padding: 0 1rem 4rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; font-size: 1rem; line-height: 1.6; }
+  .tw-title { margin: 0 0 1rem; font-size: 2.2rem; font-weight: 700; color: #e2e8f0; text-align: center; }
+  .tw-box { max-width: 760px; margin: 0 auto 2.5rem; padding: 1.1rem 1.4rem 0.5rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.75rem; background: rgba(148,163,184,0.1); }
+  .tw-box p { margin: 0 0 0.7rem; }
+  .tw-h2 { margin: 3rem 0 0.8rem; font-size: 1.7rem; font-weight: 700; color: #e2e8f0; padding-bottom: 0.4rem; border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, #fb923c, #a78bfa, transparent) 1; }
+  .tw-h4 { margin: 1.4rem 0 0.4rem; font-size: 1.08rem; font-weight: 700; color: #cbd5e1; }
+  .tw-bars { margin-bottom: 0.6rem; }
+  .tw-bar-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.25rem 0; font-size: 0.85rem; }
+  .tw-bar-row span:first-child { width: 7.5em; color: #94a3b8; }
+  .tw-bar-track { flex: 1; height: 14px; border-radius: 7px; background: rgba(148,163,184,0.15); overflow: hidden; }
+  .tw-bar-fill { height: 100%; border-radius: 7px; transition: width 0.15s ease; }
+  .tw-refs { max-width: 760px; margin: 0.5rem 0 0; padding-left: 0; list-style: none; font-size: 0.9rem; line-height: 1.5; color: #94a3b8; }
+  .tw-refs li { margin: 0.25rem 0; padding-left: 1.2rem; text-indent: -1.2rem; }
+  .tw-refs li.tw-ref-group { list-style: none; padding-left: 0; text-indent: 0; margin: 1rem 0 0.2rem 0; font-weight: 700; color: #cbd5e1; font-size: 0.95rem; }
+  .tw-labbox { padding: 1rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); margin: 0.6rem 0 1rem; }
+  .tw-lab-blurb { margin: 0 0 0.7rem; font-size: 0.93rem; line-height: 1.5; }
+  /* ---- collapsible sections */
+  .tw-sec-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.42s ease; }
+  .tw-sec-inner { min-height: 0; }
+  .tw-sec--closed > .tw-sec-body { grid-template-rows: 0fr; }
+  .tw-sec--closed > .tw-sec-body > .tw-sec-inner, .tw-sec--anim > .tw-sec-body > .tw-sec-inner { overflow: hidden; }
+  .tw-sec--closed > .tw-sec-body > .tw-sec-inner { visibility: hidden; transition: visibility 0s 0.42s; }
+  .tw-h2[role=button], .tw-h3[role=button] { cursor: pointer; user-select: none; scroll-margin-top: 90px; display: flex; align-items: center; transition: color 0.2s ease; }
+  .tw-h2[role=button]:hover, .tw-h3[role=button]:hover { color: #fbbf24; }
+  .tw-h2[role=button]::before, .tw-h3[role=button]::before { content: ''; flex: none; width: 0.42em; height: 0.42em; margin: 0 0.75rem 0.1em 0.2rem; border-right: 3px solid currentColor; border-bottom: 3px solid currentColor; transform: rotate(45deg); transition: transform 0.3s ease; opacity: 0.7; }
+  .tw-h2[role=button][aria-expanded=false]::before, .tw-h3[role=button][aria-expanded=false]::before { transform: rotate(-45deg); }
+  .tw-h3[role=button]::before { width: 0.36em; height: 0.36em; border-width: 2.5px; }
+  .tw-h2[role=button][aria-expanded=false] { opacity: 0.8; }
+  @keyframes tw-flash { 0% { background: rgba(251,191,36,0.28); } 100% { background: rgba(251,191,36,0); } }
+  .tw-flash { animation: tw-flash 1.6s ease-out; border-radius: 0.4rem; }
+  .tw-sec-2 + .tw-sec-2 { margin-top: 0; }
+
+  /* ---- the map */
+  .tw-map { position: relative; margin: 0 auto 2.6rem; max-width: 880px; padding: 1.3rem 1.5rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 1rem; overflow: hidden;
+    background:
+      radial-gradient(1.3px 1.3px at 12% 22%, rgba(226,232,240,0.55), transparent), radial-gradient(1px 1px at 31% 71%, rgba(226,232,240,0.4), transparent),
+      radial-gradient(1.2px 1.2px at 58% 18%, rgba(226,232,240,0.5), transparent), radial-gradient(1px 1px at 77% 62%, rgba(226,232,240,0.4), transparent),
+      radial-gradient(1.4px 1.4px at 91% 28%, rgba(226,232,240,0.5), transparent), radial-gradient(1px 1px at 46% 90%, rgba(226,232,240,0.35), transparent),
+      radial-gradient(420px 220px at 12% 0%, rgba(251,146,60,0.13), transparent), radial-gradient(420px 220px at 55% 0%, rgba(56,189,248,0.11), transparent), radial-gradient(420px 240px at 100% 10%, rgba(167,139,250,0.14), transparent),
+      linear-gradient(180deg, rgba(30,41,59,0.75), rgba(15,23,42,0.7)); }
+  .tw-map-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #e2e8f0; }
+  .tw-map-title > span:first-child { background: linear-gradient(90deg, #fb923c, #38bdf8 55%, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tw-map-btns button { margin-left: 0.4rem; padding: 0.2rem 0.75rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #cbd5e1; font-family: inherit; font-size: 0.78rem; letter-spacing: 0.02em; text-transform: none; font-weight: 400; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+  .tw-map-btns button:hover { border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .tw-map-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.1rem; position: relative; }
+  .tw-map-col { position: relative; --c: #fb923c; }
+  .tw-map-col::after { content: ''; position: absolute; top: 21px; left: calc(100% - 46px); right: -1.1rem; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--c)); opacity: 0.8; }
+  .tw-map-col:last-child::after, .tw-map-col:nth-child(4n)::after { display: none; }
+  .tw-map-col::before { content: ''; position: absolute; top: 46px; bottom: 6px; left: 20px; width: 3px; border-radius: 2px; background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 25%, transparent)); }
+  .tw-map-chap { display: flex; align-items: center; gap: 0.7rem; text-decoration: none !important; color: #e2e8f0 !important; font-weight: 700; font-size: 1.02rem; line-height: 1.2; position: relative; z-index: 1; }
+  .tw-map-badge { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--c); background: #0f172a; color: var(--c); font-size: 1.25rem; box-shadow: 0 0 0 4px rgba(15,23,42,0.9), 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .tw-map-chap:hover .tw-map-badge { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(15,23,42,0.9), 0 0 26px color-mix(in srgb, var(--c) 75%, transparent); }
+  .tw-map-chaptxt { margin-right: 1.4rem; }
+  .tw-map-stops { list-style: none; margin: 0.9rem 0 0; padding: 0 0 0 44px; position: relative; z-index: 1; }
+  .tw-map-stops li { position: relative; margin: 0.15rem 0; }
+  .tw-map-stops li::before { content: ''; position: absolute; left: -28px; top: 50%; width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%; background: #0f172a; border: 2.5px solid var(--c); transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+  .tw-map-stops li:hover::before { transform: scale(1.35); background: var(--c); }
+  .tw-map-stops a, .tw-map-ref { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.28rem 0.5rem; border-radius: 0.4rem; text-decoration: none !important; color: #cbd5e1 !important; font-size: 0.92rem; line-height: 1.25; transition: background 0.15s ease, color 0.15s ease; }
+  .tw-map-stops a:hover, .tw-map-ref:hover { background: color-mix(in srgb, var(--c, #94a3b8) 16%, transparent); color: #f8fafc !important; }
+  .tw-map-live { font-style: normal; color: #fbbf24; font-size: 0.78rem; text-shadow: 0 0 8px rgba(251,191,36,0.7); }
+  .tw-map-stops a.tw-map-active, .tw-map-chap.tw-map-active .tw-map-chaptxt { color: #fbbf24 !important; font-weight: 700; }
+  .tw-map-stops li:has(.tw-map-active)::before { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251,191,36,0.8); }
+  .tw-map-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.9rem; padding-top: 0.7rem; border-top: 1px solid rgba(148,163,184,0.18); font-size: 0.82rem; color: #94a3b8; }
+  .tw-map-foot .tw-map-ref { display: inline-flex; font-size: 0.85rem; padding: 0.2rem 0.8rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; }
+  .tw-map-foot .tw-map-ref.tw-map-active { color: #fbbf24 !important; border-color: #fbbf24; }
+  @media (max-width: 760px) {
+    .tw-map-cols { grid-template-columns: 1fr; gap: 1.6rem; }
+    .tw-map-col::after { display: none; }
+  }
+  .tw-float { position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 40; display: flex; align-items: center; gap: 0.5rem; max-width: min(88vw, 340px); padding: 0.5rem 1rem 0.5rem 0.8rem; border: 1px solid rgba(148,163,184,0.45); border-radius: 999px; background: rgba(15,23,42,0.92); backdrop-filter: blur(6px); color: #e2e8f0; font-family: 'STIX Two Text', serif; font-size: 0.92rem; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,0.45); opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.15s ease; }
+  .tw-float--on { opacity: 1; transform: none; pointer-events: auto; }
+  .tw-float:hover { border-color: #fbbf24; }
+  .tw-float-arrow { color: #fbbf24; font-weight: 700; }
+  .tw-float-sec { color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 1px solid rgba(148,163,184,0.4); padding-left: 0.55rem; }
+  .tw-float-sec:empty { display: none; }
+  .tw-h3 { margin: 2rem 0 0.6rem; font-size: 1.25rem; font-weight: 700; color: #e2e8f0; }
+  .tw-p { margin: 0 0 0.8rem; max-width: 760px; }
+  .tw-note { color: #94a3b8; margin-top: 1.5rem; }
+  .tw-cap { margin: -0.4rem 0 0.9rem; font-size: 0.88rem; color: #94a3b8; max-width: 760px; }
+  .tw-eq-block { margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
+  .tw-eq-block--sm { margin: 0.5rem 0; font-size: 0.88rem; }
+  .tw-val { display: inline-block; min-width: 5.5em; font-weight: 700; color: #fbbf24; }
+  .tw-wrap .katex { color: inherit; }
+  .tw-wrap .tw-eq-block .katex-display { margin: 0.4em 0; }
+
+  .tw-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.9rem; margin: 0.6rem 0 1rem; }
+  .tw-cards--wide { grid-template-columns: 1fr; }
+  .tw-card { padding: 0.85rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.7rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); font-size: 0.93rem; line-height: 1.5; }
+  .tw-card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+
+  .tw-fig { margin: 0.5rem 0 1rem; }
+  .tw-fig--rel { position: relative; }
+  .tw-fig svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .tw-detail { padding: 0.85rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.7rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); font-size: 0.95rem; line-height: 1.5; min-height: 4.5rem; }
+  .tw-detail strong { font-size: 1.05rem; }
+  .tw-muted { color: #64748b; }
+  .tw-tip { position: absolute; display: none; pointer-events: none; z-index: 5; max-width: 320px; padding: 0.55rem 0.8rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 0.45rem; background: rgba(15,23,42,0.97); font-size: 0.85rem; line-height: 1.45; color: #e2e8f0; }
+  .tw-tip--on { display: block; }
+
+  .tw-node { cursor: pointer; }
+  .tw-node circle.tw-node-c { transition: stroke-width 0.15s ease, fill 0.15s ease; }
+  .tw-node:hover circle.tw-node-c, .tw-node--sel circle.tw-node-c { stroke-width: 4; }
+  .tw-node-text { font-size: 17px; font-weight: 700; fill: #e2e8f0; text-anchor: middle; pointer-events: none; }
+  .tw-node-sub { font-size: 13px; fill: #94a3b8; text-anchor: middle; pointer-events: none; }
+  .tw-edge-text { font-size: 14px; fill: #94a3b8; text-anchor: middle; }
+  .tw-axis-text { font-size: 17px; fill: #94a3b8; text-anchor: middle; }
+  .tw-axis-title { font-size: 16px; fill: #cbd5e1; text-anchor: middle; }
+  .tw-grid { stroke: #1e293b; stroke-width: 1; }
+  .tw-bar { cursor: default; opacity: 0.85; transition: opacity 0.15s ease; }
+  .tw-bar:hover { opacity: 1; stroke: #f8fafc; stroke-width: 2; }
+  .tw-bar-label { font-size: 19px; fill: #e2e8f0; text-anchor: end; }
+  .tw-lab { font-size: 16px; fill: #e2e8f0; }
+  .tw-lab-sub { font-size: 15px; fill: #94a3b8; }
+  .tw-fo { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #cbd5e1; font-size: 20px; line-height: 1; white-space: nowrap; }
+  .tw-fo--sub { color: #94a3b8; font-size: 16px; }
+
+  .tw-controls { display: flex; align-items: center; gap: 0.8rem; max-width: 600px; margin: 0.4rem 0; }
+  .tw-controls input[type=range] { flex: 1; accent-color: #fbbf24; }
+
+  .tw-table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .tw-table-wrap--sm { max-width: 560px; }
+  .tw-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .tw-table--sm { font-size: 0.9rem; }
+  .tw-table:not(.tw-table--sm) { min-width: 700px; }
+  .tw-table th { text-align: left; padding: 0.5rem 0.7rem; color: #94a3b8; border-bottom: 1px solid rgba(148,163,184,0.35); }
+  .tw-table td { padding: 0.55rem 0.7rem; border-bottom: 1px solid rgba(148,163,184,0.14); vertical-align: top; }
+  .tw-table--sm th, .tw-table--sm td { padding: 0.35rem 0.5rem; }
+  .tw-table td:first-child { font-weight: 700; color: #e2e8f0; }
+  .tw-table:not(.tw-table--sm) td:first-child { white-space: normal; min-width: 9.5rem; }
+  .tw-table td:last-child { color: #94a3b8; white-space: nowrap; }
+  .tw-table--sm td:last-child { color: inherit; white-space: normal; }
+  .tw-table tbody tr:hover { background: rgba(148,163,184,0.07); }
+  .tw-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; }
+
+  .tw-seg { display: inline-flex; margin-bottom: 0.9rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 999px; overflow: hidden; }
+  .tw-seg button { padding: 0.3rem 1rem; border: 0; background: transparent; color: #cbd5e1; font-family: inherit; font-size: 0.9rem; cursor: pointer; }
+  .tw-seg button.tw-seg-on { background: rgba(251,191,36,0.2); color: #fbbf24; font-weight: 700; }
+  .tw-contexts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 0; }
+  .tw-ctx { padding: 0.3rem 0.8rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #e2e8f0; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+  .tw-ctx:hover { border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+
+  /* ---- AGN explorer additions */
+  .tw-wrap .tw-figtitle { margin: 0 0 0.5rem; font-size: 0.95rem; font-style: italic; color: #94a3b8; }
+  .tw-lead { max-width: 760px; margin: 0 0 0.9rem; }
+  .tw-pit { max-width: 760px; margin: 0.4rem 0 1rem; padding: 0.55rem 1rem; border-left: 3px solid #fbbf24; border-radius: 0 0.5rem 0.5rem 0; background: rgba(251,191,36,0.08); font-size: 0.95rem; line-height: 1.5; }
+  .tw-pit b { color: #fbbf24; }
+  .tw-badge { display: inline-block; padding: 0.05rem 0.55rem; border-radius: 999px; border: 1px solid rgba(251,191,36,0.55); color: #fbbf24; font-size: 0.78rem; letter-spacing: 0.03em; vertical-align: 0.1em; }
+  .tw-hint { color: #94a3b8; font-size: 0.88rem; }
+
+  /* ---- the spectrum */
+  .tw-sedbox { padding: 1rem 1.1rem 0.8rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.9rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); }
+  .tw-ctlrow { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.2rem; margin: 0 0 0.7rem; }
+  .tw-ctlrow .tw-seg { margin-bottom: 0; }
+  .tw-ctlrow[hidden], .tw-sub[hidden] { display: none; }
+  .tw-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.4rem 1.4rem; margin: 0 0 0.6rem; }
+  .tw-sl label { display: block; font-size: 0.9rem; color: #cbd5e1; }
+  .tw-sl label output, .tw-val { color: #fbbf24; font-weight: 700; }
+  .tw-sl input[type=range], .tw-range { width: 100%; accent-color: #fbbf24; margin: 0.1rem 0 0; }
+  .tw-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.2rem 0; }
+  .tw-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.22rem 0.7rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #e2e8f0; font-family: inherit; font-size: 0.82rem; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease, opacity 0.15s ease; }
+  .tw-chip:hover { border-color: #fbbf24; }
+  .tw-chip.tw-chip-on { border-color: var(--c, #fbbf24); background: color-mix(in srgb, var(--c, #fbbf24) 22%, transparent); }
+  .tw-chip i.tw-sw { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--c, #94a3b8); border-radius: 2px; }
+  .tw-chip i.tw-sw.tw-dash { border-top-style: dashed; }
+  .tw-chip i.tw-sw.tw-fillsw { height: 9px; border: 0; background: color-mix(in srgb, var(--c, #94a3b8) 45%, transparent); }
+  .tw-sedsvg { display: block; width: 100%; height: auto; user-select: none; }
+  .tw-sedsvg text { font-family: 'STIX Two Text', serif; }
+  .tw-sedsvg .tw-hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
+  .tw-sedsvg .tw-curve { fill: none; stroke-linejoin: round; stroke-linecap: round; transition: opacity 0.2s ease; pointer-events: none; }
+  .tw-sedsvg .tw-area { pointer-events: none; transition: opacity 0.25s ease; }
+  .tw-sedsvg .tw-clk { cursor: pointer; }
+  .tw-sedsvg .tw-band rect { transition: fill 0.15s ease; }
+  .tw-sedsvg .tw-band:hover rect { fill: rgba(251,191,36,0.22); }
+  .tw-sedsvg .tw-band.tw-band-on rect { fill: rgba(251,191,36,0.32); stroke: #fbbf24; }
+  .tw-sedsvg .tw-band text { fill: #cbd5e1; font-size: 13px; text-anchor: middle; pointer-events: none; }
+  .tw-sedsvg .tw-tick { fill: #94a3b8; font-size: 14px; text-anchor: middle; }
+  .tw-sedsvg .tw-tick-y { text-anchor: end; }
+  .tw-sedsvg .tw-gridl { stroke: rgba(148,163,184,0.1); stroke-width: 1; }
+  .tw-sedsvg .tw-axl { fill: #cbd5e1; font-size: 15px; text-anchor: middle; font-style: italic; }
+  .tw-sedsvg .tw-anno { font-size: 13px; pointer-events: none; }
+  .tw-sedsvg .tw-sp { stroke-width: 1.8; }
+  .tw-fo { display: block; width: 100%; height: 100%; font-size: 13px; white-space: nowrap; pointer-events: none; }
+  .tw-fo--c { text-align: center; } .tw-fo--r { text-align: right; } .tw-fo--l { text-align: left; }
+  .tw-readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.4rem 0.9rem; margin: 0.5rem 0 0.2rem; padding: 0.5rem 0.2rem; border-top: 1px solid rgba(148,163,184,0.18); font-size: 0.82rem; color: #94a3b8; }
+  .tw-readouts b { display: block; font-size: 0.98rem; color: #e2e8f0; font-weight: 700; }
+  .tw-warn { grid-column: 1 / -1; color: #fbbf24; }
+  .tw-panel { margin-top: 0.7rem; padding: 0.9rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-left: 4px solid var(--c, #94a3b8); border-radius: 0.7rem; background: linear-gradient(180deg, rgba(30,41,59,0.6), rgba(15,23,42,0.4)); font-size: 0.97rem; line-height: 1.55; min-height: 6rem; }
+  .tw-panel-t { font-size: 1.15rem; font-weight: 700; color: var(--c, #e2e8f0); }
+  .tw-panel-tag { margin-bottom: 0.35rem; font-size: 0.82rem; color: #94a3b8; letter-spacing: 0.03em; }
+  .tw-panel ul { margin: 0.4rem 0 0.2rem; padding-left: 1.2rem; font-size: 0.92rem; color: #cbd5e1; }
+  .tw-panel li { margin: 0.12rem 0; }
+  .tw-panel-go { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+  .tw-go { padding: 0.2rem 0.8rem; border: 1px solid rgba(251,191,36,0.55); border-radius: 999px; background: rgba(251,191,36,0.08); color: #fbbf24; font-family: inherit; font-size: 0.82rem; cursor: pointer; }
+  .tw-go:hover { background: rgba(251,191,36,0.2); }
+  .tw-tip { position: fixed; display: none; pointer-events: none; z-index: 50; max-width: 260px; padding: 0.35rem 0.65rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 0.4rem; background: rgba(15,23,42,0.96); font-size: 0.82rem; line-height: 1.35; color: #e2e8f0; }
+  .tw-tip--on { display: block; }
+
+  /* ---- generic figure widgets */
+  .tw-grid2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); gap: 1.2rem; align-items: start; }
+  @media (max-width: 760px) { .tw-grid2 { grid-template-columns: 1fr; } }
+  .tw-svg { display: block; width: 100%; height: auto; }
+  .tw-svg text { font-family: 'STIX Two Text', serif; }
+  .tw-svg .tw-tick { fill: #94a3b8; font-size: 14px; text-anchor: middle; }
+  .tw-svg .tw-tick-y { text-anchor: end; }
+  .tw-svg .tw-axl { fill: #cbd5e1; font-size: 15px; text-anchor: middle; font-style: italic; }
+  .tw-svg .tw-gridl { stroke: rgba(148,163,184,0.12); stroke-width: 1; }
+  .tw-svg .tw-anno { font-size: 13px; pointer-events: none; }
+  .tw-svg .tw-clk { cursor: pointer; }
+  .tw-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.35rem 1rem; margin: 0.6rem 0 0.2rem; font-size: 0.85rem; color: #94a3b8; }
+  .tw-out b { display: block; font-size: 1.02rem; color: #fbbf24; font-weight: 700; }
+  .tw-note2 { margin: 0.4rem 0 0; font-size: 0.85rem; color: #94a3b8; }
+  .tw-canvas { display: block; width: 100%; height: auto; border-radius: 0.5rem; background: #0b1220; }
+  .tw-table--plain td:last-child { white-space: normal; color: inherit; }
+  .tw-table--plain td:first-child { min-width: 0; }
+  .tw-table-wrap { overflow-x: auto; }
+  .tw-time { position: relative; margin: 0.4rem 0 0.4rem; padding: 0.2rem 0; overflow-x: auto; }
+  .tw-time-line { position: relative; height: 90px; min-width: 700px; margin: 0 1rem; }
+  .tw-time-line::before { content: ''; position: absolute; left: 0; right: 0; top: 44px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #fb923c, #38bdf8, #a78bfa); opacity: 0.8; }
+  .tw-tk { position: absolute; top: 0; width: 70px; margin-left: -35px; text-align: center; cursor: pointer; background: none; border: 0; color: #cbd5e1; font-family: inherit; }
+  .tw-tk i { display: block; width: 14px; height: 14px; margin: 37px auto 0.3rem; border-radius: 50%; background: #0f172a; border: 3px solid var(--c, #94a3b8); transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+  .tw-tk:hover i, .tw-tk.tw-tk-on i { transform: scale(1.35); background: var(--c, #fbbf24); box-shadow: 0 0 14px color-mix(in srgb, var(--c, #fbbf24) 70%, transparent); }
+  .tw-tk span { position: absolute; left: 0; right: 0; font-size: 0.82rem; font-weight: 700; color: #94a3b8; }
+  .tw-tk.tw-tk-on span { color: #fbbf24; }
+  .tw-tk.tw-up span { top: 2px; } .tw-tk.tw-dn span { top: 74px; }
+  .tw-tk.tw-up i { margin-top: 37px; }
+  .tw-xref { color: #fbbf24; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .tw-xref:hover { text-decoration-style: solid; }
+  .tw-table--plain td:first-child { font-weight: 400; color: #e2e8f0; } .tw-table--plain th { white-space: nowrap; }
+  .tw-ext { color: #60a5fa; text-decoration: underline; text-underline-offset: 3px; }
+  .tw-map-pills { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; }
+  .tw-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 720px) { .tw-scroll > svg, .tw-scroll > canvas { min-width: 640px; } .tw-scroll::after { content: 'scroll sideways for the full figure'; display: block; margin: 0.2rem 0 0.4rem; font-size: 0.78rem; color: #64748b; } }
+  .tw-sec-body, .tw-sec-inner { min-width: 0; }
+  @media (max-width: 600px) { .tw-eq { font-size: 0.86em; } }
+
+  /* dark halo behind every label in the figures, so text stays legible over curves and lines */
+  .tw-fo { text-shadow: 0 0 2px #0b1220, 0 0 3px #0b1220, 0 0 4px #0b1220, 1px 1px 2px #0b1220, -1px -1px 2px #0b1220, 1px -1px 2px #0b1220, -1px 1px 2px #0b1220; }
+  .tw-svg text, .tw-sedsvg text { paint-order: stroke; stroke: #0b1220; stroke-width: 3.5px; stroke-linejoin: round; stroke-opacity: 0.9; }
+  .tw-wrap code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82em; padding: 0.05em 0.35em; border-radius: 4px; background: rgba(148,163,184,0.16); color: #e2e8f0; }
+  .tw-steps { max-width: 760px; margin: 0.2rem 0 1rem; padding-left: 1.4rem; }
+  .tw-steps li { margin: 0.35rem 0; }
+  .tw-card code, .tw-panel code { font-size: 0.8em; }
+  .tw-seg-wide button { padding: 0.3rem 0.8rem; }
+  .tw-rng-row { display: grid; grid-template-columns: 7.5rem repeat(24, 1fr); gap: 2px; margin: 3px 0; font-size: 0.8rem; align-items: center; }
+  .tw-rng-row b { font-weight: 400; color: #94a3b8; }
+  .tw-rng-cell { text-align: center; padding: 0.15rem 0; border-radius: 3px; background: rgba(148,163,184,0.12); color: #e2e8f0; }
+  .tw-rng-cell.tw-bad { background: rgba(248,113,113,0.45); color: #fff; }
+  .tw-rng-cell.tw-hit { background: rgba(251,191,36,0.25); }
+
+  .tw-slgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.3rem 1.2rem; margin-top: 0.7rem; }
+  .tw-grid2.tw-g-blast { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
+  .tw-grid2.tw-g-kern { grid-template-columns: minmax(0, 1.3fr) minmax(220px, 1fr); }
+  @media (max-width: 760px) { .tw-grid2.tw-g-blast, .tw-grid2.tw-g-kern { grid-template-columns: 1fr; } }
+  .tw-svg foreignObject, .tw-sedsvg foreignObject { pointer-events: none; }
+  .tw-card .tw-eq { margin: 0.4rem 0; font-size: 0.88em; overflow-x: auto; overflow-y: hidden; }
+  .tw-grid2.tw-g-half { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  @media (max-width: 760px) { .tw-grid2.tw-g-half { grid-template-columns: 1fr; } }
+  .tw-imgfig { margin: 0; padding: 0.6rem 0.5rem 0.4rem; border-radius: 0.5rem; overflow: hidden; background: #0b1220; }
+  .tw-imgfig img { display: block; width: 100%; height: auto; }
+  .tw-hgrid { display: grid; gap: 0.3rem; }
+  .tw-hgrid svg { display: block; width: 100%; height: auto; }
+  .tw-rowlab { margin: 0.5rem 0 0.1rem; font-size: 0.92rem; font-weight: 700; color: #e2e8f0; }
+  @media (max-width: 600px) { .tw-seg button { padding: 0.3rem 0.6rem; font-size: 0.82rem; } }
+
+  .tw-eq-inline { margin: 0.55rem 0 0.2rem; font-size: 0.95em; overflow-x: auto; overflow-y: hidden; }
+
+  .tw-kv { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 0.2rem 0.8rem; font-size: 0.92rem; }
+  .tw-kv b { color: #94a3b8; font-weight: 400; }
+  @media (max-width: 520px) { .tw-kv { grid-template-columns: 1fr; } }
+  .tw-grid2.tw-g-wide { grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); }
+  .tw-grid2.tw-g-gal { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+  @media (max-width: 760px) { .tw-grid2.tw-g-wide, .tw-grid2.tw-g-gal { grid-template-columns: 1fr; } }
+
+  .tw-steps { max-width: 760px; margin: 0 0 1rem; padding-left: 1.4rem; }
+  .tw-steps li { margin: 0.35rem 0; }
+  .tw-steps li b { color: #e2e8f0; }
+  .tw-wrap code { font-size: 0.9em; padding: 0.05em 0.35em; border-radius: 0.3rem; background: rgba(148,163,184,0.16); color: #e2e8f0; }
+  .tw-tabbox { max-height: 330px; overflow: auto; border: 1px solid rgba(148,163,184,0.2); border-radius: 0.5rem; }
+  .tw-tab { min-width: 0 !important; margin: 0; }
+  .tw-tab th, .tw-tab td { text-align: right; font-variant-numeric: tabular-nums; }
+  .tw-tab td:first-child, .tw-tab th:first-child { text-align: center; }
+  .tw-tab td:last-child { color: inherit; white-space: nowrap; }
+  .tw-tab thead th { position: sticky; background: #162033; z-index: 1; }
+  .tw-tab thead tr:first-child th { top: 0; }
+  .tw-tab thead tr:nth-child(2) th { top: 2.1rem; }
+  .tw-th-grp { text-align: center !important; color: #fbbf24 !important; font-size: 0.8rem; letter-spacing: 0.03em; }
+  .tw-tab tr.tw-r-old td { background: rgba(56,189,248,0.2); }
+  .tw-tab tr.tw-r-new td { background: rgba(251,146,60,0.22); }
+  .tw-g-half2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tw-g-sl { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0.4rem; }
+  @media (max-width: 760px) { .tw-g-half2, .tw-g-sl { grid-template-columns: 1fr; } }
+
+</style>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var wrap = document.querySelector('.tw-wrap');
+  function $(s) { return wrap.querySelector(s); }
+  function $$(s) { return Array.prototype.slice.call(wrap.querySelectorAll(s)); }
+  function sv(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+  var LN10 = Math.LN10;
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  var AX = {};                         // hooks shared between the modules below
+
+  // ---------------------------------------------------------- mathematics
+  // tex() returns KaTeX markup (or the raw string if KaTeX did not load);
+  // mixed() converts every $...$ in a string and leaves the rest as text.
+  function tex(s, display) {
+    if (!window.katex) return s;
+    try { return window.katex.renderToString(s, { throwOnError: false, displayMode: !!display }); } catch (e) { return s; }
+  }
+  function mixed(s) { return s.replace(/\$([^$]+)\$/g, function (m, a) { return tex(a); }); }
+  function setMath(node, html) { node.innerHTML = mixed(html); }
+  // Label inside an SVG: a foreignObject so the KaTeX fonts are used there too.
+  function fo(parent, x, y, w, h, s, align, color, size) {
+    var f = sv('foreignObject', { x: x, y: y, width: w, height: h });
+    var d = el('div', 'tw-fo tw-fo--' + (align || 'c')); d.style.lineHeight = h + 'px';
+    if (color) d.style.color = color;
+    if (size) d.style.fontSize = size + 'px';
+    d.innerHTML = mixed(s);
+    f.appendChild(d); parent.appendChild(f);
+    f._d = d;
+    return f;
+  }
+  function foSet(f, s) { f._d.innerHTML = mixed(s); }
+  function renderTextMath(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) {
+      if (!n.nodeValue || n.nodeValue.indexOf('$') < 0) return NodeFilter.FILTER_REJECT;
+      var p = n.parentNode; if (p.closest && p.closest('svg, script, style, .katex, .tw-eq, textarea')) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT; } });
+    var nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (n) {
+      var parts = n.nodeValue.split(/\$([^$]+)\$/); if (parts.length < 3) return;
+      var frag = document.createDocumentFragment();
+      parts.forEach(function (s, i) {
+        if (i % 2 === 0) { if (s) frag.appendChild(document.createTextNode(s)); }
+        else { var sp = document.createElement('span'); sp.className = 'tw-m'; sp.innerHTML = tex(s); frag.appendChild(sp); }
+      });
+      n.parentNode.replaceChild(frag, n);
+    });
+  }
+  function renderAll(attempt) {
+    if (!window.katex) { if ((attempt || 0) < 30) setTimeout(function () { renderAll((attempt || 0) + 1); }, 100); return; }
+    $$('.tw-eq').forEach(function (e) {
+      if (e._done) return; e._done = true;
+      try { window.katex.render(e.textContent, e, { throwOnError: false, displayMode: true }); } catch (x) {}
+    });
+    renderTextMath(wrap);
+    AX.ready = true; if (AX.onReady) AX.onReady();
+  }
+  AX.rerender = function () { renderAll(0); };
+
+  // a compact number formatter: 1.3e45 -> "1.3 \times 10^{45}"
+  function sci(v, d) {
+    if (!isFinite(v) || v === 0) return '0';
+    var e = Math.floor(Math.log10(Math.abs(v)) + 1e-9), m = v / Math.pow(10, e);
+    var ms = m.toFixed(d === undefined ? 1 : d); if (parseFloat(ms) >= 10) { ms = (1).toFixed(d === undefined ? 1 : d); e += 1; }
+    return (ms === '1.0' || ms === '1' ? '' : ms + '\\times ') + '10^{' + e + '}';
+  }
+  function num(v, d) { return v >= 1000 || (v < 0.01 && v > 0) ? '$' + sci(v, d === undefined ? 1 : d) + '$' : (+v.toPrecision(d === undefined ? 2 : d + 1)).toString(); }
+
+  // ------------------------------------------------------- shared tooltip
+  var tip = el('div', 'tw-tip'); document.body.appendChild(tip);
+  function tipShow(html, ev) { tip.innerHTML = mixed(html); tip.classList.add('tw-tip--on'); tipMove(ev); }
+  function tipMove(ev) { var x = ev.clientX + 14, y = ev.clientY + 16; if (x + tip.offsetWidth > window.innerWidth - 8) x = ev.clientX - tip.offsetWidth - 14; tip.style.left = x + 'px'; tip.style.top = y + 'px'; }
+  function tipHide() { tip.classList.remove('tw-tip--on'); }
+
+  // physical constants (cgs)
+  var HP = 6.626e-27, KB = 1.381e-16, CL = 2.998e10, GN = 6.674e-8, MSUN = 1.989e33, MP = 1.673e-24, ST = 6.652e-25, PC = 3.086e18, LD = 2.59e15, AU = 1.496e13, YR = 3.156e7, SB = 5.670e-5;
+  function nuB(nu, T) { var x = HP * nu / (KB * T); if (x > 600) return 0; return 2 * HP * Math.pow(nu, 4) / (CL * CL) / Math.expm1(x); }   // nu B_nu
+  function xAxis(a, b, st) { var r = []; for (var x = a; x <= b + 1e-9; x += st) r.push(+x.toFixed(4)); return r; }
+  function lg(v) { return v > 1e-14 ? Math.log10(v) : -14; }
+  // function-of-slider helper: binds an <input type=range> to a callback and a read-out
+  function bind(input, out, fmt, cb) {
+    function f() { var v = parseFloat(input.value); if (out) setMath(out, fmt(v)); cb(v); }
+    input.addEventListener('input', f); f(); return f;
+  }
+  // make an animation run only while its element is on screen and its section is open
+  function onScreen(node, flag) {
+    if (window.IntersectionObserver) new IntersectionObserver(function (en) { flag.vis = en[0].isIntersecting; if (flag.vis && flag.kick) flag.kick(); }).observe(node);
+    else flag.vis = true;
+  }
+  // spin / black-hole radii (units of r_g = GM/c^2), Bardeen et al. (1972)
+  function kerr(a) {
+    var z1 = 1 + Math.cbrt(1 - a * a) * (Math.cbrt(1 + a) + Math.cbrt(1 - a)), z2 = Math.sqrt(3 * a * a + z1 * z1);
+    var isco = 3 + z2 - Math.sign(a >= 0 ? 1 : -1) * Math.sqrt((3 - z1) * (3 + z1 + 2 * z2));
+    var s = a >= 0 ? 1 : -1, aa = Math.abs(a);
+    var horizon = 1 + Math.sqrt(1 - a * a);
+    var photon = 2 * (1 + Math.cos(2 / 3 * Math.acos(-s * aa)));
+    var mb = 2 - s * aa + 2 * Math.sqrt(1 - s * aa);
+    var eta = 1 - Math.sqrt(1 - 2 / (3 * isco));
+    return { isco: isco, horizon: horizon, photon: photon, mb: mb, eta: eta, ergo: 2 };
+  }
+
+
+  // =========================================================== generic helpers for the figures below
+  // A simple axes frame: returns scale functions and a clipped group for data.
+  var plotId = 0;
+  function mkPlot(svg, o) {
+    var W = o.W, H = o.H, L = o.l, R = o.r, T = o.t, B = o.b, id = 'tw-clip-' + (plotId++);
+    var sx = function (x) { return L + (x - o.x0) / (o.x1 - o.x0) * (W - L - R); }, sy = function (y) { return T + (o.y1 - y) / (o.y1 - o.y0) * (H - T - B); };
+    var defs = sv('defs'), cp = sv('clipPath', { id: id }); cp.appendChild(sv('rect', { x: L, y: T, width: W - L - R, height: H - T - B })); defs.appendChild(cp); svg.appendChild(defs);
+    svg.appendChild(sv('rect', { x: L, y: T, width: W - L - R, height: H - T - B, fill: 'rgba(15,23,42,0.55)', stroke: 'rgba(148,163,184,0.35)' }));
+    var g = sv('g'); svg.appendChild(g);
+    (o.xt || []).forEach(function (x) { g.appendChild(sv('line', { x1: sx(x), x2: sx(x), y1: T, y2: H - B, 'class': 'tw-gridl' })); g.appendChild(sv('text', { x: sx(x), y: H - B + 17, 'class': 'tw-tick' }, o.xfmt ? o.xfmt(x) : (x < 0 ? '\u2212' + (-x) : x))); });
+    (o.yt || []).forEach(function (y) { g.appendChild(sv('line', { x1: L, x2: W - R, y1: sy(y), y2: sy(y), 'class': 'tw-gridl' })); g.appendChild(sv('text', { x: L - 7, y: sy(y) + 5, 'class': 'tw-tick tw-tick-y' }, o.yfmt ? o.yfmt(y) : (y < 0 ? '\u2212' + (-y) : y))); });
+    if (o.xlab) { var xt = sv('g', { transform: 'translate(' + ((L + W - R) / 2) + ',' + (H - 8) + ')' }); fo(xt, -130, -13, 260, 26, o.xlab, 'c', '#cbd5e1', 14); g.appendChild(xt); }
+    if (o.ylab) { var yt = sv('g', { transform: 'translate(13,' + ((T + H - B) / 2) + ') rotate(-90)' }); fo(yt, -110, -13, 220, 26, o.ylab, 'c', '#cbd5e1', 14); g.appendChild(yt); }
+    var data = sv('g', { 'clip-path': 'url(#' + id + ')' }); svg.appendChild(data);
+    return { sx: sx, sy: sy, data: data, g: g, W: W, H: H, L: L, R: R, T: T, B: B };
+  }
+  function linePath(p, xs, ys) { var d = ''; for (var i = 0; i < xs.length; i++) d += (i ? 'L' : 'M') + p.sx(xs[i]).toFixed(1) + ' ' + p.sy(ys[i]).toFixed(1); return d; }
+  function outCells(node, cells) { setMath(node, cells.map(function (c) { return '<div>' + c[0] + '<b>' + c[1] + '</b></div>'; }).join('')); }
+  function fmtTime(s) {
+    var u = [['s', 1], ['min', 60], ['hours', 3600], ['days', 86400], ['yr', YR], ['kyr', YR * 1e3], ['Myr', YR * 1e6], ['Gyr', YR * 1e9]], k = 0;
+    for (var i = 0; i < u.length; i++) if (s >= u[i][1]) k = i;
+    var v = s / u[k][1]; return (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)) + ' ' + u[k][0];
+  }
+  function chipsOf(node) { return Array.prototype.slice.call(node.closest('.tw-labbox').querySelectorAll('.tw-chip')); }
+  var sigFmt = function (v, d) { return v >= 1e4 || (v < 0.01 && v > 0) ? '$' + sci(v, d === undefined ? 1 : d) + '$' : +v.toPrecision(d === undefined ? 2 : d + 1); };
+
+
+  // =========================================================== small helpers for static figures
+  function addCurve(p, xs, ys, col, w, dash) { var e = sv('path', { d: linePath(p, xs, ys), fill: 'none', stroke: col, 'stroke-width': w || 3, 'stroke-dasharray': dash || 'none', 'stroke-linejoin': 'round' }); p.data.appendChild(e); return e; }
+  function label(svg, p, x, y, s, align, col, size, w) { w = w || 170; var X = p.sx(x), ax = align === 'r' ? X - w : align === 'c' ? X - w / 2 : X; return fo(svg, ax, p.sy(y) - 10, w, 20, s, align || 'l', col, size || 13); }
+  // a clickable region group with a shared information panel
+  function regionSet(panel, items) {
+    var cur = null;
+    function show(k) {
+      cur = k; var it = items[k]; panel.style.setProperty('--c', it.color);
+      setMath(panel, '<div class="tw-panel-t">' + it.title + '</div>' + (it.tag ? '<div class="tw-panel-tag">' + it.tag + '</div>' : '') + '<div>' + it.text + '</div>');
+      if (it.go) { var gb = el('div', 'tw-panel-go'); it.go.forEach(function (g) { var b = el('button', 'tw-go', g[0] + ' \u2192'); b.type = 'button'; b.addEventListener('click', function () { if (AX.goTo) AX.goTo(g[1]); }); gb.appendChild(b); }); panel.appendChild(gb); }
+      Object.keys(items).forEach(function (q) { (items[q].els || []).forEach(function (e) { e.style.filter = q === k ? 'drop-shadow(0 0 6px ' + items[q].color + ')' : ''; e.setAttribute('data-sel', q === k ? '1' : '0'); }); if (items[q].onSel) items[q].onSel(q === k); });
+    }
+    Object.keys(items).forEach(function (k) {
+      (items[k].els || []).forEach(function (e) {
+        e.classList.add('tw-clk'); e.addEventListener('click', function (ev) { ev.stopPropagation(); show(k); });
+        e.addEventListener('mouseenter', function (ev) { if (items[k].tip) tipShow(items[k].title, ev); }); e.addEventListener('mousemove', tipMove); e.addEventListener('mouseleave', tipHide);
+      });
+    });
+    return show;
+  }
+
+
+  // =========================================================== small helpers shared by the figures
+  function clearSvg(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+  function curve(p, xs, ys, col, w, dash, op) { var e = sv('path', { d: linePath(p, xs, ys), fill: 'none', stroke: col, 'stroke-width': w, 'stroke-dasharray': dash || 'none', 'stroke-linejoin': 'round', opacity: op || 1, 'pointer-events': 'none' }); p.data.appendChild(e); return e; }
+  function lg10(a) { return a.map(function (v) { return v === null ? NaN : Math.log10(Math.max(v, 1e-30)); }); }
+  function legend(svg, x, y, items, dy) { items.forEach(function (it, i) { var yy = y + i * (dy || 18); svg.appendChild(sv('line', { x1: x, x2: x + 26, y1: yy + 9, y2: yy + 9, stroke: it.c, 'stroke-width': it.w || 2.6, 'stroke-dasharray': it.d || 'none', opacity: it.o || 1 })); fo(svg, x + 32, yy, 250, 18, it.t, 'l', '#e2e8f0', 13); }); }
+  function segBind(id, cb) { $$('#' + id + ' button').forEach(function (b) { b.addEventListener('click', function () { $$('#' + id + ' button').forEach(function (x) { x.classList.toggle('tw-seg-on', x === b); }); cb(b.dataset.q); }); }); }
+  function chipBar(container, defs, on, redraw) { defs.forEach(function (c) { var b = el('button', 'tw-chip tw-chip-on', '<i class="tw-sw" style="--c:' + c.c + '"></i>' + c.t); b.type = 'button'; b.style.setProperty('--c', c.c); b.addEventListener('click', function () { on[c.k] = !on[c.k]; b.classList.toggle('tw-chip-on', on[c.k]); redraw(); }); container.appendChild(b); }); }
+
+  // =========================================================== the Townsend scheme, on a schematic table
+  var SUPD = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' };
+  function pow10Txt(k) { return '10' + String(k).split('').map(function (c) { return SUPD[c] || c; }).join(''); }
+  function gaussA(lt, c, s1, s2, A) { var d = lt - c, s = d < 0 ? s1 : s2; return A * Math.exp(-0.5 * d * d / (s * s)); }
+  // schematic cooling function per n_H^2 [erg cm^3 s^-1]: hydrogen, metals, bremsstrahlung
+  function LamModel(T) {
+    var lt = Math.log10(T);
+    return gaussA(lt, 4.3, 0.075, 0.28, 1.0e-21) + gaussA(lt, 5.35, 0.4, 0.3, 5.5e-22) + gaussA(lt, 6.3, 0.35, 0.35, 1.2e-22) + 2.4e-27 * Math.sqrt(T);
+  }
+
+  var TW = (function () {
+    var M = 16, LT0 = 4.0, DLT = 0.25, Tk = [], Lk = [], al = [], ck = [], Yk = [];
+    for (var i = 0; i <= M; i++) { Tk.push(Math.pow(10, LT0 + DLT * i)); Lk.push(LamModel(Tk[i])); }
+    for (var k = 0; k < M; k++) { al.push(Math.log(Lk[k + 1] / Lk[k]) / Math.log(Tk[k + 1] / Tk[k])); ck.push((Lk[M] / Lk[k]) * (Tk[k] / Tk[M])); }
+    // Y_k = Y(T_k), accumulated from the reference (the top knot) downwards; Y_M = 0
+    function dY(k, T) { var a = al[k], s = Tk[k] / T; return Math.abs(a - 1) < 1e-9 ? -ck[k] * Math.log(T / Tk[k]) : ck[k] * (Math.pow(s, a - 1) - 1) / (a - 1); }
+    Yk[M] = 0; for (var j = M - 1; j >= 0; j--) Yk[j] = Yk[j + 1] - dY(j, Tk[j + 1]);
+    function bin(T) { var k = 0; while (k < M - 1 && Tk[k + 1] <= T) k++; return k; }
+    function Y(T) { var k = bin(T); return Yk[k] + dY(k, T); }
+    function inv(Ys) {                           // returns [T, bin]; below the table -> the bottom knot
+      if (Ys >= Yk[0]) return [Tk[0], 0];
+      var k = M - 1; while (k > 0 && Yk[k] < Ys) k--;     // Y_k decreases with k: take the last bin with Y_k >= Y*
+      var a = al[k], T;
+      if (Math.abs(a - 1) < 1e-9) T = Tk[k] * Math.exp(-(Ys - Yk[k]) / ck[k]);
+      else T = Tk[k] * Math.pow(1 - (1 - a) * (Ys - Yk[k]) / ck[k], 1 / (1 - a));
+      return [Math.min(T, Tk[M]), k];
+    }
+    function Lam(T) { if (T < Tk[0]) return 0; var k = bin(T); return Lk[k] * Math.pow(T / Tk[k], al[k]); }
+    // cooling time in units of t_ref = T_ref / (K Lambda_ref)
+    function tc(T) { return (T / Tk[M]) * (Lk[M] / Lam(T)); }
+    // one Townsend step of length dtau (in units of t_ref)
+    function step(T, dtau) { if (T <= Tk[0]) return T; return inv(Y(T) + dtau)[0]; }
+    // exact solution by fine explicit substeps (independent of the scheme above)
+    function ref(T, tEnd) {
+      var t = 0; while (t < tEnd) { var h = Math.min(0.002 * tc(T), tEnd - t); if (T <= Tk[0]) break;
+        var f = function (x) { return -(Tk[M] / Lk[M]) * Lam(x); };
+        var k1 = f(T), k2 = f(T + 0.5 * h * k1), k3 = f(T + 0.5 * h * k2), k4 = f(T + h * k3);
+        T = Math.max(Tk[0], T + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6); t += h; }
+      return T;
+    }
+    function euler(T, dtau) { return Math.max(Tk[0], T - (Tk[M] / Lk[M]) * Lam(T) * dtau); }
+    return { M: M, Tk: Tk, Lk: Lk, al: al, ck: ck, Yk: Yk, bin: bin, Y: Y, inv: inv, Lam: Lam, tc: tc, step: step, ref: ref, euler: euler };
+  })();
+
+  // ---------------------------------------------------------- the start-up table
+  var hiRows = (function () {
+    var tb = $('#tw-tab tbody'), rows = [];
+    for (var k = 0; k <= TW.M; k++) {
+      var tr = el('tr'), last = k === TW.M;
+      [String(k), Math.log10(TW.Tk[k]).toFixed(2), Math.log10(TW.Lk[k]).toFixed(2).replace('-', '\u2212'), last ? '\u2013' : TW.al[k].toFixed(2).replace('-', '\u2212'), last ? '0' : TW.Yk[k].toFixed(4)].forEach(function (c) { tr.appendChild(el('td', null, c)); });
+      tb.appendChild(tr); rows.push(tr);
+    }
+    renderTextMath($('#tw-tab'));
+    return function (a, b) { rows.forEach(function (r, k) { r.classList.toggle('tw-r-old', k === a); r.classList.toggle('tw-r-new', k === b && b !== a); }); };
+  })();
+
+  // ---------------------------------------------------------- figure A: explicit stepping vs exact
+  (function () {
+    var svg = $('#tw-a'), out = $('#tw-a-out'), sT = $('#tw-s-aT'), sD = $('#tw-s-aD');
+    function draw() {
+      clearSvg(svg);
+      var lT0 = +sT.value, T0 = Math.pow(10, lT0), f = Math.pow(10, +sD.value), tc0 = TW.tc(T0), dt = f * tc0;
+      // horizon: the time at which the exact solution reaches 3e4 K
+      var Yend = TW.Y(3e4), horizon = Math.max(Yend - TW.Y(T0), 0.5 * tc0);
+      var n = Math.min(400, Math.max(2, Math.ceil(horizon / dt))), xmax = horizon / tc0;
+      var p = mkPlot(svg, { W: 560, H: 400, l: 62, r: 14, t: 14, b: 48, x0: 0, x1: xmax, y0: 4.3, y1: Math.max(lT0 + 0.2, 5), xt: niceTicks(xmax), yt: [4.5, 5, 5.5, 6, 6.5, 7, 7.5], yfmt: function (y) { return pow10Txt(y); }, xlab: 'time $t/t_{\\rm cool}(T_0)$', ylab: 'temperature $T$ [K]' });
+      // exact curve
+      var xs = [], ys = [], Tt = T0, tt = 0, N = 160, h = horizon / N;
+      xs.push(0); ys.push(lT0);
+      for (var i = 1; i <= N; i++) { var Tn = TW.step(T0, i * h); xs.push(i * h / tc0); ys.push(Math.log10(Math.max(Tn, 1e4))); }
+      curve(p, xs, ys, '#34d399', 3.4);
+      // Euler and Townsend with the same fixed steps
+      var eX = [0], eY = [lT0], tX = [0], tY = [lT0], Te = T0, Tt2 = T0, maxErr = 0, maxE = 0, k;
+      for (k = 1; k <= n; k++) {
+        Te = TW.euler(Te, dt); Tt2 = TW.step(Tt2, dt);
+        eX.push(k * dt / tc0); eY.push(Math.log10(Te)); tX.push(k * dt / tc0); tY.push(Math.log10(Tt2));
+        var Tex = TW.step(T0, k * dt); maxErr = Math.max(maxErr, Math.abs(Math.log10(Tt2) - Math.log10(Tex))); maxE = Math.max(maxE, Math.abs(Math.log10(Te) - Math.log10(Tex)));
+      }
+      curve(p, eX, eY, '#fb923c', 2.2, '5 4');
+      eX.forEach(function (x, i) { if (x <= xmax * 1.001) p.data.appendChild(sv('rect', { x: p.sx(x) - 3.5, y: p.sy(eY[i]) - 3.5, width: 7, height: 7, fill: '#fb923c', stroke: '#0f172a', 'stroke-width': 1.2 })); });
+      tX.forEach(function (x, i) { if (x <= xmax * 1.001) p.data.appendChild(sv('circle', { cx: p.sx(x), cy: p.sy(tY[i]), r: 4.3, fill: '#38bdf8', stroke: '#0f172a', 'stroke-width': 1.2 })); });
+      legend(svg, 400, 22, [{ c: '#34d399', t: 'exact', w: 3.4 }, { c: '#fb923c', t: 'forward Euler', d: '5 4' }, { c: '#38bdf8', t: 'Townsend', w: 3 }]);
+      // errors
+      var eE = maxE;
+      var refT = TW.ref(T0, n * dt), eT = Math.abs(Math.log10(Tt2) - Math.log10(refT));
+      setMath($('#tw-o-aT'), '$T_0=' + sci(T0, 1) + '$ K'); setMath($('#tw-o-aD'), '$\\Delta t=' + (+f.toPrecision(2)) + '\\,t_{\\rm cool}(T_0)$');
+      outCells(out, [['Steps taken', n], ['Euler, worst error in $\\log T$', eE < 0.005 ? '$<0.01$ dex' : '$' + eE.toFixed(2) + '$ dex'], ['Townsend vs fine reference', eT < 1e-3 ? '$<10^{-3}$ dex' : '$' + eT.toFixed(3) + '$ dex'], ['Townsend vs its own exact map', maxErr < 1e-9 ? '$<10^{-9}$ dex' : '$' + sci(maxErr, 1) + '$ dex']]);
+    }
+    [sT, sD].forEach(function (s) { s.addEventListener('input', draw); }); AX.drawA = draw; draw();
+  })();
+  function niceTicks(xmax) { var st = xmax > 40 ? 10 : xmax > 16 ? 5 : xmax > 8 ? 2 : xmax > 3 ? 1 : 0.5, r = []; for (var x = st; x < xmax; x += st) r.push(+x.toFixed(2)); return r; }
+
+  // ---------------------------------------------------------- figure B: the clock and one step
+  (function () {
+    var s1 = $('#tw-b1'), s2 = $('#tw-b2'), out = $('#tw-b-out'), sT = $('#tw-s-bT'), sD = $('#tw-s-bD');
+    var BLUE = '#38bdf8', ORG = '#fb923c';
+    function shade(p, k, col, lo, hi) { p.data.appendChild(sv('rect', { x: p.sx(Math.log10(TW.Tk[k])), y: p.T, width: p.sx(Math.log10(TW.Tk[k + 1])) - p.sx(Math.log10(TW.Tk[k])), height: p.H - p.T - p.B, fill: col, opacity: 0.16 })); }
+    function draw() {
+      clearSvg(s1); clearSvg(s2);
+      var lT0 = +sT.value, T0 = Math.pow(10, lT0), f = Math.pow(10, +sD.value), tc0 = TW.tc(T0), dtau = f * tc0;
+      var Y0 = TW.Y(T0), Y1 = Y0 + dtau, r = TW.inv(Y1), T1 = r[0], k1 = r[1], k0 = TW.bin(T0), below = Y1 >= TW.Yk[0];
+      hiRows(TW.bin(T0), Y0 + dtau < TW.Yk[0] ? TW.inv(Y0 + dtau)[1] : -1);
+      // left: the table and its power-law segments
+      var p = mkPlot(s1, { W: 460, H: 340, l: 62, r: 14, t: 14, b: 46, x0: 4, x1: 8, y0: -25, y1: -20.5, xt: [4, 5, 6, 7, 8], xfmt: pow10Txt, yt: [-24, -23, -22, -21], yfmt: pow10Txt, xlab: 'temperature $T$ [K]', ylab: '$\\Lambda$ [erg cm$^3$ s$^{-1}$]' });
+      shade(p, k0, BLUE); if (!below) shade(p, k1, ORG);
+      var xs = [], ys = []; for (var x = 4; x <= 8.0001; x += 0.01) { xs.push(x); ys.push(Math.log10(LamModel(Math.pow(10, x)))); }
+      curve(p, xs, ys, 'rgba(148,163,184,0.5)', 1.6, '3 3');
+      var kx = [], ky = []; TW.Tk.forEach(function (T, i) { kx.push(Math.log10(T)); ky.push(Math.log10(TW.Lk[i])); });
+      curve(p, kx, ky, '#f1f5f9', 2.8);
+      kx.forEach(function (x, i) { var d = sv('path', { d: 'M' + p.sx(x) + ',' + (p.sy(ky[i]) - 5.5) + 'l5.5,5.5l-5.5,5.5l-5.5,-5.5z', fill: '#0f172a', stroke: '#f1f5f9', 'stroke-width': 1.6 }); p.data.appendChild(d); });
+      [[lT0, BLUE], [Math.log10(T1), ORG]].forEach(function (a) { p.data.appendChild(sv('line', { x1: p.sx(a[0]), x2: p.sx(a[0]), y1: p.T, y2: p.H - p.B, stroke: a[1], 'stroke-width': 2, 'stroke-dasharray': '4 3' })); });
+      label(s1, p, lT0, -20.8, '$T_{\\rm old}$', lT0 > 6.6 ? 'r' : 'l', BLUE, 13, 70); label(s1, p, Math.log10(T1), -21.35, '$T_{\\rm new}$', Math.log10(T1) > 6.6 ? 'r' : 'l', ORG, 13, 70);
+      label(s1, p, 5.15, -24.55, 'table knots, straight lines in log-log', 'l', '#cbd5e1', 12, 240);
+      // right: the clock, drawn as the time still to run until the bottom of the table, R = Y(T_bottom) - Y(T)
+      var Yb = TW.Yk[0];
+      var q = mkPlot(s2, { W: 460, H: 340, l: 62, r: 14, t: 14, b: 46, x0: 4, x1: 8, y0: -5, y1: 1, xt: [4, 5, 6, 7, 8], xfmt: pow10Txt, yt: [-5, -4, -3, -2, -1, 0, 1], yfmt: pow10Txt, xlab: 'temperature $T$ [K]', ylab: 'time left on the clock [$t_{\\rm ref}$]' });
+      shade(q, k0, BLUE); if (!below) shade(q, k1, ORG);
+      var yx = [], yy = []; for (var x2 = 4.002; x2 <= 8.0001; x2 += 0.01) { var v = Yb - TW.Y(Math.pow(10, x2)); if (v > 1e-5) { yx.push(x2); yy.push(Math.log10(v)); } }
+      curve(q, yx, yy, '#f1f5f9', 3);
+      TW.Tk.forEach(function (T, i) { var v = Yb - TW.Yk[i]; if (v > 1e-5) q.data.appendChild(sv('circle', { cx: q.sx(Math.log10(T)), cy: q.sy(Math.log10(v)), r: 3.2, fill: '#0f172a', stroke: '#f1f5f9', 'stroke-width': 1.5 })); });
+      var cl = function (v) { return clamp(Math.log10(Math.max(v, 1e-9)), -5, 1); };
+      var R0 = Yb - Y0, R1 = Yb - Y1;
+      var xo = q.sx(lT0), y0p = q.sy(cl(R0)), y1p = q.sy(below ? -5 : cl(R1)), xn = q.sx(Math.log10(T1));
+      q.data.appendChild(sv('line', { x1: xo, x2: xo, y1: y0p, y2: y1p, stroke: BLUE, 'stroke-width': 3 }));
+      q.data.appendChild(sv('path', { d: 'M' + xo + ',' + (y1p + 1) + 'l-6,-9l12,0z', fill: BLUE }));
+      q.data.appendChild(sv('line', { x1: xo, x2: xn, y1: y1p, y2: y1p, stroke: ORG, 'stroke-width': 2.4, 'stroke-dasharray': '5 4' }));
+      q.data.appendChild(sv('line', { x1: xn, x2: xn, y1: y1p, y2: q.H - q.B, stroke: ORG, 'stroke-width': 2, 'stroke-dasharray': '4 3' }));
+      q.data.appendChild(sv('circle', { cx: xo, cy: y0p, r: 6, fill: BLUE, stroke: '#0f172a', 'stroke-width': 2 }));
+      q.data.appendChild(sv('circle', { cx: xn, cy: y1p, r: 6, fill: ORG, stroke: '#0f172a', 'stroke-width': 2 }));
+      label(s2, q, lT0, cl(R0) + 0.35, '$R(T_{\\rm old})$', lT0 > 6.2 ? 'r' : 'l', BLUE, 13, 100); label(s2, q, 4.1, (below ? -4.6 : cl(R1)) + 0.4, '$R-\\Delta t/t_{\\rm ref}$', 'l', ORG, 13, 150);
+      setMath($('#tw-o-bT'), '$T_{\\rm old}=' + sci(T0, 1) + '$ K'); setMath($('#tw-o-bD'), '$\\Delta t=' + (+f.toPrecision(2)) + '\\,t_{\\rm cool}(T_{\\rm old})$');
+      // how many explicit substeps would be needed to resolve the same step
+      var subs = 0, Te = T0, tl = 0; while (tl < dtau && subs < 100000 && Te > TW.Tk[0]) { var hh = Math.min(0.1 * TW.tc(Te), dtau - tl); Te = TW.euler(Te, hh); tl += hh; subs++; }
+      var crossed = below ? k0 : Math.max(0, k0 - k1);
+      outCells(out, [['Time left, $R(T_{\\rm old})$', num(Yb - Y0, 2) + ' $t_{\\rm ref}$'], ['Step, $\\Delta t$', num(dtau, 2) + ' $t_{\\rm ref}$'], ['$T_{\\rm new}$', below ? 'table floor, $10^4$ K' : '$' + sci(T1, 2) + '$ K'], ['Bins crossed', crossed + (below ? ' (to the floor)' : '')], ['Townsend', '1 evaluation'], ['Explicit, substeps $\\le0.1\\,t_{\\rm cool}$', subs >= 100000 ? '$>10^5$ substeps' : subs + ' substeps']]);
+    }
+    [sT, sD].forEach(function (s) { s.addEventListener('input', draw); }); draw();
+  })();
+
+  renderAll(0);
+})();
+</script>

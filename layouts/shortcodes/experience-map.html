@@ -1,0 +1,733 @@
+<div class="xp-wrap" id="xp" data-world="{{ "data/world-50m.json" | relURL }}">
+  <div class="xp-head">
+    <h1 class="xp-title">Experience</h1>
+    <p class="xp-lead">A path across Europe, from Mulhouse to Paris. Press play to follow it step by step, pick a stop on the map or in the list, or switch to the conferences layer.</p>
+  </div>
+
+  <div class="xp-app">
+    <div class="xp-mapbox" id="xp-mapbox">
+      <svg id="xp-svg" role="img" aria-label="Interactive map of my academic path"></svg>
+      <div class="xp-loading" id="xp-loading">Loading the map&hellip;</div>
+
+      <div class="xp-seg" role="tablist" aria-label="Map layer">
+        <button type="button" role="tab" class="xp-seg-b is-on" data-layer="path" aria-selected="true">Academic path</button>
+        <button type="button" role="tab" class="xp-seg-b" data-layer="conf" aria-selected="false">Conferences</button>
+      </div>
+
+      <div class="xp-zoom">
+        <button type="button" id="xp-zin" aria-label="Zoom in">+</button>
+        <button type="button" id="xp-zout" aria-label="Zoom out">&minus;</button>
+        <button type="button" id="xp-home" aria-label="Back to overview" title="Back to overview">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><circle cx="10" cy="10" r="6.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10" cy="10" r="1.7" fill="currentColor"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="xp-cap" id="xp-cap" aria-live="polite"></div>
+      <div class="xp-hint" id="xp-hint">Drag to pan &middot; Ctrl/&#8984; + scroll or pinch to zoom</div>
+    </div>
+
+    <aside class="xp-side">
+      <div class="xp-ctl">
+        <button type="button" class="xp-play" id="xp-play" aria-label="Play the journey">
+          <svg class="xp-ic-play" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M5 3.2v13.6a.8.8 0 0 0 1.2.7l11-6.8a.8.8 0 0 0 0-1.4l-11-6.8A.8.8 0 0 0 5 3.2Z" fill="currentColor"/></svg>
+          <svg class="xp-ic-pause" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><rect x="4.5" y="3" width="4" height="14" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="4" height="14" rx="1" fill="currentColor"/></svg>
+          <span id="xp-play-t">Play the journey</span>
+        </button>
+        <button type="button" class="xp-nav" id="xp-prev" aria-label="Previous stop">
+          <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="xp-nav" id="xp-next" aria-label="Next stop">
+          <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="xp-count" id="xp-count"></span>
+      </div>
+      <ol class="xp-list" id="xp-list"></ol>
+    </aside>
+  </div>
+
+  <p class="xp-foot"><a href="{{ "experience-classic/" | relURL }}">Prefer the classic timeline? Skills, awards and languages are there &rarr;</a></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
+<style>
+  .xp-wrap { --xp-bg: #080d1a; --xp-panel: #0c1324; --xp-line: rgba(148,163,184,0.18); --xp-text: #e2e8f0; --xp-mut: #94a3b8; --xp-acc: #5eead4; --xp-amb: #fbbf24;
+    max-width: 1240px; margin: 0 auto; padding: 0 1rem 2.5rem; }
+  .xp-head { text-align: center; margin-bottom: 1.4rem; }
+  .xp-title { margin: 0 0 0.5rem; font-size: 2.2rem; font-weight: 700; }
+  .xp-lead { margin: 0 auto; max-width: 660px; font-size: 1.02rem; line-height: 1.5; opacity: 0.8; }
+
+  .xp-app { display: grid; grid-template-columns: minmax(0, 1fr) 372px; height: clamp(560px, 76vh, 740px); border: 1px solid var(--xp-line); border-radius: 18px; overflow: hidden; background: var(--xp-bg); box-shadow: 0 24px 60px -24px rgba(2, 6, 23, 0.7); color: var(--xp-text); }
+  .xp-app *, .xp-app *::before, .xp-app *::after { box-sizing: border-box; }
+  .xp-app button { font: inherit; color: inherit; cursor: pointer; }
+  .xp-app a { color: var(--xp-acc); text-decoration: none; }
+  .xp-app a:hover { text-decoration: underline; }
+
+  /* ---------------------------------------------------------------- map */
+  .xp-mapbox { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--xp-bg); }
+  .xp-mapbox::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 70px 0 rgba(4, 8, 18, 0.7); }
+  #xp-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; outline: none; user-select: none; -webkit-user-select: none; }
+  #xp-svg:active { cursor: grabbing; }
+  .xp-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--xp-mut); font-size: 0.95rem; pointer-events: none; transition: opacity 0.6s; z-index: 3; }
+  .xp-loading.is-gone { opacity: 0; }
+
+  .xp-grat, .xp-border, .xp-coast { vector-effect: non-scaling-stroke; }
+  .xp-grat { fill: none; stroke: rgba(148, 163, 184, 0.07); stroke-width: 0.6; }
+  .xp-land { fill: #19243b; stroke: none; }
+  .xp-hi { fill: rgba(94, 234, 212, 0.06); stroke: none; transition: opacity 0.6s; }
+  .xp-border { fill: none; stroke: rgba(148, 163, 184, 0.24); stroke-width: 0.6; stroke-linejoin: round; }
+  .xp-coast { fill: none; stroke: rgba(165, 180, 205, 0.42); stroke-width: 0.9; stroke-linejoin: round; }
+
+  .xp-arc, .xp-arcg { fill: none; stroke-linecap: butt; stroke-dasharray: 1 2; stroke-dashoffset: 1.02; transition: stroke-dashoffset 0.9s cubic-bezier(0.45, 0, 0.2, 1), opacity 0.4s; }
+  .xp-arc { stroke-width: 2.2; }
+  .xp-arcg { stroke-width: 8; opacity: 0.16; }
+  .xp-arc.on, .xp-arcg.on { stroke-dashoffset: 0; transition-delay: var(--d, 0ms), 0ms; }
+  .xp-head-a { opacity: 0; transition: opacity 0.25s; }
+  .xp-head-a.on { opacity: 1; transition: opacity 0.3s ease calc(var(--d, 0ms) + 0.7s); }
+  .xp-comet-g { opacity: 0; transition: opacity 0.3s; }
+  .xp-comet-g.on { opacity: 1; }
+
+  .xp-node { cursor: pointer; outline: none; transition: opacity 0.5s; }
+  .xp-node .xp-halo { opacity: 0.16; transition: opacity 0.3s, r 0.3s; }
+  .xp-node .xp-core { fill: #0a1020; stroke-width: 2; transition: fill 0.3s; }
+  .xp-node .xp-n { fill: #f1f5f9; font-size: 11px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; transition: fill 0.3s; }
+  .xp-node:hover .xp-halo, .xp-node:focus-visible .xp-halo { opacity: 0.4; }
+  .xp-node.is-future { opacity: 0.3; }
+  .xp-node.is-active .xp-core { fill: var(--c); }
+  .xp-node.is-active .xp-n { fill: #07101e; }
+  .xp-node.is-active .xp-halo { opacity: 0.32; animation: xp-pulse 2.2s ease-out infinite; }
+  .xp-node.is-conf .xp-core { stroke-width: 1.8; }
+  .xp-node.is-conf.is-online .xp-core { stroke-dasharray: 2.4 2.2; }
+  .xp-node.is-conf .xp-dot { fill: var(--c); transition: r 0.3s; }
+  @keyframes xp-pulse { 0% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 0; transform: scale(1.9); } }
+  .xp-node .xp-halo { transform-box: fill-box; transform-origin: center; }
+
+  .xp-lab { font-size: 12px; font-weight: 600; fill: var(--xp-text); paint-order: stroke; stroke: #080d1a; stroke-width: 3.6px; stroke-linejoin: round; pointer-events: none; transition: opacity 0.3s; }
+  .xp-lab .xp-lb { font-size: 10.5px; font-weight: 500; fill: var(--xp-mut); }
+  .xp-lab.is-future { opacity: 0; }
+
+  .xp-edge { cursor: pointer; }
+  .xp-edge rect { fill: rgba(12, 19, 36, 0.92); stroke: var(--c); stroke-width: 1; }
+  .xp-edge text { fill: var(--xp-text); font-size: 11px; font-weight: 600; dominant-baseline: central; pointer-events: none; }
+  .xp-edge path { fill: var(--c); }
+
+  .xp-seg { position: absolute; top: 14px; left: 14px; z-index: 4; display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgba(12, 19, 36, 0.92); border: 1px solid var(--xp-line); }
+  .xp-seg-b { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-size: 0.83rem; font-weight: 600; color: var(--xp-mut); transition: background 0.25s, color 0.25s; }
+  .xp-seg-b:hover { color: var(--xp-text); }
+  .xp-seg-b.is-on { background: rgba(94, 234, 212, 0.16); color: #99f6e4; }
+  .xp-seg-b[data-layer="conf"].is-on { background: rgba(251, 191, 36, 0.16); color: #fde68a; }
+
+  .xp-zoom { position: absolute; top: 14px; right: 14px; z-index: 4; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: rgba(12, 19, 36, 0.92); border: 1px solid var(--xp-line); }
+  .xp-zoom button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: transparent; font-size: 1.2rem; line-height: 1; color: var(--xp-mut); transition: background 0.2s, color 0.2s; }
+  .xp-zoom button + button { border-top: 1px solid var(--xp-line); }
+  .xp-zoom button:hover { background: rgba(148, 163, 184, 0.14); color: var(--xp-text); }
+
+  .xp-cap { position: absolute; left: 14px; bottom: 14px; z-index: 4; max-width: min(420px, calc(100% - 28px)); padding: 12px 16px 13px; border-radius: 14px; background: rgba(10, 16, 32, 0.92); border: 1px solid var(--xp-line); transition: opacity 0.35s, transform 0.35s; pointer-events: none; }
+  .xp-cap.is-empty { opacity: 0; transform: translateY(8px); }
+  .xp-cap-k { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--xp-mut); font-weight: 600; }
+  .xp-cap-k i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); display: inline-block; }
+  .xp-cap-t { margin-top: 3px; font-size: 1.22rem; font-weight: 700; line-height: 1.2; }
+  .xp-cap-s { margin-top: 3px; font-size: 0.86rem; color: #b6c2d4; line-height: 1.35; }
+  .xp-hint { position: absolute; right: 14px; bottom: 12px; z-index: 4; font-size: 0.7rem; color: rgba(148, 163, 184, 0.7); pointer-events: none; text-align: right; }
+
+  /* --------------------------------------------------------------- side */
+  .xp-side { display: flex; flex-direction: column; min-height: 0; background: var(--xp-panel); border-left: 1px solid var(--xp-line); }
+  .xp-ctl { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--xp-line); }
+  .xp-play { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px 8px 13px; border-radius: 999px; border: 1px solid rgba(94, 234, 212, 0.45); background: rgba(94, 234, 212, 0.12); color: #99f6e4; font-size: 0.85rem; font-weight: 600; transition: background 0.2s; }
+  .xp-play:hover { background: rgba(94, 234, 212, 0.22); }
+  .xp-play .xp-ic-pause { display: none; }
+  .xp-play.is-playing .xp-ic-pause { display: block; }
+  .xp-play.is-playing .xp-ic-play { display: none; }
+  .xp-nav { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--xp-line); background: transparent; color: var(--xp-mut); transition: background 0.2s, color 0.2s; }
+  .xp-nav:hover:not(:disabled) { background: rgba(148, 163, 184, 0.14); color: var(--xp-text); }
+  .xp-nav:disabled { opacity: 0.35; cursor: default; }
+  .xp-count { margin-left: auto; font-size: 0.8rem; color: var(--xp-mut); font-variant-numeric: tabular-nums; }
+
+  .xp-list { list-style: none; margin: 0; padding: 8px 8px 14px; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent; }
+  .xp-item { position: relative; }
+  .xp-item::before { content: ""; position: absolute; left: 23px; top: 38px; bottom: -6px; width: 2px; background: linear-gradient(var(--c), var(--c2, var(--c))); opacity: 0.28; border-radius: 2px; }
+  .xp-item:last-child::before, .xp-list.is-flat .xp-item::before { display: none; }
+  .xp-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 11px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 12px; transition: background 0.2s; }
+  .xp-row:hover { background: rgba(148, 163, 184, 0.08); }
+  .xp-item.is-active .xp-row { background: rgba(148, 163, 184, 0.1); }
+  .xp-num { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--c); font-size: 0.72rem; font-weight: 700; background: var(--xp-panel); position: relative; z-index: 1; transition: background 0.25s, color 0.25s; }
+  .xp-item.is-active .xp-num { background: var(--c); color: #07101e; }
+  .xp-item.is-future .xp-num { opacity: 0.55; }
+  .xp-list.is-flat .xp-num { width: 12px; height: 12px; border-width: 0; background: var(--c); margin: 0 8px; font-size: 0; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.16); }
+  .xp-list.is-flat .xp-item.is-active .xp-num { box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.32); }
+  .xp-item.is-online .xp-list .xp-num { border-style: dashed; }
+  .xp-place { display: block; font-size: 0.93rem; font-weight: 650; line-height: 1.25; }
+  .xp-sub { display: block; font-size: 0.78rem; color: var(--xp-mut); line-height: 1.3; margin-top: 1px; }
+  .xp-per { font-size: 0.72rem; color: var(--xp-mut); white-space: nowrap; font-variant-numeric: tabular-nums; align-self: start; padding-top: 3px; }
+  .xp-yr { margin: 10px 10px 2px; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--xp-mut); font-weight: 700; }
+  .xp-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s ease; }
+  .xp-item.is-active .xp-more { grid-template-rows: 1fr; }
+  .xp-more-in { min-height: 0; overflow: hidden; padding: 0 10px 0 51px; }
+  .xp-list.is-flat .xp-more-in { padding-left: 46px; }
+  .xp-item.is-active .xp-more-in { padding-bottom: 8px; }
+  .xp-org { font-size: 0.84rem; font-weight: 600; margin-top: 4px; color: #cbd5e1; }
+  .xp-txt { margin: 5px 0 0; font-size: 0.84rem; line-height: 1.5; color: #aab6c8; }
+  .xp-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .xp-tag { font-size: 0.7rem; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--xp-line); color: #b6c2d4; }
+  .xp-tag.is-now { border-color: rgba(94, 234, 212, 0.5); color: #99f6e4; }
+
+  .xp-foot { text-align: center; margin: 1.1rem 0 0; font-size: 0.9rem; }
+  .xp-foot a { opacity: 0.75; }
+  .xp-foot a:hover { opacity: 1; }
+
+  @media (max-width: 920px) {
+    .xp-app { grid-template-columns: 1fr; height: auto; }
+    .xp-mapbox { height: min(64vh, 520px); min-height: 400px; }
+    .xp-side { border-left: 0; border-top: 1px solid var(--xp-line); }
+    .xp-list { overflow: visible; max-height: none; }
+    .xp-hint { display: none; }
+    .xp-cap-t { font-size: 1.08rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .xp-arc, .xp-arcg, .xp-more, .xp-node, .xp-head-a { transition: none !important; }
+    .xp-node.is-active .xp-halo { animation: none; }
+  }
+</style>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.getElementById('xp');
+  var mapbox = document.getElementById('xp-mapbox');
+  var loading = document.getElementById('xp-loading');
+  if (!root) return;
+  if (!window.d3 || !window.topojson) { loading.textContent = 'The map library could not be loaded.'; return; }
+
+  // ------------------------------------------------------------------ data
+  // ll = [longitude, latitude]
+  var PATH = [
+    { site: 'Mulhouse', lab: 'Mulhouse', ll: [7.3359, 47.7508], title: 'Hometown and high school', org: 'Mulhouse, Alsace', per: 'until 2016', tags: ['Origins'],
+      text: 'Where it started: childhood and high-school years in Alsace, close to the point where France, Germany and Switzerland meet.' },
+    { site: 'Besancon', lab: 'Besançon', ll: [6.0241, 47.2378], title: 'Classes préparatoires (PCSI / PC*)', org: 'Lycée Victor Hugo', per: '2016–2019', tags: ['Prépa'],
+      text: 'Three intense years of mathematics and physics in the French classes préparatoires, ending with the competitive entrance exams to the engineering schools.' },
+    { site: 'Grenoble', lab: 'Grenoble', ll: [5.7068, 45.1931], title: 'Engineering degree and MSc in Physics and Engineering', org: 'Phelma · Grenoble INP – Université Grenoble Alpes', url: 'https://phelma.grenoble-inp.fr/', per: '2019–2022', tags: ['Engineering school', 'Nuclear and particle physics'],
+      text: 'Physics and engineering at Phelma, with a track in nuclear engineering and particle physics, an exchange at EPFL and internships in Germany.' },
+    { site: 'Mainz', lab: 'Mainz', ll: [8.2473, 49.9929], title: 'Internship', org: 'Mainz, Germany', per: '2021', tags: ['Internship'],
+      text: 'A first stay in Germany, during my studies at Phelma.' },
+    { site: 'Lausanne', lab: 'Lausanne', ll: [6.5668, 46.5191], title: 'Erasmus exchange', org: 'EPFL', url: 'https://www.epfl.ch/', per: '2021\u20132022', tags: ['Erasmus'],
+      text: 'An exchange period at the École Polytechnique Fédérale de Lausanne, as part of the Phelma curriculum.' },
+    { site: 'Heidelberg', lab: 'Heidelberg', ll: [8.7228, 49.3975], title: 'Master thesis internship', org: 'Max-Planck-Institut für Astronomie (MPIA)', url: 'https://www.mpia.de/', per: 'Apr–Aug 2022', tags: ['Internship', 'Galaxies'],
+      text: 'Properties of Magellanic Cloud analogues in the TNG50 cosmological simulation, with Annalisa Pillepich: my first research project in astrophysics.' },
+    { site: 'Paris', lab: 'Paris', ll: [2.3365, 48.8355], title: 'MSc in Astronomy and Astrophysics', org: 'Observatoire de Paris · Université Paris Cité', url: 'https://www.obspm.fr/', per: '2022–2023', tags: ['MSc'],
+      text: 'The master’s programme that turned the interest in astrophysics into a plan: a PhD on galaxies and gas.' },
+    { site: 'Lyon', lab: 'Lyon', ll: [4.8225, 45.7298], title: 'MSc thesis', org: 'École Normale Supérieure de Lyon', url: 'https://www.ens-lyon.fr/', per: 'Apr–Aug 2023', tags: ['MSc thesis', 'Cosmic rays'],
+      text: 'Cosmic-ray propagation in the Milky Way: magnetohydrodynamical simulations with RAMSES of high-energy cosmic rays emitted from the Galactic Centre, with Jérémy Fensch and Benoît Commerçon.' },
+    { site: 'Hamburg', lab: 'Hamburg', ll: [10.2411, 53.4813], title: 'PhD in Astrophysics, summa cum laude', org: 'Universität Hamburg', url: 'https://www.uni-hamburg.de/', per: '2023–2026', tags: ['PhD', 'Intracluster medium'],
+      text: 'Thesis: “Cold gas in a hot universe: Supermassive black hole feedback and multiphase condensation in the magnetized intracluster medium”, supervised by Marcus Brüggen and Philipp Grete.' },
+    { site: 'Paris', lab: 'Paris', ll: [2.3365, 48.8355], title: 'Postdoctoral researcher', org: 'Institut d’Astrophysique de Paris · CNRS and Sorbonne Université', url: 'https://www.iap.fr/', per: 'since Oct 2026', now: true, tags: ['Postdoc', 'Current'],
+      text: 'Back in Paris to keep studying the multiphase intracluster medium with magnetohydrodynamical simulations.' }
+  ];
+
+  var CONF = [
+    { site: 'Marseille', lab: 'Marseille', ll: [5.3698, 43.2965], yr: 2024, title: 'SF2A – Journées de la Société Française d’Astronomie et d’Astrophysique', org: 'Marseille, France', kind: 'Contributed talk' },
+    { site: 'Cambridge', lab: 'Cambridge, MA', ll: [-71.1281, 42.3814], yr: 2024, title: 'Galaxy Clusters and Radio Relics II', org: 'Cambridge, Massachusetts, USA', kind: 'Contributed talk' },
+    { site: 'Toulouse', lab: 'Toulouse', ll: [1.4442, 43.6047], yr: 2025, title: 'SF2A – Journées de la Société Française d’Astronomie et d’Astrophysique', org: 'Toulouse, France', kind: 'Contributed talk' },
+    { site: 'Cargese', lab: 'Cargèse', ll: [8.5963, 42.1356], yr: 2025, title: 'MIST2025 – Cosmic Turbulence and Magnetic Fields', org: 'Cargèse, Corsica, France', kind: 'Contributed talk' },
+    { site: 'Ringberg', lab: 'Ringberg', ll: [11.7656, 47.7117], yr: 2025, title: 'Modelling of Multiphase Astrophysical Media', org: 'Schloss Ringberg, Germany', kind: 'Contributed talk' },
+    { site: 'Sexten', lab: 'Sexten', ll: [12.3500, 46.7000], yr: 2025, title: 'BlackHoleWeather: Toward a Unified Theory of Feeding and Feedback', org: 'Sexten, Italy', kind: 'Invited talk' },
+    { site: 'Brno', lab: 'Brno', ll: [16.5888, 49.2046], yr: 2026, title: '8th ICM Theory and Computation Workshop', org: 'Brno Observatory and Planetarium, Czechia', kind: 'Poster talk' },
+    { site: 'Boston', lab: 'Boston (online)', ll: [-71.0589, 42.3601], yr: 2026, title: 'Parthenon User Meeting', org: 'Boston, USA (online)', kind: 'Invited talk', online: true }
+  ];
+
+  var HILITE = { path: ['250', '276', '756'], conf: ['250', '276', '380', '203', '840'] };
+  var RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var RAMP = d3.interpolateRgbBasis(['#5eead4', '#38bdf8', '#818cf8', '#c084fc', '#f472b6']);
+  var AMBER = '#fbbf24';
+
+  // ----------------------------------------------------------------- state
+  var layer = 'path', items = [], cur = -1, playing = false, playTimer = null, hover = -1;
+  var W = 0, H = 0, base = null, idleT = null, T = d3.zoomIdentity, ready = false, resizeAnim = false;
+  var feats = {}, landFC = null, borderLines = [], coastLines = [];
+  var proj = d3.geoMercator().scale(1).translate([0, 0]);
+  var unit = d3.geoMercator().scale(1).translate([0, 0]);
+  var gen = d3.geoPath(proj);
+  var grat = {};
+  var BULGE = 0.28;
+
+  // ------------------------------------------------------------------- DOM
+  var svg = d3.select('#xp-svg');
+  var defs = svg.append('defs');
+  var rg = defs.append('radialGradient').attr('id', 'xp-sea').attr('cx', '50%').attr('cy', '46%').attr('r', '75%');
+  rg.append('stop').attr('offset', '0').attr('stop-color', '#0a1426');
+  rg.append('stop').attr('offset', '1').attr('stop-color', '#050913');
+  var sea = svg.append('rect').attr('fill', 'url(#xp-sea)');
+  var gGeo = svg.append('g');
+  var gGrat = gGeo.append('path').attr('class', 'xp-grat');
+  var gLand = gGeo.append('path').attr('class', 'xp-land');
+  var gHi = gGeo.append('g');
+  var gBorder = gGeo.append('path').attr('class', 'xp-border');
+  var gCoast = gGeo.append('path').attr('class', 'xp-coast');
+  var gArcs = svg.append('g');
+  var gNodes = svg.append('g');
+  var gLabs = svg.append('g');
+  var gEdge = svg.append('g');
+
+  var listEl = document.getElementById('xp-list');
+  var capEl = document.getElementById('xp-cap');
+  var countEl = document.getElementById('xp-count');
+  var playBtn = document.getElementById('xp-play');
+  var playTxt = document.getElementById('xp-play-t');
+  var prevBtn = document.getElementById('xp-prev');
+  var nextBtn = document.getElementById('xp-next');
+  var hintEl = document.getElementById('xp-hint');
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  // ------------------------------------------------------------- layer set
+  var arcs = [], nodes = [], labs = [], edges = [];
+  var pos = [];
+
+  function buildLayer() {
+    items = layer === 'path' ? PATH : CONF;
+    var n = items.length, cnt = {}, seen = {};
+    items.forEach(function (it) { cnt[it.site] = (cnt[it.site] || 0) + 1; });
+    items.forEach(function (it, i) {
+      seen[it.site] = seen[it.site] || 0;
+      it.off = cnt[it.site] > 1 ? (seen[it.site] - (cnt[it.site] - 1) / 2) * 27 : 0;
+      seen[it.site]++;
+      it.col = layer === 'path' ? RAMP(n > 1 ? i / (n - 1) : 0) : AMBER;
+    });
+    gArcs.selectAll('*').remove(); gNodes.selectAll('*').remove(); gLabs.selectAll('*').remove(); gEdge.selectAll('*').remove();
+    arcs = []; nodes = []; labs = []; edges = [];
+
+    if (layer === 'path') {
+      items.forEach(function (it, i) {
+        if (i === 0) { arcs.push(null); return; }
+        var a = {};
+        a.glow = gArcs.append('path').attr('class', 'xp-arcg').attr('pathLength', 1).attr('stroke', it.col);
+        a.line = gArcs.append('path').attr('class', 'xp-arc').attr('pathLength', 1).attr('stroke', it.col);
+        a.head = gArcs.append('path').attr('class', 'xp-head-a').attr('fill', it.col);
+        a.cg = gArcs.append('g').attr('class', 'xp-comet-g');
+        a.cg.append('circle').attr('r', 6).attr('fill', it.col).attr('opacity', 0.28);
+        a.cg.append('circle').attr('r', 2.4).attr('fill', '#ffffff');
+        a.on = false; a.since = 0; a.len = 0;
+        arcs.push(a);
+      });
+    }
+
+    items.forEach(function (it, i) {
+      var g = gNodes.append('g').attr('class', 'xp-node' + (layer === 'conf' ? ' is-conf' : '') + (it.online ? ' is-online' : ''))
+        .attr('tabindex', 0).attr('role', 'button').attr('aria-label', it.lab + (it.per ? ', ' + it.per : it.yr ? ', ' + it.yr : ''))
+        .style('--c', it.col);
+      var r = layer === 'path' ? 11 : 8;
+      g.append('circle').attr('class', 'xp-halo').attr('r', r + 7).attr('fill', it.col);
+      g.append('circle').attr('class', 'xp-core').attr('r', r).attr('stroke', it.col);
+      if (layer === 'path') g.append('text').attr('class', 'xp-n').text(i + 1);
+      else g.append('circle').attr('class', 'xp-dot').attr('r', 3.2).attr('fill', it.col);
+      g.on('click', function (ev) { ev.stopPropagation(); userGo(i); });
+      g.on('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); userGo(i); } });
+      g.on('mouseenter', function () { hover = i; renderLabels(); }).on('mouseleave', function () { hover = -1; renderLabels(); });
+      g.on('focus', function () { hover = i; renderLabels(); }).on('blur', function () { hover = -1; renderLabels(); });
+      nodes.push(g);
+
+      var t = gLabs.append('text').attr('class', 'xp-lab');
+      t.append('tspan').attr('class', 'xp-la').text(it.lab);
+      t.append('tspan').attr('class', 'xp-lb').text(layer === 'path' ? it.per : String(it.yr));
+      labs.push(t);
+
+      var eg = gEdge.append('g').attr('class', 'xp-edge').style('--c', it.col).style('display', 'none');
+      eg.append('rect').attr('rx', 11).attr('height', 22).attr('y', -11);
+      eg.append('text').attr('x', 10).text(it.lab);
+      eg.append('path');
+      eg.on('click', function (ev) { ev.stopPropagation(); userGo(eg.node().__more ? -1 : i); });
+      edges.push(eg);
+    });
+
+    // highlighted countries
+    gHi.selectAll('*').remove();
+    HILITE[layer].forEach(function (id) { if (feats[id]) gHi.append('path').attr('class', 'xp-hi').datum(feats[id]); });
+  }
+
+  // ------------------------------------------------------------------ list
+  function buildList() {
+    while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+    listEl.classList.toggle('is-flat', layer === 'conf');
+    var lastYr = null;
+    items.forEach(function (it, i) {
+      if (layer === 'conf' && it.yr !== lastYr) { lastYr = it.yr; listEl.appendChild(el('li', 'xp-yr', String(it.yr))); }
+      var li = el('li', 'xp-item' + (it.online ? ' is-online' : ''));
+      li.style.setProperty('--c', it.col);
+      if (layer === 'path' && i < items.length - 1) li.style.setProperty('--c2', items[i + 1].col);
+      var row = el('button', 'xp-row'); row.type = 'button'; row.setAttribute('aria-expanded', 'false');
+      row.appendChild(el('span', 'xp-num', String(i + 1)));
+      var mid = el('span', 'xp-mid');
+      mid.appendChild(el('span', 'xp-place', layer === 'path' ? it.lab : it.title));
+      mid.appendChild(el('span', 'xp-sub', layer === 'path' ? it.title : it.org));
+      row.appendChild(mid);
+      row.appendChild(el('span', 'xp-per', layer === 'path' ? it.per : ''));
+      row.addEventListener('click', function () { userGo(cur === i ? -1 : i); });
+      li.appendChild(row);
+      var more = el('div', 'xp-more'), inn = el('div', 'xp-more-in');
+      var org = el('div', 'xp-org');
+      if (layer === 'path') {
+        if (it.url) { var a = el('a', null, it.org); a.href = it.url; a.target = '_blank'; a.rel = 'noopener'; org.appendChild(a); } else org.textContent = it.org;
+        inn.appendChild(org);
+        inn.appendChild(el('p', 'xp-txt', it.text));
+        var tg = el('div', 'xp-tags');
+        it.tags.forEach(function (t) { tg.appendChild(el('span', 'xp-tag' + (t === 'Current' ? ' is-now' : ''), t)); });
+        inn.appendChild(tg);
+      } else {
+        inn.appendChild(el('div', 'xp-org', it.kind + ' · ' + it.yr));
+      }
+      more.appendChild(inn); li.appendChild(more);
+      listEl.appendChild(li);
+      it.li = li; it.row = row;
+    });
+  }
+
+  function updateUI() {
+    items.forEach(function (it, i) {
+      var act = i === cur, fut = cur >= 0 && i > cur && layer === 'path';
+      it.li.classList.toggle('is-active', act); it.li.classList.toggle('is-future', fut);
+      it.row.setAttribute('aria-expanded', act ? 'true' : 'false');
+      nodes[i].classed('is-active', act).classed('is-future', fut);
+      labs[i].classed('is-future', fut);
+    });
+    var n = items.length;
+    countEl.textContent = cur < 0 ? n + (layer === 'path' ? ' stops' : ' conferences') : (cur + 1) + ' / ' + n;
+    prevBtn.disabled = cur <= 0; nextBtn.disabled = cur >= n - 1;
+    playBtn.classList.toggle('is-playing', playing);
+    playTxt.textContent = playing ? 'Pause' : (cur < 0 ? 'Play the journey' : (cur >= n - 1 ? 'Replay' : 'Resume'));
+    if (layer === 'conf') playTxt.textContent = playing ? 'Pause' : (cur < 0 ? 'Play through them' : (cur >= n - 1 ? 'Replay' : 'Resume'));
+    updateCaption();
+    if (cur >= 0 && items[cur].li) {
+      var li = items[cur].li, top = li.offsetTop - 70;
+      if (listEl.scrollHeight > listEl.clientHeight + 4) listEl.scrollTo({ top: Math.max(0, top), behavior: RM ? 'auto' : 'smooth' });
+    }
+  }
+
+  function updateCaption() {
+    while (capEl.firstChild) capEl.removeChild(capEl.firstChild);
+    if (cur < 0) { capEl.classList.add('is-empty'); return; }
+    var it = items[cur];
+    capEl.classList.remove('is-empty'); capEl.style.setProperty('--c', it.col);
+    var k = el('div', 'xp-cap-k'); k.appendChild(el('i'));
+    k.appendChild(el('span', null, layer === 'path' ? ('Stop ' + (cur + 1) + ' of ' + items.length + (it.per ? ' · ' + it.per : '')) : (it.kind + ' · ' + it.yr)));
+    capEl.appendChild(k);
+    capEl.appendChild(el('div', 'xp-cap-t', layer === 'path' ? it.lab : it.title));
+    capEl.appendChild(el('div', 'xp-cap-s', layer === 'path' ? it.title + ' · ' + it.org : it.org));
+  }
+
+  // ---------------------------------------------------------------- camera
+  var zoom = d3.zoom().scaleExtent([330, 160000]).on('zoom', function (ev) { T = ev.transform; render(); });
+  zoom.filter(function (ev) {
+    if (ev.type === 'wheel') { if (ev.ctrlKey || ev.metaKey) return true; flashHint(); return false; }
+    return !ev.button && (ev.type.indexOf('touch') === 0 || !ev.ctrlKey);
+  });
+  svg.call(zoom).on('dblclick.zoom', null);
+  svg.on('pointerdown.pause', function () { if (playing) stop(); });
+
+  var hintT = null;
+  function flashHint() {
+    hintEl.style.color = '#e2e8f0'; hintEl.style.opacity = 1;
+    clearTimeout(hintT); hintT = setTimeout(function () { hintEl.style.color = ''; }, 1400);
+  }
+
+  function fitT(pts, sidePad, bottom, kmax, arc) {
+    var xs = [], ys = [];
+    pts.forEach(function (p) { var u = unit(p); xs.push(u[0]); ys.push(u[1]); });
+    if (arc && pts.length === 2) {
+      var ua = unit(pts[0]), ub = unit(pts[1]), ex = ub[0] - ua[0], ey = ub[1] - ua[1];
+      xs.push((ua[0] + ub[0]) / 2 + ey * BULGE / 2); ys.push((ua[1] + ub[1]) / 2 - ex * BULGE / 2);
+    }
+    var x0 = d3.min(xs), x1 = d3.max(xs), y0 = d3.min(ys), y1 = d3.max(ys);
+    var top = 84, ps = Math.max(56, sidePad * Math.min(W, H));
+    var aw = Math.max(80, W - 2 * ps), ah = Math.max(80, H - top - bottom);
+    var kx = (x1 - x0) > 1e-9 ? aw / (x1 - x0) : Infinity;
+    var ky = (y1 - y0) > 1e-9 ? ah / (y1 - y0) : Infinity;
+    var k = Math.min(kx, ky, kmax);
+    var cx = ps + aw / 2, cy = top + ah / 2;
+    return d3.zoomIdentity.translate(cx - k * (x0 + x1) / 2, cy - k * (y0 + y1) / 2).scale(k);
+  }
+  function overviewT() {
+    var pts = items.map(function (it) { return it.ll; });
+    if (layer === 'conf') pts = pts.filter(function (p) { return p[0] > -20; });
+    return fitT(pts, layer === 'path' ? 0.2 : 0.16, 64, 4200);
+  }
+  function focusT(i) {
+    var it = items[i], pts = [it.ll];
+    if (layer === 'path' && i > 0 && items[i - 1].site !== it.site) pts.push(items[i - 1].ll);
+    var bottom = Math.max(capEl.offsetHeight + 14 + 52, 110);
+    return fitT(pts, 0.16, bottom, pts.length > 1 ? 30000 : (layer === 'conf' ? 16000 : 7500), true);
+  }
+  function fly(T2, dur) {
+    if (!ready) return;
+    var s = svg.interrupt();
+    if (RM || dur <= 0) svg.call(zoom.transform, T2);
+    else svg.transition().duration(dur).ease(d3.easeCubicInOut).call(zoom.transform, T2);
+  }
+
+  // ---------------------------------------------------------------- render
+  function gratFor(k) {
+    var step = k < 900 ? 10 : k < 5000 ? 5 : k < 20000 ? 1 : 0.5;
+    if (!grat[step]) grat[step] = d3.geoGraticule().step([step, step]).extent([[-180, -80], [180, 80]])();
+    return grat[step];
+  }
+
+  function render() {
+    if (!ready) return;
+    proj.scale(T.k).translate([T.x, T.y]);
+    sea.attr('width', W).attr('height', H);
+    // The map geometry is heavy (about 100k points), so it is only re-projected when needed.
+    // While panning and zooming the last rendering is moved with a cheap transform (exact for
+    // Mercator, since screen = k*u + t); a crisp re-render follows once the motion stops.
+    var need = !base;
+    if (!need) {
+      var r = T.k / base.k, mx = W * 0.6, my = H * 0.6;
+      var bx0 = (0 - T.x) / r + base.x, bx1 = (W - T.x) / r + base.x, by0 = (0 - T.y) / r + base.y, by1 = (H - T.y) / r + base.y;
+      if (r < 0.5 || r > 2 || bx0 < -mx || bx1 > W + mx || by0 < -my || by1 > H + my) need = true;
+      else gGeo.attr('transform', 'translate(' + (T.x - r * base.x) + ',' + (T.y - r * base.y) + ') scale(' + r + ')');
+    }
+    if (need) geoFull();
+    else { clearTimeout(idleT); idleT = setTimeout(geoFull, 150); }
+
+    items.forEach(function (it, i) { var p = proj(it.ll); pos[i] = [p[0] + it.off, p[1]]; });
+    nodes.forEach(function (g, i) { g.attr('transform', 'translate(' + pos[i][0] + ',' + pos[i][1] + ')'); });
+
+    if (layer === 'path') {
+      for (var j = 1; j < items.length; j++) {
+        var a = arcs[j], G = arcGeom(pos[j - 1], pos[j]);
+        if (!G) { a.line.attr('d', null); a.glow.attr('d', null); a.head.attr('d', null); continue; }
+        a.line.attr('d', G.d); a.glow.attr('d', G.d); a.head.attr('d', G.head);
+      }
+    }
+    renderLabels();
+    renderEdges();
+  }
+
+  function geoFull() {
+    clearTimeout(idleT);
+    proj.scale(T.k).translate([T.x, T.y]);
+    gGeo.attr('transform', null);
+    gGrat.attr('d', gen(gratFor(T.k)));
+    // only project what can be on screen (bounding boxes are precomputed)
+    var c0 = proj.invert([-W * 0.6, H * 1.6]), c1 = proj.invert([W * 1.6, -H * 0.6]);
+    var seen = function (b) { return b[0][0] > b[1][0] || (b[0][0] < c1[0] && b[1][0] > c0[0] && b[0][1] < c1[1] && b[1][1] > c0[1]); };
+    gLand.attr('d', gen({ type: 'FeatureCollection', features: landFC.features.filter(function (f) { return seen(f.__b); }) }));
+    gBorder.attr('d', gen({ type: 'GeometryCollection', geometries: borderLines.filter(function (l) { return seen(l.__b); }) }));
+    gCoast.attr('d', gen({ type: 'GeometryCollection', geometries: coastLines.filter(function (l) { return seen(l.__b); }) }));
+    gHi.selectAll('path').attr('d', function (d) { return gen(d); });
+    base = { k: T.k, x: T.x, y: T.y };
+  }
+
+  function arcGeom(A, B) {
+    var dx = B[0] - A[0], dy = B[1] - A[1], d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 34) return null;
+    var nx = dy / d, ny = -dx / d, bulge = BULGE * d;
+    var Q = [(A[0] + B[0]) / 2 + nx * bulge, (A[1] + B[1]) / 2 + ny * bulge];
+    var us = unitV(A, Q), ue = unitV(Q, B);
+    var S = [A[0] + us[0] * 13, A[1] + us[1] * 13];
+    var tip = [B[0] - ue[0] * 14, B[1] - ue[1] * 14];
+    var base = [tip[0] - ue[0] * 10, tip[1] - ue[1] * 10];
+    var px = -ue[1], py = ue[0];
+    var head = 'M' + tip[0] + ',' + tip[1] + 'L' + (base[0] + px * 5) + ',' + (base[1] + py * 5) + 'L' + (base[0] - px * 5) + ',' + (base[1] - py * 5) + 'Z';
+    return { d: 'M' + S[0] + ',' + S[1] + 'Q' + Q[0] + ',' + Q[1] + ' ' + (base[0] + ue[0] * 1) + ',' + (base[1] + ue[1] * 1), head: head };
+  }
+  function unitV(a, b) { var x = b[0] - a[0], y = b[1] - a[1], l = Math.sqrt(x * x + y * y) || 1; return [x / l, y / l]; }
+
+  function renderLabels() {
+    if (!ready) return;
+    var occ = [], order = [];
+    pos.forEach(function (p, i) { occ.push([p[0] - 14, p[1] - 14, p[0] + 14, p[1] + 14]); });
+    items.forEach(function (it, i) { order.push(i); });
+    order.sort(function (a, b) { return pri(a) - pri(b); });
+    function pri(i) { return (i === cur ? 0 : i === hover ? 1 : 10 + i); }
+    var m = 6;
+    order.forEach(function (i) {
+      var t = labs[i], p = pos[i], it = items[i];
+      var fut = layer === 'path' && cur >= 0 && i > cur;
+      if (fut || p[0] < -20 || p[0] > W + 20 || p[1] < -20 || p[1] > H + 20) { t.attr('display', 'none'); return; }
+      var w = Math.max(it.lab.length * 6.9, 40) + 4, h = 28;
+      var cands = [
+        { x: p[0] + 17, y: p[1], anc: 'start', b: [p[0] + 14, p[1] - 14, p[0] + 17 + w, p[1] + 14] },
+        { x: p[0] - 17, y: p[1], anc: 'end', b: [p[0] - 17 - w, p[1] - 14, p[0] - 14, p[1] + 14] },
+        { x: p[0], y: p[1] - 30, anc: 'middle', b: [p[0] - w / 2, p[1] - 44, p[0] + w / 2, p[1] - 14] },
+        { x: p[0], y: p[1] + 25, anc: 'middle', b: [p[0] - w / 2, p[1] + 14, p[0] + w / 2, p[1] + 42] }
+      ];
+      var pick = null;
+      for (var c = 0; c < cands.length && !pick; c++) {
+        var b = cands[c].b, ok = b[0] > m && b[2] < W - m && b[1] > m && b[3] < H - m;
+        for (var q = 0; q < occ.length && ok; q++) { var o = occ[q]; if (b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]) ok = false; }
+        if (ok) pick = cands[c];
+      }
+      if (!pick) { t.attr('display', 'none'); return; }
+      occ.push(pick.b);
+      t.attr('display', null).attr('text-anchor', pick.anc);
+      t.select('.xp-la').attr('x', pick.x).attr('y', pick.y - 2);
+      t.select('.xp-lb').attr('x', pick.x).attr('y', pick.y + 11);
+    });
+  }
+
+  function renderEdges() {
+    var off = [], cx = W / 2, cy = H / 2;
+    items.forEach(function (it, i) {
+      var p = pos[i], fut = layer === 'path' && cur >= 0 && i > cur;
+      var out = p[0] < 8 || p[0] > W - 8 || p[1] < 8 || p[1] > H - 8;
+      edges[i].style('display', 'none'); edges[i].node().__more = 0;
+      if (out && !fut) off.push({ i: i, a: Math.atan2(p[1] - cy, p[0] - cx) });
+    });
+    off.sort(function (u, v) { return u.a - v.a; });
+    // group the pointers that aim in nearly the same direction
+    var groups = [];
+    off.forEach(function (o) { var g = groups[groups.length - 1]; if (g && o.a - g[g.length - 1].a < 0.5) g.push(o); else groups.push([o]); });
+    var placed = [];
+    groups.forEach(function (g) {
+      var shown = g.length > 2 ? [g[0]] : g;
+      shown.forEach(function (o) { drawEdge(o.i, placed, shown === g ? 0 : g.length); });
+    });
+  }
+  function drawEdge(i, placed, more) {
+    var it = items[i], p = pos[i], g = edges[i], cx = W / 2, cy = H / 2, dx = p[0] - cx, dy = p[1] - cy, ins = 34;
+    var s = Math.min((W / 2 - ins) / Math.max(Math.abs(dx), 1e-6), (H / 2 - ins - 14) / Math.max(Math.abs(dy), 1e-6));
+    var x = cx + dx * s, y = cy + dy * s, ang = Math.atan2(dy, dx) * 180 / Math.PI;
+    placed.forEach(function (q) { if (Math.abs(q[0] - x) < 150 && Math.abs(q[1] - y) < 26) y += 28 * (y < cy ? 1 : -1); });
+    placed.push([x, y]);
+    var label = more ? more + ' more' : it.lab;
+    g.select('text').text(label);
+    var w = label.length * 6.6 + 40, left = x > cx;
+    g.node().__more = more;
+    g.style('display', null);
+    g.select('rect').attr('width', w).attr('x', left ? -w : 0);
+    g.select('text').attr('x', left ? -w + 10 : 24).attr('text-anchor', 'start');
+    g.select('path').attr('d', 'M0,-5L8,0L0,5Z').attr('transform', 'translate(' + (left ? -9 : 11) + ',0) rotate(' + (left ? ang : ang + 180) + ')');
+    g.attr('transform', 'translate(' + x + ',' + y + ')');
+  }
+
+  // ------------------------------------------------------------ navigation
+  function syncArcs(prevCur, intro) {
+    if (layer !== 'path') return;
+    for (var j = 1; j < items.length; j++) {
+      var a = arcs[j], want = cur < 0 || j <= cur;
+      if (want === a.on) continue;
+      a.on = want;
+      var delay = intro ? (j - 1) * 330 + 400 : (cur >= 0 && j === cur && prevCur < j ? (RM ? 0 : 650) : 0);
+      [a.glow, a.line, a.head].forEach(function (s) { s.style('--d', delay + 'ms').classed('on', want); });
+      a.cg.classed('on', want);
+      a.since = performance.now() + delay + 950;
+    }
+  }
+
+  function go(i, dur) {
+    var n = items.length;
+    if (i < -1 || i >= n) return;
+    var prev = cur; cur = i;
+    syncArcs(prev, false);
+    updateUI();
+    fly(i < 0 ? overviewT() : focusT(i), dur == null ? 1500 : dur);
+    renderLabels(); renderEdges();
+  }
+  function userGo(i) { stop(); go(i); }
+
+  function stop() { playing = false; clearTimeout(playTimer); updateUI(); }
+  function start() {
+    var n = items.length;
+    playing = true;
+    if (cur < 0 || cur >= n - 1) go(0, 1700); else go(cur + 1);
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(playTimer);
+    playTimer = setTimeout(function () {
+      if (!playing) return;
+      if (cur >= items.length - 1) { stop(); return; }
+      go(cur + 1); schedule();
+    }, RM ? 3500 : 4600);
+  }
+
+  playBtn.addEventListener('click', function () { if (playing) stop(); else start(); });
+  prevBtn.addEventListener('click', function () { userGo(Math.max(0, cur - 1)); });
+  nextBtn.addEventListener('click', function () { userGo(cur < 0 ? 0 : Math.min(items.length - 1, cur + 1)); });
+  document.getElementById('xp-home').addEventListener('click', function () { userGo(-1); });
+  document.getElementById('xp-zin').addEventListener('click', function () { stop(); svg.interrupt().transition().duration(350).call(zoom.scaleBy, 1.8); });
+  document.getElementById('xp-zout').addEventListener('click', function () { stop(); svg.interrupt().transition().duration(350).call(zoom.scaleBy, 1 / 1.8); });
+  root.addEventListener('keydown', function (ev) {
+    if (ev.target && ev.target.closest && ev.target.closest('a')) return;
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); nextBtn.click(); }
+    else if (ev.key === 'ArrowLeft') { ev.preventDefault(); prevBtn.click(); }
+    else if (ev.key === 'Escape') { userGo(-1); }
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.xp-seg-b'), function (b) {
+    b.addEventListener('click', function () {
+      var L = b.getAttribute('data-layer'); if (L === layer) return;
+      stop(); setLayer(L, true);
+    });
+  });
+
+  function setLayer(L, animate) {
+    layer = L; cur = -1; hover = -1; base = null;
+    Array.prototype.forEach.call(document.querySelectorAll('.xp-seg-b'), function (b) {
+      var on = b.getAttribute('data-layer') === L; b.classList.toggle('is-on', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    buildLayer(); buildList();
+    items.forEach(function (it, i) { var p = proj(it.ll); pos[i] = [p[0] + it.off, p[1]]; });
+    syncArcs(-1, true);
+    updateUI();
+    fly(overviewT(), animate ? 1400 : 0);
+    if (!animate) render();
+  }
+
+  // ----------------------------------------------------------- comet loop
+  var inView = true;
+  if (window.IntersectionObserver) new IntersectionObserver(function (e) { inView = e[0].isIntersecting; }).observe(mapbox);
+  function loop(ts) {
+    if (!RM && inView && !document.hidden && layer === 'path' && ready) {
+      var now = performance.now();
+      for (var j = 1; j < arcs.length; j++) {
+        var a = arcs[j];
+        if (!a || !a.on || now < a.since || !a.line.attr('d')) continue;
+        var ph = ((now / 3600) + j * 0.17) % 1, node = a.line.node();
+        var pt = node.getPointAtLength(ph * node.getTotalLength());
+        a.cg.attr('transform', 'translate(' + pt.x + ',' + pt.y + ')');
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ------------------------------------------------------------ size / boot
+  function measure() {
+    var r = mapbox.getBoundingClientRect(); W = Math.max(200, Math.round(r.width)); H = Math.max(200, Math.round(r.height));
+    svg.attr('viewBox', '0 0 ' + W + ' ' + H);
+    proj.clipExtent([[-W * 0.6, -H * 0.6], [W * 1.6, H * 1.6]]);
+    base = null;
+  }
+  var lastW = 0, lastH = 0;
+  function onResize() {
+    var r = mapbox.getBoundingClientRect(); if (Math.round(r.width) === lastW && Math.round(r.height) === lastH) return;
+    lastW = Math.round(r.width); lastH = Math.round(r.height);
+    measure();
+    if (ready) { svg.interrupt(); svg.call(zoom.transform, cur < 0 ? overviewT() : focusT(cur)); }
+  }
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(mapbox); else window.addEventListener('resize', onResize);
+
+  function boot(topo) {
+    var all = topojson.feature(topo, topo.objects.countries).features.filter(function (f) { return f.id !== '010'; });
+    all.forEach(function (f) { feats[f.id] = f; });
+    landFC = { type: 'FeatureCollection', features: all };
+    all.forEach(function (f) { f.__b = d3.geoBounds(f); });
+    var lines = function (m) {
+      return m.coordinates.map(function (c) { var g = { type: 'LineString', coordinates: c }; g.__b = d3.geoBounds(g); return g; });
+    };
+    borderLines = lines(topojson.mesh(topo, topo.objects.countries, function (a, b) { return a !== b; }));
+    coastLines = lines(topojson.mesh(topo, topo.objects.countries, function (a, b) { return a === b; }));
+    lastW = Math.round(mapbox.getBoundingClientRect().width); lastH = Math.round(mapbox.getBoundingClientRect().height);
+    measure();
+    ready = true;
+    setLayer('path', false);
+    svg.call(zoom.transform, overviewT());
+    loading.classList.add('is-gone');
+    requestAnimationFrame(loop);
+  }
+
+  var url = root.getAttribute('data-world');
+  fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .catch(function () { return fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(function (r) { return r.json(); }); })
+    .then(boot)
+    .catch(function () { loading.textContent = 'The map data could not be loaded.'; });
+})();
+</script>

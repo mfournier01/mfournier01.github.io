@@ -1,0 +1,26 @@
+# French navigation. The Explorers pages are English only for now, so that
+# entry points at the English page (`lang_neutral` keeps the /fr/ prefix off).
+main:
+  - name: Bio
+    url: /
+    weight: 10
+  - name: Projets
+    url: /#papers
+    weight: 11
+  - name: Actualités
+    url: /#talks
+    weight: 12
+  - name: Parcours
+    url: experience/
+    weight: 13
+  - name: Visualisations
+    url: visualizations/
+    weight: 15
+  - name: Explorateurs
+    url: /explorers/
+    weight: 16
+    params:
+      lang_neutral: true
+  - name: Photographie
+    url: photography/
+    weight: 17

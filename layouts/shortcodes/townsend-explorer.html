@@ -21,11 +21,11 @@
   <!-- ====================================================== 1. the problem -->
   <h2 class="tw-h2" id="sec-problem">The problem: a stiff ordinary equation</h2>
   <p class="tw-p">
-    In an operator-split code the cooling is applied after the hydrodynamical update, cell by cell, with the density held fixed during the step. With hydrogen number density $n_{\rm H}$, the specific internal energy $e$ obeys $\rho\,\dot e=-n_{\rm H}^2\Lambda(T)$, and since $T=(\gamma-1)\,\bar m\,e/k_B$ this is an ordinary differential equation for the temperature alone:
+    Cooling acts on each cell as a source term, with the density and the rest of the state held fixed while it is applied. AthenaPK adds it as an unsplit source inside every stage of the time integrator, and the last section shows where. With hydrogen number density $n_{\rm H}$, the specific internal energy $e$ obeys $\rho\,\dot e=-n_{\rm H}^2\Lambda(T)$, and since $T=(\gamma-1)\,\bar m\,e/k_B$ this is an ordinary differential equation for the temperature alone:
   </p>
   <div class="tw-eq">\frac{\mathrm{d}T}{\mathrm{d}t}=-\mathcal{K}\,\Lambda(T),\qquad \mathcal{K}=\frac{(\gamma-1)\,\bar m}{k_B}\,\frac{n_{\rm H}^2}{\rho}</div>
   <p class="tw-p">
-    Here $\Lambda(T)$ is the cooling function tabulated from atomic physics, and $\mathcal K$ is a constant for the step. The local cooling time is $t_{\rm cool}=T/(\mathcal K\Lambda)$. The difficulty is that $\Lambda$ changes by two orders of magnitude between $10^4$ and $2\times10^5$ K: a cell that cools slowly at the start of the step can become a runaway a fraction of a step later. A forward-Euler update uses the cooling rate at the <em>start</em> of the step, so it either subcycles at a cost, or, when $\Delta t$ approaches $t_{\rm cool}$, it takes the gas too far down the curve.
+    Here $\Lambda(T)$ is the cooling function tabulated from atomic physics, and $\mathcal K$ is a constant while the cooling is applied. The local cooling time is $t_{\rm cool}=T/(\mathcal K\Lambda)$. The difficulty is that $\Lambda$ changes by two orders of magnitude between $10^4$ and $2\times10^5$ K: a cell that cools slowly at the start of the step can become a runaway a fraction of a step later. A forward-Euler update uses the cooling rate at the <em>start</em> of the step, so it either subcycles at a cost, or, when $\Delta t$ approaches $t_{\rm cool}$, it takes the gas too far down the curve.
   </p>
 
   <div class="tw-labbox">
@@ -123,18 +123,72 @@
       <thead><tr><th>Property</th><th>Comment</th></tr></thead>
       <tbody>
         <tr><td>Cost</td><td>One bin search and two power laws per cell, whatever $\Delta t$. There is no iteration and no subcycling: every cell takes the same short path.</td></tr>
-        <tr><td>Accuracy</td><td>Exact for the tabulated $\Lambda$ read as a piecewise power law. The remaining error is that of the interpolation (a finer table helps), and the first-order error of splitting the cooling from the hydrodynamics.</td></tr>
+        <tr><td>Accuracy</td><td>Exact for the tabulated $\Lambda$ read as a piecewise power law. The remaining error is that of the interpolation (a finer table helps), and of how the cooling is coupled to the rest of the update: it acts on the state left by the flux update of the same stage, and the density it sees does not evolve while it runs.</td></tr>
         <tr><td>Stability</td><td>Unconditional: the gas is carried down the cooling curve and never overshoots, however large $\Delta t$ is. It cannot go below the bottom of the table.</td></tr>
         <tr><td>Heating</td><td>Not included. The ODE must depend on $T$ only through $\Lambda$, so a heating term that does not scale like cooling has to be applied separately, or folded into a net cooling curve.</td></tr>
-        <tr><td>Fixed density</td><td>$\mathcal K$ is constant during the step. That is the usual operator-splitting assumption, and it is exact for a cell that cools isochorically.</td></tr>
+        <tr><td>Fixed density</td><td>$\mathcal K$ is constant while the cooling is applied: density, momentum and magnetic field are frozen during it, and only the thermal energy changes. That is exact for gas that cools isochorically; any compression comes from the flux update, not from the cooling step.</td></tr>
         <tr><td>Special case</td><td>A bin with slope exactly $\alpha_k=1$ turns the power into a logarithm in both formulas. AthenaPK does not implement that case and refuses such a table.</td></tr>
-        <tr><td>Timestep</td><td>The integrator does not need a cooling timestep limit, but AthenaPK can still cap the step at a fraction of the shortest cooling time (a cooling CFL) so that cooling and hydrodynamics stay coupled.</td></tr>
+        <tr><td>Timestep</td><td>The integrator does not need a cooling timestep limit, but AthenaPK can still cap the global timestep at a fraction of the shortest cooling time (a cooling CFL) so that cooling and hydrodynamics stay coupled.</td></tr>
       </tbody>
     </table>
+  </div>
+  <h3 class="tw-h3">Where it sits in the AthenaPK time step</h3>
+  <p class="tw-p">
+    The cooling is not applied once after the whole hydrodynamical step. It is added <strong>inside every stage</strong> of the multi-stage Runge&ndash;Kutta integrator, right after the fluxes have updated the conserved variables, together with the other unsplit sources. Click a box to see what each part of a stage does.
+  </p>
+  <div class="tw-labbox">
+    <div class="tw-figtitle">One stage of the integrator <span class="tw-badge">interactive</span></div>
+    <svg class="tw-svg" id="tw-st" viewBox="0 0 880 420" role="img" aria-label="The four tasks of one Runge-Kutta stage, with the cooling inside the unsplit sources, and the length of the cooling step in each stage"></svg>
+    <div class="tw-panel" id="tw-st-panel"></div>
   </div>
   <p class="tw-p">
     In AthenaPK the table is read at start-up, converted to code units, and the slopes $\alpha_k$ and the values $Y_k$ are computed once. During the run a cell below the temperature floor is reset to the floor, and a cell below the first table temperature is left alone: it does not cool at all, rather than cooling with an extrapolated curve.
   </p>
+
+  <h2 class="tw-h2" id="sec-dust">With dust: a table built on the fly</h2>
+  <div class="tw-pit"><b>A proposal, not code.</b> AthenaPK does not support the Townsend integrator together with its dust fluid, because the cooling function is then different in every cell. This section sketches how that restriction could be lifted. Nothing here is implemented.</div>
+  <p class="tw-p">
+    The Townsend integrator builds, at start-up, the slope $\alpha_k$ of every segment of the cooling table and the normalised integral $Y_k=Y(T_k)$ at every node, and stores them in two arrays that all cells share. With dust there is no single table: the cooling function of a cell is $\Lambda_{\rm cell}(T)=\Lambda_{\rm gas}(T)+\sum_b c_b\,H_b(T)$, with weights $c_b$ set by the grains in that cell. Nothing can be computed once for everybody.
+  </p>
+  <p class="tw-p">
+    Two observations make it affordable anyway. Only <em>differences</em> in $Y$ enter a step, so the cell can take its own $T_{\rm old}$ as the reference instead of the top of the table. And a step only crosses the segments between $T_{\rm old}$ and $T_{\rm new}$, so only those need to be built. The table then exists only where this cell needs it, and only for as long as the step lasts:
+  </p>
+<pre class="tw-code"># S: value of the integral of dT / Lambda_cell over the step
+S = mbar_gm1_over_kb * n_H^2 / rho * dt
+k = segment containing T_old      # Lambda_cell at its two nodes
+T_hi = T_old
+loop:
+  alpha_k = log(L[k+1] / L[k]) / log(T[k+1] / T[k])
+  I = integral of dT / Lambda_cell, T[k] to T_hi   # closed form
+  if I >= S:  invert on this segment -> T_new; stop
+  S -= I;  T_hi = T[k];  k -= 1    # one new node per segment
+  (stop at the bottom of the table, as now)</pre>
+  <p class="tw-p">
+    The answer is the one regular Townsend would give with a full table built from $\Lambda_{\rm cell}$. The figure shows what that table is made of.
+  </p>
+  <div class="tw-labbox">
+    <div class="tw-figtitle">The cooling curve with dust, and a step built on it <span class="tw-badge">interactive</span></div>
+    <div class="tw-sliders">
+      <div class="tw-sl"><label>Dust-to-gas ratio: <output id="tw-o-tdD"></output></label><input type="range" id="tw-s-tdD" min="-5" max="-1.5" step="0.05" value="-3"></div>
+      <div class="tw-sl"><label>Table nodes: <output id="tw-o-tdN"></output></label><input type="range" id="tw-s-tdN" min="2" max="20" step="1" value="4"></div>
+      <div class="tw-sl"><label>Temperature before the step: <output id="tw-o-tdT"></output></label><input type="range" id="tw-s-tdT" min="4.05" max="7.9" step="0.01" value="6.8"></div>
+      <div class="tw-sl"><label>Step length: <output id="tw-o-tdF"></output></label><input type="range" id="tw-s-tdF" min="-1.5" max="0.7" step="0.02" value="-0.2"></div>
+    </div>
+    <div class="tw-grid2 tw-g-half">
+      <svg class="tw-svg" id="tw-td1" viewBox="0 0 460 360" role="img" aria-label="Gas cooling, dust cooling and their sum against temperature, with the power law on each table segment"></svg>
+      <svg class="tw-svg" id="tw-td2" viewBox="0 0 460 360" role="img" aria-label="Temperature after one step over temperature before, for the exact integration and two tables"></svg>
+    </div>
+    <div class="tw-out" id="tw-td-out"></div>
+    <p class="tw-note2">Left: a schematic gas cooling function (blue; not a real table), the dust cooling of an MRN population of $0.005$ to $0.5\ \mu$m carbonaceous grains with the chosen dust-to-gas ratio (orange), and their sum (white), per $n_{\rm H}^2$. Dots: the nodes of the table. Gold: the power law on each segment between nodes, which is what the integrator uses; pink: the segments the step from the gold line to the green line crosses, the only ones built. Right: for every starting temperature, the temperature after a step of the chosen length in units of the cooling time of the total at that temperature (white: the integral of $\mathrm dT/\Lambda$ done on a fine grid; gold: the per-cell walk; grey: a regular table of the gas alone, same nodes). The grains are held fixed during the step. Re-implemented in this page.</p>
+  </div>
+  <p class="tw-p">
+    Compared with regular Townsend:
+  </p>
+  <ul class="tw-ul">
+    <li><strong>Cost.</strong> One evaluation of $\Lambda_{\rm cell}$ per node crossed: two for the starting segment, one more for each further segment, typically two or three per cell. If the dust rates $H_b$ were tabulated on the nodes of the gas table, each evaluation would be $N_{\rm bins}$ multiply&ndash;adds. The dust lookup table currently has its own grid, $\log T=0$ to $9$, and would have to move to the nodes of the gas table. With <code>Dwek_Werner1981_INTEGRATED</code> the $H_b$ depend on the reconstructed distribution of the cell and must be computed per cell and per node, which is the expensive part.</li>
+    <li><strong>Accuracy.</strong> Regular Townsend is exact for the log&ndash;log interpolant of $\Lambda$, and with one table that interpolant <em>is</em> the cooling function. Here the true $\Lambda_{\rm cell}$ is a sum of power laws of different slopes, with the kinks of the Dwek and Werner regimes inside segments. One power law per segment approximates it, with an error set by the node spacing, as the dashed gold line in the figure shows. It is the kind of error the dust lookup table already makes.</li>
+    <li><strong>Assumptions.</strong> The density and the weights $c_b$ must stay fixed during the step, so this fits the dust update that is done once per step after the cooling (<code>subcycle = false</code> in the dust module), not the update after every cooling subcycle. It needs $\Lambda_{\rm cell}>0$ at every node, which holds since dust only adds cooling. The temperature floor and the bottom of the table are handled as they are now.</li>
+  </ul>
 
   <h2 class="tw-h2">References</h2>
   <ul class="tw-refs">
@@ -420,7 +474,8 @@
   .tw-grid2.tw-g-gal { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
   @media (max-width: 760px) { .tw-grid2.tw-g-wide, .tw-grid2.tw-g-gal { grid-template-columns: 1fr; } }
 
-  .tw-steps { max-width: 760px; margin: 0 0 1rem; padding-left: 1.4rem; }
+  .tw-steps { max-width: 760px; margin: 0 0 1rem; padding-left: 1.6rem; list-style: decimal; }
+  .tw-steps li::marker { color: #fbbf24; font-weight: 700; }
   .tw-steps li { margin: 0.35rem 0; }
   .tw-steps li b { color: #e2e8f0; }
   .tw-wrap code { font-size: 0.9em; padding: 0.05em 0.35em; border-radius: 0.3rem; background: rgba(148,163,184,0.16); color: #e2e8f0; }
@@ -435,8 +490,13 @@
   .tw-th-grp { text-align: center !important; color: #fbbf24 !important; font-size: 0.8rem; letter-spacing: 0.03em; }
   .tw-tab tr.tw-r-old td { background: rgba(56,189,248,0.2); }
   .tw-tab tr.tw-r-new td { background: rgba(251,146,60,0.22); }
+  .tw-wrap .tw-panel { font-size: 0.95rem; line-height: 1.55; }
   .tw-g-half2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tw-g-sl { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0.4rem; }
+  .tw-ul { max-width: 760px; margin: 0.3rem 0 1rem; padding-left: 1.3rem; list-style: disc; }
+  .tw-ul li { margin: 0.35rem 0; }
+  .tw-ul li::marker { color: #fbbf24; }
+  .tw-code { max-width: 760px; margin: 0.6rem 0 1rem; padding: 0.8rem 1rem; overflow-x: auto; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.6rem; background: rgba(15,23,42,0.7); font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; white-space: pre; }
   @media (max-width: 760px) { .tw-g-half2, .tw-g-sl { grid-template-columns: 1fr; } }
 
 </style>
@@ -744,6 +804,144 @@
     }
     [sT, sD].forEach(function (s) { s.addEventListener('input', draw); }); draw();
   })();
+
+  // ---------------------------------------------------------- figure C: one stage of the integrator
+  (function () {
+    var svg = $('#tw-st'), panel = $('#tw-st-panel');
+    function foWrap(x, y, w, h, html, color, size) {
+      var f = sv('foreignObject', { x: x, y: y, width: w, height: h }), d = el('div'); d.style.cssText = 'font-size:' + size + 'px;line-height:1.28;color:' + color + ';pointer-events:none;';
+      d.innerHTML = mixed(html); f.appendChild(d); svg.appendChild(f); return f;
+    }
+    var C = { flux: '#38bdf8', upd: '#22d3ee', src: '#a78bfa', cool: '#fbbf24', bnd: '#34d399', bars: '#f472b6' };
+    var defs = sv('defs'), mk = sv('marker', { id: 'tw-ar', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 8, markerHeight: 8, orient: 'auto-start-reverse' });
+    mk.appendChild(sv('path', { d: 'M0,1L9,5L0,9z', fill: '#94a3b8' })); defs.appendChild(mk); svg.appendChild(defs);
+    // the stage container
+    svg.appendChild(sv('rect', { x: 14, y: 14, width: 852, height: 252, rx: 16, fill: 'rgba(148,163,184,0.05)', stroke: 'rgba(148,163,184,0.35)', 'stroke-dasharray': '6 5' }));
+    fo(svg, 30, 20, 640, 28, 'one stage of the time integrator, repeated for $s=1,\\dots,N$', 'l', '#94a3b8', 17);
+    var X = [38, 253, 468, 683], Y = 62, W = 190, H = 138;
+    function box(i, col, title, sub) {
+      var r = sv('rect', { x: X[i], y: Y, width: W, height: H, rx: 12, fill: 'rgba(15,23,42,0.85)', stroke: col, 'stroke-width': 2.2 }); svg.appendChild(r);
+      svg.appendChild(sv('circle', { cx: X[i] + 22, cy: Y + 24, r: 13, fill: col })); svg.appendChild(sv('text', { x: X[i] + 22, y: Y + 30, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 700, style: 'fill:#0f172a;stroke:none;paint-order:normal' }, String(i + 1)));
+      fo(svg, X[i] + 42, Y + 10, W - 46, 28, '<b>' + title + '</b>', 'l', '#e2e8f0', 18);
+      if (sub) foWrap(X[i] + 14, Y + 52, W - 28, 82, sub, '#a8b5c9', 15.5);
+      return r;
+    }
+    var b1 = box(0, C.flux, 'Fluxes', 'Riemann fluxes, from the primitive variables');
+    var b2 = box(1, C.upd, 'Flux update', 'conserved variables advanced with the flux divergence');
+    var b3 = box(2, C.src, 'Unsplit sources', null);
+    var b4 = box(3, C.bnd, 'Boundaries', 'ghost cells exchanged, then primitives refreshed');
+    [0, 1, 2].forEach(function (i) { svg.appendChild(sv('line', { x1: X[i] + W + 3, x2: X[i + 1] - 4, y1: Y + H / 2, y2: Y + H / 2, stroke: '#94a3b8', 'stroke-width': 2, 'marker-end': 'url(#tw-ar)' })); });
+    // the cooling chip inside the sources box
+    var chip = sv('rect', { x: X[2] + 12, y: Y + 54, width: W - 24, height: 38, rx: 10, fill: 'rgba(251,191,36,0.2)', stroke: C.cool, 'stroke-width': 1.8 }); svg.appendChild(chip);
+    fo(svg, X[2] + 12, Y + 54, W - 24, 38, '<b>radiative cooling</b>', 'c', '#fde68a', 16.5);
+    fo(svg, X[2] + 8, Y + 100, W - 16, 28, '+ MHD cleaning, gravity, &hellip;', 'c', '#a8b5c9', 14);
+    // return arrow
+    svg.appendChild(sv('path', { d: 'M' + (X[3] + W / 2) + ',' + (Y + H + 4) + ' C' + (X[3] + W / 2) + ',262 ' + (X[0] + W / 2) + ',262 ' + (X[0] + W / 2) + ',' + (Y + H + 6), fill: 'none', stroke: '#94a3b8', 'stroke-width': 2, 'stroke-dasharray': '5 4', 'marker-end': 'url(#tw-ar)' }));
+    fo(svg, 385, 226, 110, 26, 'next stage', 'c', '#94a3b8', 16);
+
+    // the length of the cooling step in each stage (illustrative weights)
+    fo(svg, 14, 282, 850, 28, 'the step the cooling is given: the full timestep, and the stage lengths $\\beta_s\\Delta t$ (illustrative weights)', 'l', '#94a3b8', 17);
+    var x0 = 92, L = 600, rows = [['$\\Delta t$', 1, '#64748b'], ['$\\beta_1\\Delta t$', 1, C.bars], ['$\\beta_2\\Delta t$', 0.5, C.bars]], bars = [];
+    rows.forEach(function (r, i) {
+      var y = 326 + i * 32;
+      fo(svg, 4, y - 6, 82, 28, r[0], 'r', '#cbd5e1', 17);
+      var rc = sv('rect', { x: x0, y: y, width: L * r[1], height: 18, rx: 9, fill: r[2], opacity: i ? 0.9 : 0.5 }); svg.appendChild(rc); if (i) bars.push(rc);
+    });
+    fo(svg, x0 + L + 14, 326 + 32 - 6, 170, 28, '&larr; used by the cooling', 'l', '#f9a8d4', 15);
+    var show = regionSet(panel, {
+      flux: { color: C.flux, title: '1 &middot; Fluxes', tag: 'reads the primitive variables', els: [b1], text: 'Reconstruction and a Riemann solver give the fluxes of the conserved variables through every cell face, from the primitive variables $(\\rho,\\mathbf v,P,\\mathbf B)$ of the stage. Nothing is modified yet.' },
+      upd: { color: C.upd, title: '2 &middot; Flux update', tag: 'modifies the conserved variables', els: [b2], text: 'The conserved variables $(\\rho,\\rho\\mathbf v,E,\\mathbf B)$ are advanced with the divergence of those fluxes over the stage length $\\beta_s\\Delta t$, combined with the stored values through the integrator\u2019s weights. They are now ahead of the primitive variables, which still describe the start of the stage.' },
+      src: { color: C.src, title: '3 &middot; Unsplit sources', tag: 'modify the conserved variables again', els: [b3], text: 'Source terms are added to the conserved variables that the flux update has just produced, each over the same stage length: radiative cooling, divergence cleaning for MHD, an external gravitational field, and problem-specific sources. They act in the same stage as the fluxes and not after the full timestep.' },
+      cool: { color: C.cool, title: 'Radiative cooling, Townsend step', tag: 'changes the total energy and the pressure, nothing else', els: [chip], text: 'For every cell: (1) rebuild the thermal energy per unit mass from the conserved variables, $e=\\bigl(E-\\tfrac12\\rho v^2-\\tfrac12B^2\\bigr)/\\rho$, since the primitive variables are out of date; (2) turn it into $T$ and take the exact Townsend step of length $\\beta_s\\Delta t$, which is a table lookup and two power laws; (3) add $\\rho\\,(e_{\\rm new}-e)$ to $E$ and set the pressure. Density, momentum and field are not touched. A cell at or below the temperature floor is reset to it, and a cell below the first table entry is left alone.' },
+      bnd: { color: C.bnd, title: '4 &middot; Boundaries and primitives', tag: 'ghost cells, then a consistent state', els: [b4], text: 'Ghost cells are exchanged between blocks and refinement levels, and the primitive variables are then recomputed from the conserved ones, so that the next stage starts from a consistent state.' },
+      bars: { color: C.bars, title: 'The step the cooling is given', tag: 'the stage length, not the full timestep', els: bars, text: 'The cooling does not receive the whole timestep $\\Delta t$ but the length $\\beta_s\\Delta t$ of the stage it is called in, where the weights $\\beta_s$ belong to the Runge&ndash;Kutta scheme. This is the $\\Delta t$ that appears in the formulas above. The weights drawn here are only an illustration.' }
+    });
+    show('cool');
+  })();
+
+  // =========================================================== a per-cell Townsend step with dust
+  (function () {
+    var CGOLD = '#fbbf24', CBLU = '#38bdf8', CORG = '#fb923c', CGRN = '#34d399', CPNK = '#f472b6', MH = 1.6726e-24, XH = 0.75, YHE = 0.25;
+    function pd(x0, x1, p) { if (Math.abs(p) < 1e-8) return Math.log(x1 / x0); return (Math.pow(x1, p) - Math.pow(x0, p)) / p; }
+    // Dwek and Werner (1981) heating per grain and per unit electron density, a in micron
+    function Hdw(a, T) {
+      var chi = 2.71e8 * Math.pow(a, 2 / 3) / T;
+      if (chi >= 4.5) return 5.38e-18 * a * a * Math.pow(T, 1.5);
+      if (chi >= 1.5) return 3.37e-13 * Math.pow(a, 2.41) * Math.pow(T, 0.88);
+      return 6.48e-6 * a * a * a;
+    }
+    // dust cooling function per n_H^2 [erg cm^3 s^-1] for an MRN population on [a0, a1]
+    function dustCool(T, dtg, rhoG, a0, a1) {
+      var ne_nH = (2 * XH + YHE) / (2 * XH), pref = ne_nH * dtg * MH / XH / (4 / 3 * Math.PI * rhoG * 1e-12), v = 0, i, M = 400, l0 = Math.log(a0), dl = (Math.log(a1) - l0) / M;
+      for (i = 0; i <= M; i++) { var a = Math.exp(l0 + i * dl), w = (i === 0 || i === M) ? 1 : (i % 2 ? 4 : 2); v += w * Hdw(a, T) * Math.pow(a, -2.5); }
+      return pref * v * dl / 3 / pd(a0, a1, 0.5);
+    }
+    var s1 = $('#tw-td1'), s2 = $('#tw-td2'), out = $('#tw-td-out'), sD = $('#tw-s-tdD'), sN = $('#tw-s-tdN'), sT = $('#tw-s-tdT'), sF = $('#tw-s-tdF');
+    var A0 = 0.005, A1 = 0.5, RG = 2.2, TF = 1e4, LT0 = 4, LT1 = 8, DL = 0.01, LN10 = Math.LN10, cache = {};
+    function dustL(T, dtg) { return dustCool(T, dtg, RG, A0, A1); }
+    function fine(dtg) {                       // exact curves and F(T) = integral of dT / Lambda from the floor, on a fine grid
+      if (cache.dtg === dtg) return cache;
+      var n = Math.round((LT1 - LT0) / DL), x = [], g = [], d = [], F = [0], i;
+      for (i = 0; i <= n; i++) { var T = Math.pow(10, LT0 + i * DL); x.push(LT0 + i * DL); g.push(LamModel(T)); d.push(dustL(T, dtg)); }
+      for (i = 1; i <= n; i++) F.push(F[i - 1] + 0.5 * (Math.pow(10, x[i - 1]) / (g[i - 1] + d[i - 1]) + Math.pow(10, x[i]) / (g[i] + d[i])) * DL * LN10);
+      cache = { dtg: dtg, x: x, g: g, d: d, F: F }; return cache;
+    }
+    function exact(c, To, S) {
+      var u = (Math.log10(To) - LT0) / DL, i = Math.min(Math.floor(u), c.F.length - 2), Fo = c.F[i] + (u - i) * (c.F[i + 1] - c.F[i]), tg = Fo - S;
+      if (tg <= 0) return TF;
+      var lo = 0, hi = c.F.length - 1;
+      while (hi - lo > 1) { var m = (lo + hi) >> 1; if (c.F[m] <= tg) lo = m; else hi = m; }
+      return Math.pow(10, c.x[lo] + (tg - c.F[lo]) / (c.F[lo + 1] - c.F[lo]) * DL);
+    }
+    // the per-cell walk: Lambda is a power law between the table nodes, built one segment at a time from the starting temperature
+    function walk(To, S, npd, lam) {
+      var nn = Math.round((LT1 - LT0) * npd), k = Math.min(Math.floor((Math.log10(To) - LT0) * npd + 1e-9), nn - 1), k0 = k, hi = To, ev = 2, Lk = lam(k), Lk1 = lam(k + 1);
+      for (;;) {
+        var Tk = Math.pow(10, LT0 + k / npd), Tk1 = Math.pow(10, LT0 + (k + 1) / npd), q = 1 - Math.log(Lk1 / Lk) / Math.log(Tk1 / Tk), I;
+        I = Math.abs(q) < 1e-9 ? Tk / Lk * Math.log(hi / Tk) : Tk / (Lk * q) * (Math.pow(hi / Tk, q) - 1);
+        if (I >= S) { var J = I - S; return { T: Math.abs(q) < 1e-9 ? Tk * Math.exp(Lk * J / Tk) : Tk * Math.pow(Math.max(1 + q * Lk * J / Tk, 1e-300), 1 / q), k0: k0, k1: k, ev: ev }; }
+        S -= I; hi = Tk; k--;
+        if (k < 0) return { T: TF, k0: k0, k1: 0, ev: ev, floor: true };
+        Lk1 = Lk; Lk = lam(k); ev++;
+      }
+    }
+    function draw() {
+      clearSvg(s1); clearSvg(s2);
+      var dtg = Math.pow(10, +sD.value), npd = +sN.value, lTo = +sT.value, To = Math.pow(10, lTo), f = Math.pow(10, +sF.value), c = fine(dtg), nn = Math.round((LT1 - LT0) * npd);
+      var lamTot = function (k) { var T = Math.pow(10, LT0 + k / npd); return LamModel(T) + dustL(T, dtg); }, lamGas = function (k) { return LamModel(Math.pow(10, LT0 + k / npd)); };
+      var tot = [], k;
+      for (k = 0; k <= nn; k++) tot.push(lamTot(k));
+      var lamAt = function (kk) { return tot[kk]; };
+      // left: the curves and the per-segment power law through the nodes
+      var P = mkPlot(s1, { W: 460, H: 360, l: 66, r: 14, t: 14, b: 46, x0: 4, x1: 8, y0: -27, y1: -18, xt: [4, 5, 6, 7, 8], xfmt: pow10Txt, yt: [-26, -24, -22, -20, -18], yfmt: pow10Txt, xlab: 'gas temperature $T$ [K]', ylab: '$\\Lambda/n_{\\rm H}^2$ [erg cm$^3$ s$^{-1}$]' });
+      var lg = c.g.map(function (v) { return Math.log10(v); }), ld = c.d.map(function (v) { return Math.log10(v); }), lt = c.g.map(function (v, j) { return Math.log10(v + c.d[j]); });
+      curve(P, c.x, lg, CBLU, 2.6); curve(P, c.x, ld, CORG, 2.6); curve(P, c.x, lt, '#f8fafc', 3.2);
+      var So = f * To / (LamModel(To) + dustL(To, dtg)), pc = walk(To, So, npd, lamAt), gasO = walk(To, So, npd, lamGas), Tex = exact(c, To, So);
+      for (k = 0; k < nn; k++) {                          // the power law on every segment, in gold; the segments the step crosses, in pink
+        var Tk = Math.pow(10, LT0 + k / npd), al = Math.log(tot[k + 1] / tot[k]) / (LN10 / npd), xs = [], ys = [];
+        for (var j = 0; j <= 8; j++) { var xx = LT0 + (k + j / 8) / npd; xs.push(xx); ys.push(Math.log10(tot[k]) + al * (xx - LT0 - k / npd)); }
+        curve(P, xs, ys, k <= pc.k0 && k >= pc.k1 ? CPNK : CGOLD, k <= pc.k0 && k >= pc.k1 ? 4 : 1.6, k <= pc.k0 && k >= pc.k1 ? 'none' : '4 3');
+      }
+      for (k = 0; k <= nn; k++) P.data.appendChild(sv('circle', { cx: P.sx(LT0 + k / npd), cy: P.sy(Math.log10(tot[k])), r: npd > 12 ? 1.8 : 3.2, fill: '#f8fafc', stroke: '#0f172a', 'stroke-width': 1 }));
+      [[lTo, CGOLD], [Math.log10(pc.T), CGRN]].forEach(function (m) { P.data.appendChild(sv('line', { x1: P.sx(m[0]), x2: P.sx(m[0]), y1: P.T, y2: P.H - P.B, stroke: m[1], 'stroke-width': 2, 'stroke-dasharray': '5 4' })); });
+      legend(s1, 190, 222, [{ c: '#f8fafc', t: 'gas + dust, exact', w: 3.2 }, { c: CBLU, t: 'gas (schematic)', w: 2.6 }, { c: CORG, t: 'dust', w: 2.6 }, { c: CGOLD, t: 'power law on each segment', w: 1.8, d: '4 3' }, { c: CPNK, t: 'segments built for this step', w: 4 }], 17);
+      // right: the temperature after one step, whatever the starting temperature, with a step of f cooling times
+      var Q = mkPlot(s2, { W: 460, H: 360, l: 66, r: 14, t: 14, b: 46, x0: 4, x1: 8, y0: 0, y1: 1.4, xt: [4, 5, 6, 7, 8], xfmt: pow10Txt, yt: [0, 0.5, 1], yfmt: function (y) { return y + ''; }, xlab: 'temperature before the step $T_{\\rm old}$ [K]', ylab: '$T_{\\rm new}/T_{\\rm old}$' });
+      var qx = [], qe = [], qp = [], qg = [];
+      for (var x = 4.02; x <= 7.98; x += 0.04) {
+        var T = Math.pow(10, x), S = f * T / (LamModel(T) + dustL(T, dtg));
+        qx.push(x); qe.push(exact(c, T, S) / T); qp.push(walk(T, S, npd, lamAt).T / T); qg.push(walk(T, S, npd, lamGas).T / T);
+      }
+      curve(Q, qx, qg, '#94a3b8', 2.2, '6 4'); curve(Q, qx, qp, CGOLD, 3.2); curve(Q, qx, qe, '#f8fafc', 2.2);
+      Q.data.appendChild(sv('line', { x1: Q.sx(lTo), x2: Q.sx(lTo), y1: Q.T, y2: Q.H - Q.B, stroke: CGOLD, 'stroke-width': 2, 'stroke-dasharray': '5 4' }));
+      legend(s2, 90, 20, [{ c: '#f8fafc', t: 'exact integration', w: 2.2 }, { c: CGOLD, t: 'per-cell table of gas + dust', w: 3.2 }, { c: '#94a3b8', t: 'regular table, gas only', w: 2.2, d: '6 4' }], 17);
+      var pe = (pc.T / Tex - 1) * 100, ge = (gasO.T / Tex - 1) * 100;
+      setMath($('#tw-o-tdD'), '$' + sci(dtg, 1) + '$'); setMath($('#tw-o-tdN'), npd + ' per decade'); setMath($('#tw-o-tdT'), '$T_{\\rm old}=' + sci(To, 1) + '$ K'); setMath($('#tw-o-tdF'), (+f.toPrecision(2)) + ' $t_{\\rm cool}$');
+      outCells(out, [['Dust over gas', (dustL(To, dtg) / LamModel(To)).toFixed(dustL(To, dtg) / LamModel(To) >= 10 ? 0 : 2) + '×'], ['Segments built', (pc.k0 - pc.k1 + 1) + ' ($' + pc.ev + '$ nodes)'], ['$T_{\\rm new}$ exact', '$' + sci(Tex, 3) + '$ K'], ['Per-cell table', (pe >= 0 ? '+' : '') + pe.toFixed(Math.abs(pe) < 1 ? 2 : 1) + '%'], ['Regular table, gas only', (ge >= 0 ? '+' : '') + ge.toFixed(Math.abs(ge) < 1 ? 2 : 1) + '%']]);
+    }
+    [sD, sN, sT, sF].forEach(function (s) { s.addEventListener('input', draw); }); draw();
+  })();
+
 
   renderAll(0);
 })();

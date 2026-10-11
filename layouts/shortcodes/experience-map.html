@@ -1,43 +1,43 @@
-<div class="xp-wrap" id="xp" data-world="{{ "data/world-50m.json" | relURL }}">
+{{ $fr := eq .Page.Lang "fr" }}<div class="xp-wrap" id="xp" data-world="{{ "data/world-50m.json" | relURL }}">
   <div class="xp-head">
-    <h1 class="xp-title">Experience</h1>
-    <p class="xp-lead">A path across Europe, from Mulhouse to Paris. Press play to follow it step by step, pick a stop on the map or in the list, or switch to the conferences and seminars layers.</p>
+    <h1 class="xp-title">{{ if $fr }}Parcours{{ else }}Experience{{ end }}</h1>
+    <p class="xp-lead">{{ if $fr }}Un parcours à travers l’Europe, de Mulhouse à Paris. Lancez la lecture pour le suivre pas à pas, choisissez une étape sur la carte ou dans la liste, ou passez aux couches des conférences et des séminaires.{{ else }}A path across Europe, from Mulhouse to Paris. Press play to follow it step by step, pick a stop on the map or in the list, or switch to the conferences and seminars layers.{{ end }}</p>
   </div>
 
   <div class="xp-app">
     <div class="xp-mapbox" id="xp-mapbox">
-      <svg id="xp-svg" role="img" aria-label="Interactive map of my academic path"></svg>
-      <div class="xp-loading" id="xp-loading">Loading the map&hellip;</div>
+      <svg id="xp-svg" role="img" aria-label="{{ if $fr }}Carte interactive de mon parcours académique{{ else }}Interactive map of my academic path{{ end }}"></svg>
+      <div class="xp-loading" id="xp-loading">{{ if $fr }}Chargement de la carte&hellip;{{ else }}Loading the map&hellip;{{ end }}</div>
 
-      <div class="xp-seg" role="tablist" aria-label="Map layer">
-        <button type="button" role="tab" class="xp-seg-b is-on" data-layer="path" aria-selected="true">Academic path</button>
-        <button type="button" role="tab" class="xp-seg-b" data-layer="conf" aria-selected="false">Conferences</button>
-        <button type="button" role="tab" class="xp-seg-b" data-layer="talk" aria-selected="false">Seminars</button>
+      <div class="xp-seg" role="tablist" aria-label="{{ if $fr }}Couche de la carte{{ else }}Map layer{{ end }}">
+        <button type="button" role="tab" class="xp-seg-b is-on" data-layer="path" aria-selected="true">{{ if $fr }}Parcours académique{{ else }}Academic path{{ end }}</button>
+        <button type="button" role="tab" class="xp-seg-b" data-layer="conf" aria-selected="false">{{ if $fr }}Conférences{{ else }}Conferences{{ end }}</button>
+        <button type="button" role="tab" class="xp-seg-b" data-layer="talk" aria-selected="false">{{ if $fr }}Séminaires{{ else }}Seminars{{ end }}</button>
       </div>
 
       <div class="xp-zoom">
-        <button type="button" id="xp-zin" aria-label="Zoom in">+</button>
-        <button type="button" id="xp-zout" aria-label="Zoom out">&minus;</button>
-        <button type="button" id="xp-home" aria-label="Back to overview" title="Back to overview">
+        <button type="button" id="xp-zin" aria-label="{{ if $fr }}Zoom avant{{ else }}Zoom in{{ end }}">+</button>
+        <button type="button" id="xp-zout" aria-label="{{ if $fr }}Zoom arrière{{ else }}Zoom out{{ end }}">&minus;</button>
+        <button type="button" id="xp-home" aria-label="{{ if $fr }}Retour à la vue d’ensemble{{ else }}Back to overview{{ end }}" title="{{ if $fr }}Retour à la vue d’ensemble{{ else }}Back to overview{{ end }}">
           <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><circle cx="10" cy="10" r="6.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10" cy="10" r="1.7" fill="currentColor"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         </button>
       </div>
 
       <div class="xp-cap" id="xp-cap" aria-live="polite"></div>
-      <div class="xp-hint" id="xp-hint">Drag to pan &middot; Ctrl/&#8984; + scroll or pinch to zoom</div>
+      <div class="xp-hint" id="xp-hint">{{ if $fr }}Glisser pour déplacer &middot; Ctrl/&#8984; + molette ou pincer pour zoomer{{ else }}Drag to pan &middot; Ctrl/&#8984; + scroll or pinch to zoom{{ end }}</div>
     </div>
 
     <aside class="xp-side">
       <div class="xp-ctl">
-        <button type="button" class="xp-play" id="xp-play" aria-label="Play the journey">
+        <button type="button" class="xp-play" id="xp-play" aria-label="{{ if $fr }}Lancer le parcours{{ else }}Play the journey{{ end }}">
           <svg class="xp-ic-play" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M5 3.2v13.6a.8.8 0 0 0 1.2.7l11-6.8a.8.8 0 0 0 0-1.4l-11-6.8A.8.8 0 0 0 5 3.2Z" fill="currentColor"/></svg>
           <svg class="xp-ic-pause" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><rect x="4.5" y="3" width="4" height="14" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="4" height="14" rx="1" fill="currentColor"/></svg>
-          <span id="xp-play-t">Play the journey</span>
+          <span id="xp-play-t">{{ if $fr }}Lancer le parcours{{ else }}Play the journey{{ end }}</span>
         </button>
-        <button type="button" class="xp-nav" id="xp-prev" aria-label="Previous stop">
+        <button type="button" class="xp-nav" id="xp-prev" aria-label="{{ if $fr }}Étape précédente{{ else }}Previous stop{{ end }}">
           <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button type="button" class="xp-nav" id="xp-next" aria-label="Next stop">
+        <button type="button" class="xp-nav" id="xp-next" aria-label="{{ if $fr }}Étape suivante{{ else }}Next stop{{ end }}">
           <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <span class="xp-count" id="xp-count"></span>
@@ -46,7 +46,7 @@
     </aside>
   </div>
 
-  <p class="xp-foot"><a href="{{ "experience-classic/" | relURL }}">Prefer the classic timeline? Skills, awards and languages are there &rarr;</a></p>
+  <p class="xp-foot"><a href="{{ "experience-classic/" | relLangURL }}">{{ if $fr }}Vous préférez la frise classique ? Compétences, distinctions et langues s’y trouvent &rarr;{{ else }}Prefer the classic timeline? Skills, awards and languages are there &rarr;{{ end }}</a></p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -195,11 +195,12 @@
 <script>
 (function () {
   'use strict';
+  var FR = {{ if $fr }}true{{ else }}false{{ end }};
   var root = document.getElementById('xp');
   var mapbox = document.getElementById('xp-mapbox');
   var loading = document.getElementById('xp-loading');
   if (!root) return;
-  if (!window.d3 || !window.topojson) { loading.textContent = 'The map library could not be loaded.'; return; }
+  if (!window.d3 || !window.topojson) { loading.textContent = FR ? 'La bibliothèque de cartographie n’a pas pu être chargée.' : 'The map library could not be loaded.'; return; }
 
   // ------------------------------------------------------------------ data
   // ll = [longitude, latitude]
@@ -249,6 +250,38 @@
     { site: 'Hamburg', lab: 'Hamburg', ll: [9.9755, 53.5670], yr: 2025, per: '2025', title: 'Max-Planck-Institut f\u00fcr Meteorologie', org: 'Hamburg, Germany', kind: 'Seminar' },
     { site: 'Paris', lab: 'Paris', ll: [2.3365, 48.8365], yr: 2025, yrs: [2025, 2026], per: '2025, 2026', title: 'Observatoire de Paris', org: 'Paris, France', kind: 'Seminar' }
   ];
+
+  // French version of the text fields (same order as the arrays above).
+  var FRD = {
+    path: [
+      { title: 'Ville natale et lycée', text: 'Là où tout a commencé : l’enfance et le lycée en Alsace, près du point de rencontre de la France, de l’Allemagne et de la Suisse.', per: 'jusqu’en 2016', tags: ['Origines'] },
+      { text: 'Trois années intenses de mathématiques et de physique en classes préparatoires, qui se terminent par les concours d’entrée aux écoles d’ingénieurs.' },
+      { title: 'Diplôme d’ingénieur et master en physique et ingénierie', text: 'Physique et ingénierie à Phelma, avec une filière en génie nucléaire et physique des particules, un échange à l’EPFL et des stages en Allemagne.', tags: ['École d’ingénieurs', 'Physique nucléaire et des particules'] },
+      { lab: 'Mayence', title: 'Stage', org: 'Mayence, Allemagne', text: 'Un premier séjour en Allemagne, pendant mes études à Phelma.', tags: ['Stage'] },
+      { title: 'Échange Erasmus', text: 'Une période d’échange à l’École Polytechnique Fédérale de Lausanne, dans le cadre du cursus de Phelma.' },
+      { title: 'Stage de mémoire de master', per: 'avr.–août 2022', text: 'Propriétés d’analogues des Nuages de Magellan dans la simulation cosmologique TNG50, avec Annalisa Pillepich : mon premier projet de recherche en astrophysique.', tags: ['Stage', 'Galaxies'] },
+      { title: 'Master en astronomie et astrophysique', text: 'Le master qui a transformé l’intérêt pour l’astrophysique en un projet : un doctorat sur les galaxies et le gaz.', tags: ['Master'] },
+      { title: 'Mémoire de master', per: 'avr.–août 2023', text: 'Propagation des rayons cosmiques dans la Voie lactée : simulations magnétohydrodynamiques avec RAMSES de rayons cosmiques de haute énergie émis depuis le centre galactique, avec Jérémy Fensch et Benoît Commerçon.', tags: ['Mémoire de master', 'Rayons cosmiques'] },
+      { lab: 'Hambourg', title: 'Doctorat en astrophysique, summa cum laude', text: 'Thèse : « Cold gas in a hot universe: Supermassive black hole feedback and multiphase condensation in the magnetized intracluster medium », dirigée par Marcus Brüggen et Philipp Grete.', tags: ['Doctorat', 'Milieu intra-amas'] },
+      { title: 'Chercheur postdoctoral', org: 'Institut d’Astrophysique de Paris · CNRS et Sorbonne Université', per: 'depuis oct. 2026', text: 'De retour à Paris pour continuer à étudier le milieu intra-amas multiphasé avec des simulations magnétohydrodynamiques.', tags: ['Postdoc', 'Actuel'] }
+    ],
+    conf: [
+      { kind: 'Exposé contribué' }, { kind: 'Exposé contribué', org: 'Cambridge, MA, États-Unis' }, { kind: 'Exposé contribué' }, { kind: 'Exposé contribué' },
+      { kind: 'Exposé contribué', org: 'Tegernsee, Allemagne' }, { kind: 'Exposé invité', org: 'Sexten, Italie' },
+      { kind: 'Présentation par poster', org: 'Brno, Tchéquie', venue: 'Observatoire et planétarium de Brno' },
+      { kind: 'Exposé invité', org: 'Cambridge, MA, États-Unis (en ligne)', venue: 'Black Hole Initiative, Université Harvard' }
+    ],
+    talk: [
+      { kind: 'Séminaire', org: 'Cambridge, MA, États-Unis' }, { kind: 'Séminaire', title: 'Université de Newcastle', org: 'Newcastle, Royaume-Uni' },
+      { kind: 'Séminaire', org: 'Heidelberg, Allemagne' }, { kind: 'Séminaire', org: 'Heidelberg, Allemagne' }, { kind: 'Séminaire' },
+      { kind: 'Séminaire', title: 'Université de Princeton', org: 'Princeton, NJ, États-Unis' },
+      { lab: 'Hambourg', kind: 'Séminaire', org: 'Hambourg, Allemagne' }, { kind: 'Séminaire' }
+    ]
+  };
+  if (FR) [['path', PATH], ['conf', CONF], ['talk', TALK]].forEach(function (g) {
+    g[1].forEach(function (it, i) { var o = FRD[g[0]][i] || {}; for (var k in o) it[k] = o[k]; });
+  });
+  var NOW = FR ? 'Actuel' : 'Current';
 
   var HILITE = { path: ['250', '276', '756'], conf: ['250', '276', '380', '203', '840'], talk: ['250', '276', '826', '840'] };
   var RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -407,11 +440,11 @@
         inn.appendChild(org);
         inn.appendChild(el('p', 'xp-txt', it.text));
         var tg = el('div', 'xp-tags');
-        it.tags.forEach(function (t) { tg.appendChild(el('span', 'xp-tag' + (t === 'Current' ? ' is-now' : ''), t)); });
+        it.tags.forEach(function (t) { tg.appendChild(el('span', 'xp-tag' + (t === NOW ? ' is-now' : ''), t)); });
         inn.appendChild(tg);
       } else {
         inn.appendChild(el('div', 'xp-org', it.kind + ' · ' + (it.per || it.yr)));
-        if (it.venue) inn.appendChild(el('p', 'xp-txt', 'Venue: ' + it.venue));
+        if (it.venue) inn.appendChild(el('p', 'xp-txt', (FR ? 'Lieu : ' : 'Venue: ') + it.venue));
       }
       more.appendChild(inn); li.appendChild(more);
       listEl.appendChild(li);
@@ -432,11 +465,11 @@
       labs[k].classed('is-future', fut);
     });
     var n = items.length;
-    countEl.textContent = cur < 0 ? n + (layer === 'path' ? ' stops' : layer === 'conf' ? ' conferences' : ' seminars') : (cur + 1) + ' / ' + n;
+    countEl.textContent = cur < 0 ? n + (FR ? (layer === 'path' ? ' étapes' : layer === 'conf' ? ' conférences' : ' séminaires') : (layer === 'path' ? ' stops' : layer === 'conf' ? ' conferences' : ' seminars')) : (cur + 1) + ' / ' + n;
     prevBtn.disabled = cur <= 0; nextBtn.disabled = cur >= n - 1;
     playBtn.classList.toggle('is-playing', playing);
-    playTxt.textContent = playing ? 'Pause' : (cur < 0 ? 'Play the journey' : (cur >= n - 1 ? 'Replay' : 'Resume'));
-    if (layer !== 'path') playTxt.textContent = playing ? 'Pause' : (cur < 0 ? 'Play through them' : (cur >= n - 1 ? 'Replay' : 'Resume'));
+    playTxt.textContent = FR ? (playing ? 'Pause' : (cur < 0 ? 'Lancer le parcours' : (cur >= n - 1 ? 'Rejouer' : 'Reprendre'))) : (playing ? 'Pause' : (cur < 0 ? 'Play the journey' : (cur >= n - 1 ? 'Replay' : 'Resume')));
+    if (layer !== 'path') playTxt.textContent = FR ? (playing ? 'Pause' : (cur < 0 ? 'Tout parcourir' : (cur >= n - 1 ? 'Rejouer' : 'Reprendre'))) : (playing ? 'Pause' : (cur < 0 ? 'Play through them' : (cur >= n - 1 ? 'Replay' : 'Resume')));
     updateCaption();
     if (cur >= 0 && items[cur].li) {
       var li = items[cur].li, top = li.offsetTop - 70;
@@ -450,7 +483,7 @@
     var it = items[cur];
     capEl.classList.remove('is-empty'); capEl.style.setProperty('--c', it.col);
     var k = el('div', 'xp-cap-k'); k.appendChild(el('i'));
-    k.appendChild(el('span', null, layer === 'path' ? ('Stop ' + (cur + 1) + ' of ' + items.length + (it.per ? ' · ' + it.per : '')) : (it.kind + ' · ' + (it.per || it.yr))));
+    k.appendChild(el('span', null, layer === 'path' ? ((FR ? 'Étape ' : 'Stop ') + (cur + 1) + (FR ? ' sur ' : ' of ') + items.length + (it.per ? ' · ' + it.per : '')) : (it.kind + ' · ' + (it.per || it.yr))));
     capEl.appendChild(k);
     capEl.appendChild(el('div', 'xp-cap-t', layer === 'path' ? it.lab : it.title));
     capEl.appendChild(el('div', 'xp-cap-s', layer === 'path' ? it.title + ' · ' + it.org : it.org));
@@ -771,6 +804,6 @@
   fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .catch(function () { return fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(function (r) { return r.json(); }); })
     .then(boot)
-    .catch(function () { loading.textContent = 'The map data could not be loaded.'; });
+    .catch(function () { loading.textContent = FR ? 'Les données de la carte n’ont pas pu être chargées.' : 'The map data could not be loaded.'; });
 })();
 </script>

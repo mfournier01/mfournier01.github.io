@@ -1,0 +1,9 @@
+# French overrides (merged over params.yaml)
+footer:
+  text: "Certains éléments de design sont inspirés du site de [James R. Beattie](https://astrojames.github.io)."
+  copyright:
+    notice: '© {year} Martin Fournier. Ce travail est placé sous licence {license}'
+
+locale:
+  date_format: '2 Jan 2006'
+  time_format: '15:04'

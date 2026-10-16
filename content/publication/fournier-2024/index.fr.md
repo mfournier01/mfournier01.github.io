@@ -1,5 +1,5 @@
 ---
-title: Past activity of Sgr A⋆ is unlikely to affect the local cosmic-ray spectrum
+title: Past activity of Sgr A⋆ is unlikely to affect the local cosmic-ray spectrum up to the TeV regime
   up to the TeV regime
 authors:
 - M. Fournier

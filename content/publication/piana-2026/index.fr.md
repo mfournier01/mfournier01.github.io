@@ -19,14 +19,15 @@ publishDate: "2026-05-26"
 
 publication_types: ["article-journal"]
 
-# Not yet assigned a DOI — link the arXiv preprint instead.
-doi: ""
+doi: "10.1051/0004-6361/202661142"
 url_preprint: "https://arxiv.org/abs/2605.27502"
 
-publication: '*Accepté pour publication dans Astronomy &amp; Astrophysics*'
+publication: '*Astronomy &amp; Astrophysics*'
 
 # Not first-author on this paper.
 first_author: false
+
+citations: 3
 
 abstract: Supermassive black hole (SMBH) spin is a key but poorly constrained ingredient of the feeding-feedback loop. Chaotic cold accretion (CCA) of cold gas clouds delivers rapidly varying three-dimensional torques that drive spin evolution and jet-axis reorientation, and in turn spin regulates jet power. We study the coupling between SMBH spin evolution and the morphology and thermodynamics of the multiphase CCA cycle across the meso-scale.
 

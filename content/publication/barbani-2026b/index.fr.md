@@ -21,14 +21,15 @@ publishDate: "2026-05-26"
 
 publication_types: ["article-journal"]
 
-# Not yet assigned a DOI — link the arXiv preprint instead.
-doi: ""
+doi: "10.1051/0004-6361/202659839"
 url_preprint: "https://arxiv.org/abs/2605.27504"
 
-publication: '*Accepté pour publication dans Astronomy &amp; Astrophysics*'
+publication: '*Astronomy &amp; Astrophysics*'
 
 # Not first-author on this paper.
 first_author: false
+
+citations: 1
 
 abstract: Accretion onto supermassive black holes (SMBHs) in realistic halos is time-variable, governed by turbulence, cooling, and multiphase condensation. In chaotic cold accretion (CCA), clouds and filaments condense out of the hot gas and feed the SMBH stochastically. We investigate how turbulence regulates the variability and kinematics of the multiphase inflow feeding the black hole, companion to our study of its morphology and thermodynamics.
 

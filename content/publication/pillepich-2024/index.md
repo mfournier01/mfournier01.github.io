@@ -25,7 +25,7 @@ tags:
 
 # Citation count (Semantic Scholar, Aug 2026 — update periodically).
 # Rendered only when > 0.
-citations: 115
+citations: 120
 
 # Publication name and optional abbreviated publication name.
 abstract: We present the properties of Milky Way- and Andromeda-like (MW/M31-like) galaxies simulated within TNG50, the highest-resolution run of the IllustrisTNG suite of ΛCDM magneto-hydrodynamical simulations.

@@ -29,6 +29,8 @@ publication: '*Accepted for publication in Astronomy &amp; Astrophysics*'
 # Not first-author on this paper.
 first_author: false
 
+citations: 2
+
 abstract: How mechanical AGN feedback couples to multiphase condensation across scales remains a problem in galaxy groups and clusters. It is unclear how jets reshape the chaotic cold accretion (CCA) cycle and regulate black-hole fueling. BlackHoleWeather aims to build a unified description of the AGN baryon cycle, and here we investigate how a mechanical jet reshapes the morphology and thermodynamics of the multiphase CCA cycle across the meso-scale.
 
 summary: Part of the BlackHoleWeather series, this study investigates how a mechanical AGN jet reshapes the morphology and thermodynamics of chaotic cold accretion feeding the central black hole.

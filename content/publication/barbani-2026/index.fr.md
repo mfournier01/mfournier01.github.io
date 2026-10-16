@@ -21,14 +21,15 @@ publishDate: "2026-05-26"
 
 publication_types: ["article-journal"]
 
-# Not yet assigned a DOI — link the arXiv preprint instead.
-doi: ""
+doi: "10.1051/0004-6361/202659838"
 url_preprint: "https://arxiv.org/abs/2605.27507"
 
-publication: '*Accepté pour publication dans Astronomy &amp; Astrophysics*'
+publication: '*Astronomy &amp; Astrophysics*'
 
 # Not first-author on this paper.
 first_author: false
+
+citations: 1
 
 abstract: Supermassive black holes (SMBHs) self-regulate galaxies, groups, and clusters, yet the pathway transporting gas from halo scales to sub-pc radii remains debated. In hot stratified atmospheres, subsonic turbulence can trigger nonlinear thermal instability and a multiphase condensation cascade, producing chaotic time-variable BH "weather". We study turbulence-driven condensation and chaotic cold accretion (CCA) in a group-scale halo, quantifying how the stirring level shapes multiphase morphology, thermodynamics, and SMBH feeding, using 3D hydrodynamic hyper-zoom simulations with a GPU-accelerated code. Despite large differences in condensed cold mass, the BH accretion rate is recurrently boosted by up to 100x above the hot-mode Bondi baseline, indicating that feeding is regulated primarily by how efficiently multiphase structures couple to the central inflow.
 

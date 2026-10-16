@@ -1,0 +1,25 @@
+{{ $item := .item }}
+{{ $resource := partial "functions/get_featured_image.html" $item }}
+{{ $anchor := $item.Params.image.focal_point | default "Smart" }}
+{{ $link := $item.Params.external_link | default $item.RelPermalink }}
+{{ $place := slice }}
+{{ with $item.Params.address }}{{ with .city }}{{ $place = $place | append . }}{{ end }}{{ with .country }}{{ $place = $place | append . }}{{ end }}{{ end }}
+<li class="nt-item">
+  <a class="nt-card" href="{{ $link }}">
+    {{ with $resource }}
+      {{ $img := .Fill (printf "1920x1080 %s q90" $anchor) }}
+      {{ if ne $img.MediaType.SubType "gif" }}{{ $img = $img.Process "webp q90" }}{{ end }}
+      <div class="nt-img"><img src="{{ $img.RelPermalink }}" width="{{ $img.Width }}" height="{{ $img.Height }}" alt="{{ $item.Title | plainify }}" loading="lazy"></div>
+    {{ end }}
+    <div class="nt-body">
+      <div class="nt-meta">
+        <time datetime="{{ time.Format "2006-01-02" $item.Date }}">{{ $item.Date | time.Format (site.Params.locale.date_format | default ":date_long") }}</time>
+        {{ with $place }}<span class="nt-sep">·</span><span>{{ delimit . ", " }}</span>{{ end }}
+      </div>
+      <h3 class="nt-title">{{ $item.Title }}</h3>
+      {{ with $item.Params.event }}<div class="nt-event">{{ . }}</div>{{ end }}
+      <p class="nt-sum">{{ ($item.Params.summary | default $item.Summary) | plainify | htmlUnescape | chomp }}</p>
+      <span class="nt-more">{{ if eq $item.Lang "fr" }}Lire la suite{{ else }}Read more{{ end }} &rarr;</span>
+    </div>
+  </a>
+</li>

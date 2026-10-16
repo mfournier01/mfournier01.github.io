@@ -97,9 +97,17 @@
 {{ $is_sm := eq $block.design.heading_size "sm" }}
 <div class="flex flex-col items-center max-w-prose mx-auto gap-3 justify-center px-6 md:px-0">
 
-  <div class="{{ if $is_sm }}mb-3 text-xl font-semibold italic{{ else }}mb-6 text-3xl font-bold{{ end }} text-gray-900 dark:text-white">
-    {{ $block.content.title | emojify | $page.RenderString }}
+  {{/* Section heading: optional small gold label above a large title (same
+       look as the research summary); `heading_size: sm` gives a sub-heading
+       flanked by thin rules. Styles: `.sec-*` in custom.css. */}}
+  {{ if $is_sm }}
+  <div class="sec-sub"><span>{{ $block.content.title | emojify | $page.RenderString }}</span></div>
+  {{ else }}
+  <div class="sec-head">
+    {{ with $block.content.label }}<div class="sec-label">{{ partial "functions/section_label" (dict "label" . "lang" $page.Lang) }}</div>{{ end }}
+    <h2 class="sec-title">{{ $block.content.title | emojify | $page.RenderString }}</h2>
   </div>
+  {{ end }}
 
   {{ with $block.content.text }}<p>{{ . | emojify | $page.RenderString }}</p>{{ end }}
 </div>

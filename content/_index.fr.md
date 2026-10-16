@@ -4,8 +4,7 @@ title: ""
 date: 2022-10-24
 type: landing
 
-# Enables KaTeX so LaTeX in publication titles (e.g. the Prasad 2025 paper's
-# `$\sim 10^{13.5}$ M$_\odot$`) renders correctly in the Publications list.
+# Enables KaTeX so any LaTeX in publication titles renders in the Publications list.
 math: true
 
 design:
@@ -38,28 +37,25 @@ sections:
           size: cover
           position: center
           parallax: false
-  - block: markdown
+  - block: research-intro
     content:
-      title: '📚 Mes recherches'
-      subtitle: ''
-      text: |-
-
-        Mon principal sujet d'intérêt est la nature multiphasée du milieu intra-amas et l'interaction entre la rétroaction des trous noirs supermassifs, les instabilités thermiques et les champs magnétiques. Pour explorer ces questions, j'utilise des méthodes numériques avancées et je lance des simulations accélérées par GPU sur des supercalculateurs.
-
-        Par le passé, j'ai aussi travaillé sur des détecteurs de neutrinos, des simulations cosmologiques de formation des galaxies et la physique des rayons cosmiques.
-    design:
-      columns: '1'
+      label: '01'
+      title: Trous noirs, gaz froid et champs magnétiques
+      lead: |-
+        Mon principal sujet d'intérêt est la **nature multiphasée du milieu intra-amas** et l'interaction entre la **rétroaction des trous noirs supermassifs**, les **instabilités thermiques** et les **champs magnétiques**. Pour explorer ces questions, j'utilise des méthodes numériques avancées et je lance des **simulations accélérées par GPU** sur des supercalculateurs.
+      past_label: Auparavant
+      past: Détecteurs de neutrinos · simulations cosmologiques de formation des galaxies · physique des rayons cosmiques
   - block: collection
     id: papers
     content:
+      label: '02'
       title: Projets
       filters:
         folders:
           - publication
         featured_only: true
     design:
-      view: article-grid
-      columns: 2
+      view: project-cards
   - block: image-full-bleed
     content:
       image: noirlab2126a5k.jpg
@@ -72,7 +68,8 @@ sections:
         padding: ["0", "0", "2rem", "0"]
   - block: markdown
     content:
-      title: Liste des publications
+      label: '03'
+      title: Publications
       text: ""
     design:
       columns: '1'
@@ -125,6 +122,7 @@ sections:
   - block: collection
     id: talks
     content:
+      label: '04'
       title: Actualités
       filters:
         folders:
@@ -133,8 +131,7 @@ sections:
       # Higher-resolution variant of `article-grid` (see
       # layouts/partials/views/article-grid-hires.html) — talk photos were
       # looking compressed at the stock 960x540/q80 output.
-      view: article-grid-hires
-      columns: 1
+      view: news-timeline
   - block: cta-card
     demo: true # Only display this section in the Hugo Blox Builder demo site
     content:

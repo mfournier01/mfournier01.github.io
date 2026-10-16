@@ -1,0 +1,14 @@
+{{/* Fills placeholders in a home-section label with live numbers, so the
+     gold label adds information instead of repeating the title:
+       {papers}     number of publications (current language)
+       {featured}   number of featured publications
+       {citations}  sum of the `citations` front-matter values
+     Usage: partial "functions/section_label" (dict "label" "…" "lang" .Lang) */}}
+{{ $pubs := where (where site.RegularPages "Section" "publication") "Lang" .lang }}
+{{ $cites := 0 }}
+{{ range $pubs }}{{ with .Params.citations }}{{ $cites = add $cites (int .) }}{{ end }}{{ end }}
+{{ $out := .label }}
+{{ $out = replace $out "{papers}" (string (len $pubs)) }}
+{{ $out = replace $out "{featured}" (string (len (where $pubs "Params.featured" true))) }}
+{{ $out = replace $out "{citations}" (string $cites) }}
+{{ return $out }}

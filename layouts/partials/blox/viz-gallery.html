@@ -1,0 +1,32 @@
+{{/* Project-only block for the Visualizations page: a minimal gallery. Each
+     item is a video (YouTube id) or an image (page resource) shown wide, with
+     a numbered title and its description underneath. */}}
+{{ $page := .wcPage }}
+{{ $c := .wcBlock.content }}
+<div class="vz-wrap">
+  <header class="vz-head">
+    <h1 class="vz-title">{{ $c.title | emojify }}</h1>
+    {{ with $c.intro }}<p class="vz-intro">{{ . | $page.RenderString }}</p>{{ end }}
+  </header>
+  {{ range $i, $it := $c.items }}
+  <figure class="vz-item">
+    <div class="vz-media">
+      {{ with $it.youtube }}
+        <div class="vz-video"><iframe src="https://www.youtube-nocookie.com/embed/{{ . }}" title="{{ $it.title | plainify }}" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      {{ end }}
+      {{ with $it.image }}
+        {{ with $page.Resources.GetMatch . }}
+          {{ $img := .Resize "1800x webp q88" }}
+          <a href="{{ .RelPermalink }}" target="_blank" rel="noopener" class="vz-zoom" aria-label="{{ $it.title | plainify }}, full resolution">
+            <img src="{{ $img.RelPermalink }}" width="{{ $img.Width }}" height="{{ $img.Height }}" alt="{{ $it.alt | default ($it.title | plainify) }}" loading="lazy">
+          </a>
+        {{ end }}
+      {{ end }}
+    </div>
+    <figcaption class="vz-cap">
+      <div class="vz-cap-h"><span class="vz-n">{{ printf "%02d" (add $i 1) }}</span><h2 class="vz-t">{{ $it.title | $page.RenderString }}</h2></div>
+      <div class="vz-text">{{ $it.text | $page.RenderString (dict "display" "block") }}</div>
+    </figcaption>
+  </figure>
+  {{ end }}
+</div>

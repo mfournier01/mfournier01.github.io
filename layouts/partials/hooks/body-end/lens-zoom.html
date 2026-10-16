@@ -27,6 +27,15 @@
       lens.style.top = (y - half) + 'px';
       lens.style.backgroundSize = (rect.width * zoomFactor) + 'px ' + (rect.height * zoomFactor) + 'px';
       lens.style.backgroundPosition = -(x * zoomFactor - half) + 'px ' + -(y * zoomFactor - half) + 'px';
+
+      // Fade the lens exactly like the image's `.fade-edges-y` mask (60px at
+      // top and bottom), expressed in the lens's own coordinates, so it melts
+      // into the page instead of showing a hard black block past the edges.
+      var top = y - half, F = 60, H = rect.height;
+      var m = 'linear-gradient(to bottom, transparent ' + (-top) + 'px, black ' + (F - top) + 'px, black ' +
+              (H - F - top) + 'px, transparent ' + (H - top) + 'px)';
+      lens.style.webkitMaskImage = m;
+      lens.style.maskImage = m;
     }
 
     container.addEventListener('mouseenter', function (e) {

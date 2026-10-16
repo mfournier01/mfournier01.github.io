@@ -21,6 +21,9 @@ main:
     weight: 16
     params:
       lang_neutral: true
+  - name: Vulgarisation
+    url: outreach/
+    weight: 17
   - name: Photographie
     url: photography/
-    weight: 17
+    weight: 18

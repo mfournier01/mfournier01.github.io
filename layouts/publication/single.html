@@ -1,0 +1,67 @@
+{{/* Project-only layout for publication pages: a header (type and date, title,
+     author list with the site owner highlighted, journal and links), the
+     featured image with its caption below, the abstract in a card, then the
+     page body and the theme footer (sharing and previous/next). */}}
+
+{{ define "main" }}
+{{ $fr := eq .Lang "fr" }}
+
+{{ $pub_type := "" }}
+{{ with .Params.publication_types }}{{ if reflect.IsSlice . }}
+  {{ $csl := index . 0 }}
+  {{ $pub_type = i18n (printf "pub_%s" (strings.Replace $csl "-" "_")) | default (strings.Title $csl) }}
+{{ end }}{{ end }}
+
+<div class="pb-wrap">
+  <header class="pb-head">
+    <div class="pb-kicker">
+      {{ with $pub_type }}<span>{{ . }}</span>{{ end }}
+      {{ if not .Params.hide_date }}<span>{{ .Date | time.Format (site.Params.locale.date_format | default ":date_long") }}</span>{{ end }}
+      {{ if .Params.first_author }}<span>{{ if $fr }}Premier auteur{{ else }}First author{{ end }}</span>{{ end }}
+    </div>
+
+    <h1 class="pb-title">{{ .Title | .RenderString }}</h1>
+
+    {{ with .GetTerms "authors" }}
+    <p class="pb-authors">
+      {{ range $i, $a := . }}{{ if $i }}<span class="pb-sep">, </span>{{ end }}<span class="pb-au{{ if in (slice "M. Fournier" "Martin Fournier") $a.Page.Title }} pb-me{{ end }}">{{ $a.Page.Title }}</span>{{ end }}
+    </p>
+    {{ end }}
+
+    {{ with .Params.publication }}
+    <p class="pb-journal">
+      {{ . | markdownify }}
+      {{ with $.Params.citations }}<span class="pb-cites">{{ . }} citation{{ if gt . 1 }}s{{ end }}</span>{{ end }}
+    </p>
+    {{ end }}
+
+    <div class="pb-links">{{ partial "page_links_div.html" . }}</div>
+  </header>
+
+  {{ $featured := partial "functions/get_featured_image.html" . }}
+  {{ if and $featured (not .Params.image.preview_only) }}
+    {{ $img := $featured.Fit "1600x1600" }}
+    {{ if ne $img.MediaType.SubType "gif" }}{{ $img = $img.Process "webp q88" }}{{ end }}
+    <figure class="pb-figure">
+      <img src="{{ $img.RelPermalink }}" width="{{ $img.Width }}" height="{{ $img.Height }}" alt="{{ with .Params.image.alt_text }}{{ . }}{{ end }}">
+      {{ with .Params.image.caption }}<figcaption>{{ . | markdownify | emojify }}</figcaption>{{ end }}
+    </figure>
+  {{ end }}
+
+  {{ with .Params.abstract }}
+  <section class="pb-card">
+    <h2 class="pb-label">{{ i18n "abstract" }}</h2>
+    <div class="pb-abstract">{{ . | markdownify }}</div>
+  </section>
+  {{ end }}
+
+  {{ with .Content }}
+  <div class="pb-body prose prose-slate dark:prose-invert">{{ . }}</div>
+  {{ end }}
+
+  <div class="pb-foot prose prose-slate dark:prose-invert">
+    {{ $.Scratch.Set "invert_pager" true }}
+    {{ partial "page_footer" . }}
+  </div>
+</div>
+{{ end }}

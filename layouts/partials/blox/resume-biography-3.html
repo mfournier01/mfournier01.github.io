@@ -49,7 +49,7 @@
       {{ $avatar_display := 220 }}
       {{ $avatar_render := mul $avatar_display 3 }}
       {{ $avatar_image := $avatar.Fill (printf "%dx%d Center q90" $avatar_render $avatar_render) }}
-      <img class="avatar rounded-full bg-white dark:bg-gray-800 p-1" src="{{ $avatar_image.RelPermalink }}" alt="{{$person_page.Title}}"
+      <img class="avatar bio-avatar rounded-full" src="{{ $avatar_image.RelPermalink }}" alt="{{$person_page.Title}}"
            width="{{ $avatar_display }}" height="{{ $avatar_display }}">
       {{with $person.status.icon}}<span class="avatar-emoji">{{.|emojify}}</span>{{end}}
     </div>
@@ -69,10 +69,10 @@
         {{- end -}}
       </div>
 
-      {{ with $person.role }}<h3 class="font-semibold mb-1">{{ . | markdownify | emojify }}</h3>{{ end }}
+      {{ with $person.role }}<h3 class="bio-role">{{ . | markdownify | emojify }}</h3>{{ end }}
 
       {{ range $person.organizations }}
-      <div class="mb-2">
+      <div class="bio-org">
         {{ with .url }}<a href="{{ . }}" target="_blank" rel="noopener">{{ end }}
         <div>{{ .name }}</div>
         {{ if .url }}</a>{{ end }}
@@ -80,7 +80,7 @@
       {{ end }}
     </div>
 
-    <ul class="network-icon dark:text-zinc-100">
+    <ul class="network-icon bio-social">
       {{ range $person.profiles }}
       {{ $pack := or .icon_pack "fas" }}
       {{ $pack_prefix := $pack }}
@@ -118,7 +118,7 @@
     {{ end }}
 
     {{ with $block.content.button }}
-    <a href="{{.url}}" target="_blank" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:outline-none focus:ring-gray-200 focus:text-primary-700 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-gray-700"><svg class="w-3.5 h-3.5 me-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+    <a href="{{.url}}" target="_blank" class="bio-cv"><svg class="bio-cv-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
       <path d="M14.707 7.793a1 1 0 0 0-1.414 0L11 10.086V1.5a1 1 0 0 0-2 0v8.586L6.707 7.793a1 1 0 1 0-1.414 1.414l4 4a1 1 0 0 0 1.416 0l4-4a1 1 0 0 0-.002-1.414Z"/>
       <path d="M18 12h-2.55l-2.975 2.975a3.5 3.5 0 0 1-4.95 0L4.55 12H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Zm-3 5a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>
     </svg> {{.text}}</a>
@@ -131,8 +131,8 @@
 
     {{ with $person.interests }}
     <div class="glass-box info-glass">
-      <div class="section-subheading mb-3">{{ i18n "interests" | markdownify }}</div>
-      <ul class="list-disc list-inside space-y-1 pl-5">
+      <div class="bio-label">{{ i18n "interests" | markdownify }}</div>
+      <ul class="bio-list">
         {{ range . }}
         <li>
           {{ . | markdownify | emojify }}
@@ -144,14 +144,14 @@
 
     {{ with $person.education }}
     <div class="glass-box info-glass">
-      <div class="section-subheading mb-3">{{ i18n "education" | markdownify }}</div>
-      <ul class="">
+      <div class="bio-label">{{ i18n "education" | markdownify }}</div>
+      <ul class="bio-edu">
         {{ range . }}
-        <li class="flex items-start gap-3">
-          {{ partial "functions/get_icon" (dict "name" "academic-cap" "attributes" "style=\"\" class='flex-shrink-0 w-5 h-5 me-2 mt-1'") }}
+        <li>
+          {{ partial "functions/get_icon" (dict "name" "academic-cap" "attributes" "class='bio-edu-icon'") }}
           <div class="description">
             <p class="course">{{ .area }}{{ with .year }}, {{ . }}{{ end }}</p>
-            <p class="text-sm">{{ .institution }}</p>
+            <p class="bio-inst">{{ .institution }}</p>
           </div>
         </li>
         {{ end }}

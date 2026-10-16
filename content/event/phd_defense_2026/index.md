@@ -24,7 +24,7 @@ image:
 
 Today I defended my PhD thesis, in a two-hour defense covering the three papers I wrote during my doctorate on the multiphase intracluster medium and turbulence, using the XMAGNET simulation suite. I was awarded the degree *summa cum laude*.
 
-{{< figure src="featured.jpg" alt="Martin Fournier with his PhD committee and Freddie the cat" caption="With the committee: Philipp Grete, Marcus Brüggen, Stephan Rosswog, Jan-Torge Schindler and Jochen Liske, plus our lovely cat Freddie, who made sure to attend." >}}
+{{< figure src="featured.jpg" alt="Martin Fournier with his PhD committee and Freddie the cat" caption="With the committee, from left to right: Marcus Brüggen, me, Philipp Grete, Stephan Rosswog, Jan-Torge Schindler and Jochen Liske, plus our lovely cat Freddie, who made sure to attend." >}}
 
 {{< figure src="presentation.jpg" alt="Martin Fournier presenting his thesis defense" caption="Presenting the defense talk." >}}
 

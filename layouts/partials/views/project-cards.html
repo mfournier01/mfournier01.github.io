@@ -1,0 +1,20 @@
+{{ $item := .item }}
+{{ $resource := partial "functions/get_featured_image.html" $item }}
+{{ $anchor := $item.Params.image.focal_point | default "Smart" }}
+{{ $link := $item.Params.external_link | default $item.RelPermalink }}
+<a class="pc-card" href="{{ $link }}">
+  {{ with $resource }}
+    {{ $img := .Fill (printf "1200x675 %s q88" $anchor) }}
+    {{ if ne $img.MediaType.SubType "gif" }}{{ $img = $img.Process "webp q88" }}{{ end }}
+    <div class="pc-img"><img src="{{ $img.RelPermalink }}" width="{{ $img.Width }}" height="{{ $img.Height }}" alt="{{ $item.Title | plainify }}" loading="lazy"></div>
+  {{ end }}
+  <div class="pc-body">
+    {{ range first 1 ($item.GetTerms "tags") }}<div class="pc-tag">{{ .LinkTitle }}</div>{{ end }}
+    <h3 class="pc-title">{{ $item.Title | $item.RenderString }}</h3>
+    <p class="pc-sum">{{ ($item.Params.summary | default $item.Summary) | plainify | htmlUnescape | chomp }}</p>
+    <div class="pc-foot">
+      <time datetime="{{ time.Format "2006-01-02" $item.Date }}">{{ $item.Date | time.Format (site.Params.locale.date_format | default ":date_long") }}</time>
+      <span class="pc-more">{{ if eq $item.Lang "fr" }}Voir le projet{{ else }}View project{{ end }} &rarr;</span>
+    </div>
+  </div>
+</a>

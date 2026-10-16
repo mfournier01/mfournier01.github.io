@@ -1,0 +1,66 @@
+{{/* Project-only block for the Outreach page: a header (title, intro, a strip
+     of key numbers and links to the groups), then one section per group.
+     Each item is either a "feature" (image or YouTube video next to its text,
+     alternating sides) or a "card" (cards shown side by side). All content
+     comes from the page front matter, so the English and French pages share
+     this layout. */}}
+
+{{ $page := .wcPage }}
+{{ $c := .wcBlock.content }}
+
+<div class="ot-wrap">
+  <header class="ot-hero">
+    <h1 class="ot-title">{{ $c.title | emojify }}</h1>
+    {{ with $c.intro }}<p class="ot-intro">{{ . | $page.RenderString }}</p>{{ end }}
+    {{ with $c.stats }}
+    <div class="ot-stats">
+      {{ range . }}<div class="ot-stat"><span class="ot-stat-v">{{ .value }}</span><span class="ot-stat-l">{{ .label }}</span></div>{{ end }}
+    </div>
+    {{ end }}
+  </header>
+
+  {{ range $gi, $g := $c.groups }}
+  <section class="ot-group" id="ot-{{ $g.id }}">
+    <div class="ot-group-head">
+      <span class="ot-group-n">{{ printf "%02d" (add $gi 1) }}</span>
+      <h2 class="ot-group-t">{{ $g.name }}</h2>
+    </div>
+    {{ with $g.lead }}<p class="ot-group-lead">{{ . | $page.RenderString }}</p>{{ end }}
+
+    <div class="{{ if eq $g.layout "cards" }}ot-cards{{ else }}ot-features{{ end }}">
+    {{ range $ii, $it := $g.items }}
+      {{/* ---- media */}}
+      {{ $media := "" }}
+      {{ with $it.youtube }}
+        {{ $media = printf `<div class="ot-video"><iframe src="https://www.youtube-nocookie.com/embed/%s" title="%s" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>` . ($it.title | plainify) }}
+      {{ end }}
+      {{ with $it.image }}
+        {{ $res := $page.Resources.GetMatch .src }}
+        {{ with $res }}
+          {{ $img := .Resize "1400x webp q82" }}
+          {{ $media = printf `<img src="%s" width="%d" height="%d" alt="%s" loading="lazy">` $img.RelPermalink $img.Width $img.Height ($it.image.alt | default "") }}
+        {{ end }}
+      {{ end }}
+      {{ with $it.film }}
+        {{ $media = `<div class="ot-film-art" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="2.5"/><circle cx="32" cy="32" r="3.5" fill="currentColor"/><circle cx="32" cy="17" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="32" cy="47" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17" cy="32" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="47" cy="32" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></div>` }}
+      {{ end }}
+
+      <article class="ot-item{{ if and (ne $g.layout "cards") (or $it.flip (modBool $ii 2 | not)) }} ot-flip{{ end }}{{ with $it.film }} ot-item--film{{ end }}">
+        <figure class="ot-media">
+          {{ $media | safeHTML }}
+          {{ with $it.caption }}<figcaption>{{ . | $page.RenderString }}</figcaption>{{ end }}
+        </figure>
+        <div class="ot-body">
+          {{ with $it.kicker }}<div class="ot-kicker">{{ . }}</div>{{ end }}
+          <h3 class="ot-item-t">{{ $it.title | $page.RenderString }}</h3>
+          {{ with $it.subtitle }}<div class="ot-sub">{{ . | $page.RenderString }}</div>{{ end }}
+          {{ with $it.text }}<div class="ot-text">{{ . | $page.RenderString (dict "display" "block") }}</div>{{ end }}
+          {{ with $it.tags }}<div class="ot-tags">{{ range . }}<span>{{ . }}</span>{{ end }}</div>{{ end }}
+          {{ with $it.link }}<a class="ot-link" href="{{ .url }}" target="_blank" rel="noopener">{{ .text }} &rarr;</a>{{ end }}
+        </div>
+      </article>
+    {{ end }}
+    </div>
+  </section>
+  {{ end }}
+</div>

@@ -1,0 +1,18 @@
+{{/* Project-only block for the home page research summary: a small label,
+     a title, a lead paragraph (bold text is highlighted) and an optional
+     "previously" line set apart below a thin divider. */}}
+
+{{ $page := .wcPage }}
+{{ $c := .wcBlock.content }}
+
+<div class="ri-wrap">
+  {{ with $c.label }}<div class="ri-label">{{ . }}</div>{{ end }}
+  <h2 class="ri-title">{{ $c.title | emojify }}</h2>
+  {{ with $c.lead }}<div class="ri-lead">{{ . | $page.RenderString (dict "display" "block") }}</div>{{ end }}
+  {{ with $c.past }}
+  <div class="ri-past">
+    <span class="ri-past-k">{{ $c.past_label }}</span>
+    <span class="ri-past-v">{{ . | $page.RenderString }}</span>
+  </div>
+  {{ end }}
+</div>

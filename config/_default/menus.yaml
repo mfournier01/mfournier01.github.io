@@ -22,9 +22,12 @@ main:
   - name: Explorers
     url: explorers/
     weight: 16
+  - name: Outreach
+    url: outreach/
+    weight: 17
   - name: Photography
     url: photography/
-    weight: 17
+    weight: 18
 #  - name: Projects
 #    url: projects/
 #    weight: 30

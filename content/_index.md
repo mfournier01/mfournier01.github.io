@@ -4,8 +4,7 @@ title: ""
 date: 2022-10-24
 type: landing
 
-# Enables KaTeX so LaTeX in publication titles (e.g. the Prasad 2025 paper's
-# `$\sim 10^{13.5}$ M$_\odot$`) renders correctly in the Publications list.
+# Enables KaTeX so any LaTeX in publication titles renders in the Publications list.
 math: true
 
 design:
@@ -38,28 +37,25 @@ sections:
           size: cover
           position: center
           parallax: false
-  - block: markdown
+  - block: research-intro
     content:
-      title: '📚 My Research'
-      subtitle: ''
-      text: |-
-
-        My main topic of interest is the multiphase nature of the intracluster medium and the interaction between feedback from supermassive black holes, thermal instabilities and magnetic fields. To explore these questions, I use advanced numerical methods and run GPU-accelerated simulations on supercomputers.
-
-        In the past, I have also been working on neutrino detectors, cosmological simulations of galaxy formation and cosmic ray physics.
-    design:
-      columns: '1'
+      label: '01'
+      title: Black holes, cold gas and magnetic fields
+      lead: |-
+        My main topic of interest is the **multiphase nature of the intracluster medium** and the interplay between **feedback from supermassive black holes**, **thermal instabilities** and **magnetic fields**. To explore these questions, I use advanced numerical methods and run **GPU-accelerated simulations** on supercomputers.
+      past_label: Previously
+      past: Neutrino detectors · cosmological simulations of galaxy formation · cosmic-ray physics
   - block: collection
     id: papers
     content:
+      label: '02'
       title: Projects
       filters:
         folders:
           - publication
         featured_only: true
     design:
-      view: article-grid
-      columns: 2
+      view: project-cards
   - block: image-full-bleed
     content:
       image: noirlab2126a5k.jpg
@@ -72,7 +68,8 @@ sections:
         padding: ["0", "0", "2rem", "0"]
   - block: markdown
     content:
-      title: Publications List
+      label: '03'
+      title: Publications
       text: ""
     design:
       columns: '1'
@@ -125,6 +122,7 @@ sections:
   - block: collection
     id: talks
     content:
+      label: '04'
       title: News
       filters:
         folders:
@@ -133,8 +131,7 @@ sections:
       # Higher-resolution variant of `article-grid` (see
       # layouts/partials/views/article-grid-hires.html) — talk photos were
       # looking compressed at the stock 960x540/q80 output.
-      view: article-grid-hires
-      columns: 1
+      view: news-timeline
   - block: cta-card
     demo: true # Only display this section in the Hugo Blox Builder demo site
     content:

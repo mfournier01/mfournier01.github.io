@@ -24,7 +24,7 @@ image:
 
 Aujourd'hui, j'ai soutenu ma thèse de doctorat, lors d'une soutenance de deux heures couvrant les trois articles que j'ai écrits pendant mon doctorat sur le milieu intra-amas multiphasé et la turbulence, avec la suite de simulations XMAGNET. J'ai obtenu le diplôme avec la mention *summa cum laude*.
 
-{{< figure src="featured.jpg" alt="Martin Fournier avec son jury de thèse et le chat Freddie" caption="Avec le jury : Philipp Grete, Marcus Brüggen, Stephan Rosswog, Jan-Torge Schindler et Jochen Liske, ainsi que notre adorable chat Freddie, qui a tenu à être présent." >}}
+{{< figure src="featured.jpg" alt="Martin Fournier avec son jury de thèse et le chat Freddie" caption="Avec le jury, de gauche à droite : Marcus Brüggen, moi, Philipp Grete, Stephan Rosswog, Jan-Torge Schindler et Jochen Liske, ainsi que notre adorable chat Freddie, qui a tenu à être présent." >}}
 
 {{< figure src="presentation.jpg" alt="Martin Fournier présentant sa soutenance de thèse" caption="Présentation de l'exposé de soutenance." >}}
 

@@ -1,5 +1,5 @@
 ---
-title: "XMAGNET: Kinetic, Thermal and Magnetic AGN Feedback in Massive Galaxies at Halo Masses $\\sim 10^{13.5}$ M$_\\odot$"
+title: "XMAGNET: Kinetic, Thermal and Magnetic AGN Feedback in Massive Galaxies at Halo Masses ∼10¹³·⁵ M⊙"
 authors:
 - D. Prasad
 - P. Grete

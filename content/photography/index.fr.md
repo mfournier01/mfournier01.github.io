@@ -12,13 +12,13 @@ design:
 # new year block) to extend the portfolio. `photo-grid` is a project-only
 # block, see layouts/partials/blox/photo-grid.html.
 sections:
-  - block: markdown
+  - block: photo-head
     content:
-      title: 📷 Photographie
-      text: |-
-        Quelques photos prises au fil des années.
-    design:
-      columns: '1'
+      title: Photographie
+      intro: Quelques photos prises au fil des années.
+      instagram:
+        text: Plus de photos sur Instagram
+        url: https://www.instagram.com/martin.fournier270/
 
   - block: photo-grid
     content:

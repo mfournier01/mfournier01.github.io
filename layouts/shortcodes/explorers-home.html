@@ -1,15 +1,16 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
 <div class="exh-wrap">
+  <div class="exh-kicker">Interactive notes</div>
   <h1 class="exh-title">Explorers</h1>
   <p class="exh-lead">Small interactive pages I build, with AI assistance, to help myself understand and learn new things in astronomy, from how telescopes and instruments work to the physics of what they observe.</p>
 
-  <h2 class="exh-cat">Telescopes and instruments</h2>
+  <h2 class="exh-cat"><span class="exh-n">01</span>Telescopes and instruments</h2>
   <p class="exh-cat-text">How the observatories work: instruments, wavelength coverage and what they can see.</p>
   <div class="exh-cards">
     {{ with .Page.Resources.GetMatch "jwst-icon.png" }}
     {{ $img := .Resize "320x webp q90" }}
     <a class="exh-card" href="/jwst-explorer/">
-      <img src="{{ $img.RelPermalink }}" alt="James Webb Space Telescope line illustration" class="exh-card-img">
+      <div class="exh-card-art"><img src="{{ $img.RelPermalink }}" alt="James Webb Space Telescope line illustration" class="exh-card-img"></div>
       <div class="exh-card-body">
         <div class="exh-card-title">The JWST instruments</div>
         <div class="exh-card-text">The four JWST instruments, their wavelength coverage, emission lines and mid-infrared features across redshift, and how big an object looks in each field of view.</div>
@@ -20,7 +21,7 @@
     {{ with .Page.Resources.GetMatch "submm-icon.png" }}
     {{ $img := .Resize "320x webp q90" }}
     <a class="exh-card" href="/interferometry-explorer/">
-      <img src="{{ $img.RelPermalink }}" alt="Line illustration of a radio dish" class="exh-card-img">
+      <div class="exh-card-art"><img src="{{ $img.RelPermalink }}" alt="Line illustration of a radio dish" class="exh-card-img"></div>
       <div class="exh-card-body">
         <div class="exh-card-title">Submillimeter instruments</div>
         <div class="exh-card-text">How arrays of millimeter dishes act as one telescope: baselines and fringes, the uv plane, imaging and CLEAN, receivers and the atmosphere, calibration, and what ALMA and NOEMA data look like.</div>
@@ -29,6 +30,7 @@
     </a>
     {{ end }}
     <div class="exh-card exh-card--soon">
+      <div class="exh-soon-mark" aria-hidden="true">+</div>
       <div class="exh-card-body">
         <div class="exh-card-title">More to come</div>
         <div class="exh-card-text">Other telescopes and instruments.</div>
@@ -36,14 +38,14 @@
     </div>
   </div>
 
-  <h2 class="exh-cat">Astrophysical processes</h2>
+  <h2 class="exh-cat"><span class="exh-n">02</span>Astrophysical processes</h2>
   <p class="exh-cat-text">The physics of the gas, dust and black holes that telescopes observe.</p>
   <div class="exh-cards">
     <a class="exh-card" href="/dust-explorer/">
-      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+      <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-gd" cx="36%" cy="32%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></radialGradient></defs>
         <g><circle cx="87.5" cy="27.5" r="9.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="35.0" cy="30.0" r="9.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="105.0" cy="45.0" r="7.2" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="20.0" cy="47.5" r="7.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="42.5" cy="100.0" r="7.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="82.5" cy="102.5" r="7.2" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="95.0" cy="65.0" r="10.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="27.5" cy="70.0" r="10.8" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="62.5" cy="95.0" r="9.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="60.0" cy="35.0" r="12.0" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="75.0" cy="80.0" r="13.2" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="47.5" cy="80.0" r="14.4" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="80.0" cy="47.5" r="15.6" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="40.0" cy="50.0" r="14.4" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/><circle cx="60.0" cy="62.5" r="18.0" fill="url(#exh-gd)" stroke="#7f8da3" stroke-width="1.6"/></g>
-      </svg>
+      </svg></div>
       <div class="exh-card-body">
         <div class="exh-card-title">Dust physics</div>
         <div class="exh-card-text">How cosmic dust forms, the kinds of grains, how they dim starlight, and the processes (sputtering, shattering, growth) that shape their life cycle.</div>
@@ -51,7 +53,7 @@
       </div>
     </a>
     <a class="exh-card" href="/molecular-explorer/">
-      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+      <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs>
           <radialGradient id="exh-mo" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity="0.95"/><stop offset="0.3" stop-color="#f87171"/><stop offset="1" stop-color="#b91c1c"/></radialGradient>
           <radialGradient id="exh-mh" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset="0.35" stop-color="#e2e8f0"/><stop offset="1" stop-color="#64748b"/></radialGradient>
@@ -63,7 +65,7 @@
         <circle cx="92" cy="42" r="13" fill="url(#exh-mh)" stroke="#0f172a" stroke-width="1.2"/>
         <circle cx="60" cy="74" r="21" fill="url(#exh-mo)" stroke="#0f172a" stroke-width="1.2"/>
         <circle cx="100" cy="98" r="5" fill="#60a5fa" opacity="0.8"/><circle cx="18" cy="96" r="4" fill="#fbbf24" opacity="0.7"/>
-      </svg>
+      </svg></div>
       <div class="exh-card-body">
         <div class="exh-card-title">Molecular Gas and Thermochemistry</div>
         <div class="exh-card-text">How gas heats, cools and becomes molecular, from H₂ and CO in clouds to the cold filaments in cluster cores: shielding, chemical networks, thermal instability and star formation in nearby galaxies.</div>
@@ -71,7 +73,7 @@
       </div>
     </a>
     <a class="exh-card" href="/agn-explorer/">
-      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+      <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs>
           <radialGradient id="exh-ga" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fde68a"/><stop offset="0.35" stop-color="#fb923c" stop-opacity="0.8"/><stop offset="1" stop-color="#fb923c" stop-opacity="0"/></radialGradient>
           <linearGradient id="exh-gj" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f472b6" stop-opacity="0"/><stop offset="0.5" stop-color="#f472b6"/><stop offset="1" stop-color="#f472b6" stop-opacity="0"/></linearGradient>
@@ -81,7 +83,7 @@
         <ellipse cx="60" cy="60" rx="44" ry="9" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0.85"/>
         <ellipse cx="60" cy="60" rx="28" ry="5" fill="none" stroke="#e2e8f0" stroke-width="2" opacity="0.7"/>
         <circle cx="60" cy="60" r="7" fill="#0b1220" stroke="#e2e8f0" stroke-width="2"/>
-      </svg>
+      </svg></div>
       <div class="exh-card-body">
         <div class="exh-card-title">Active galactic nuclei</div>
         <div class="exh-card-text">An interactive spectrum of an active galactic nucleus, with every component and band clickable, and the physics behind it: black holes, accretion, broad-line gas, the dusty torus, jets, and how black holes grow.</div>
@@ -90,17 +92,17 @@
     </a>
   </div>
 
-  <h2 class="exh-cat">Simulations and codes</h2>
+  <h2 class="exh-cat"><span class="exh-n">03</span>Simulations and codes</h2>
   <p class="exh-cat-text">How a numerical model of galaxy formation is built, and why.</p>
   <div class="exh-cards">
     <a class="exh-card" href="/stars-explorer/">
-      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+      <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-gs" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fef3c7" stop-opacity="0.95"/><stop offset="1" stop-color="#f472b6" stop-opacity="0"/></radialGradient></defs>
         <g stroke="#94a3b8" stroke-opacity="0.55" fill="none"><path d="M60 8V112M8 60H112" stroke-dasharray="3 4"/><circle cx="60" cy="60" r="44"/><circle cx="60" cy="60" r="26" stroke="#f472b6" stroke-opacity="0.7"/></g>
         <circle cx="60" cy="60" r="30" fill="url(#exh-gs)"/>
         <path d="M60 46l4 10 11 1-8 7 3 11-10-6-10 6 3-11-8-7 11-1z" fill="#fde68a" stroke="#0f172a" stroke-width="1"/>
         <circle cx="96" cy="34" r="5" fill="#34d399"/><path d="M62 58L92 36" stroke="#34d399" stroke-dasharray="3 3"/>
-      </svg>
+      </svg></div>
       <div class="exh-card-body">
         <div class="exh-card-title">Stellar Particles in AthenaPK</div>
         <div class="exh-card-text">How stars form and explode in the simulation, and why the model is built this way: virial support, supernova remnants and the terminal momentum, the ghost swarm across meshblocks, and the test runs that validate it.</div>
@@ -108,12 +110,12 @@
       </div>
     </a>
     <a class="exh-card" href="/townsend-explorer/">
-      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+      <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <g stroke="#94a3b8" stroke-opacity="0.45" fill="none"><path d="M16 12V100H110"/></g>
         <path d="M18 24L38 60L56 78L74 86L108 90" fill="none" stroke="#34d399" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M18 24L56 78L108 90" fill="none" stroke="#38bdf8" stroke-width="2.4" stroke-dasharray="4 4"/>
         <g fill="#38bdf8" stroke="#0f172a" stroke-width="1.4"><circle cx="18" cy="24" r="5.5"/><circle cx="56" cy="78" r="5.5"/><circle cx="108" cy="90" r="5.5"/></g>
-      </svg>
+      </svg></div>
       <div class="exh-card-body">
         <div class="exh-card-title">The Townsend cooling integrator</div>
         <div class="exh-card-text">How radiative cooling is integrated exactly in one step: the temporal evolution function, piecewise power-law cooling curves, and why it never overshoots.</div>
@@ -121,14 +123,14 @@
       </div>
     </a>
     <a class="exh-card" href="/dust-fluid-explorer/">
-      <svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
+      <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-dfg" cx="36%" cy="32%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></radialGradient></defs>
         <path d="M14 14V102H110" fill="none" stroke="#94a3b8" stroke-opacity="0.45"/>
         <g fill="#fbbf24" fill-opacity="0.55" stroke="#fbbf24" stroke-width="1.2"><rect x="20" y="42" width="14" height="60"/><rect x="38" y="58" width="14" height="44"/><rect x="56" y="72" width="14" height="30"/><rect x="74" y="83" width="14" height="19"/><rect x="92" y="92" width="14" height="10"/></g>
         <g fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="3 3"><rect x="29" y="32" width="14" height="70"/><rect x="47" y="50" width="14" height="52"/><rect x="65" y="66" width="14" height="36"/><rect x="83" y="80" width="14" height="22"/></g>
         <path d="M24 30 L58 22" stroke="#38bdf8" stroke-width="1.8" fill="none"/><path d="M58 22 l-7 -3 l2 7z" fill="#38bdf8"/>
         <g stroke="#7f8da3" stroke-width="1.3" fill="url(#exh-dfg)"><circle cx="92" cy="30" r="7"/><circle cx="104" cy="44" r="5"/><circle cx="82" cy="46" r="4"/></g>
-      </svg>
+      </svg></div>
       <div class="exh-card-body">
         <div class="exh-card-title">Dust Fluid in AthenaPK</div>
         <div class="exh-card-text">A size-resolved dust population carried passively with the gas: how grains are binned and reconstructed, grow and are sputtered, cool the gas, and are injected by AGB winds.</div>
@@ -141,21 +143,30 @@
 <style>
   .exh-wrap * { font-style: normal; }
   .exh-wrap em, .exh-wrap i { font-style: italic; }
-  .exh-wrap { max-width: 860px; margin: 0 auto; padding: 0 1rem 3rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; }
-  .exh-title { margin: 0 0 0.5rem; font-size: 2.2rem; font-weight: 700; color: #e2e8f0; text-align: center; }
-  .exh-lead { margin: 0 auto 2.2rem; max-width: 620px; text-align: center; font-size: 1.05rem; line-height: 1.5; }
+  .exh-wrap { --exh-acc: rgb(var(--color-primary-300)); max-width: 1040px; margin: 0 auto; padding: 3rem 1.25rem 4rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; }
+  .exh-kicker { text-align: center; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--exh-acc); }
+  .exh-title { margin: 0.4rem 0 0.9rem; font-size: clamp(2.2rem, 4.5vw, 3rem); font-weight: 700; line-height: 1.1; color: #f1f5f9; text-align: center; }
+  .exh-lead { margin: 0 auto 3.2rem; max-width: 640px; text-align: center; font-size: 1.1rem; line-height: 1.65; color: #aab6c8; }
 
-
-  .exh-cat { margin: 2.2rem 0 0.2rem; padding-bottom: 0.35rem; font-size: 1.4rem; font-weight: 700; color: #e2e8f0; border-bottom: 1px solid rgba(148,163,184,0.3); }
+  .exh-cat { display: flex; align-items: baseline; gap: 0.8rem; margin: 3.4rem 0 0.35rem; padding-bottom: 0.7rem; font-size: 1.55rem; font-weight: 700; color: #f1f5f9; border-bottom: 1px solid rgba(148,163,184,0.16); }
   .exh-cat:first-of-type { margin-top: 0; }
-  .exh-cat-text { margin: 0.1rem 0 0.9rem; font-size: 0.95rem; color: #94a3b8; }
-  .exh-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; }
-  .exh-card { display: flex; align-items: center; gap: 1.1rem; padding: 1.1rem 1.3rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); color: inherit; text-decoration: none; transition: border-color 0.2s ease, transform 0.2s ease; }
-  a.exh-card:hover { border-color: #60a5fa; transform: translateY(-2px); }
-  .exh-card--soon { border-style: dashed; color: #94a3b8; justify-content: center; text-align: center; }
-  .exh-card-img { width: 110px; height: auto; flex: 0 0 auto; }
-  .exh-card-title { font-size: 1.25rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.25rem; }
-  .exh-card--soon .exh-card-title { color: #94a3b8; }
-  .exh-card-text { font-size: 0.92rem; line-height: 1.45; }
-  .exh-card-link { margin-top: 0.5rem; font-size: 0.9rem; font-weight: 700; color: #60a5fa; }
+  .exh-n { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.08em; color: var(--exh-acc); font-variant-numeric: tabular-nums; }
+  .exh-cat-text { margin: 0.6rem 0 1.4rem; font-size: 0.98rem; color: #94a3b8; }
+
+  .exh-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.3rem; }
+  .exh-card { position: relative; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(148,163,184,0.18); border-radius: 1.1rem; background: linear-gradient(180deg, rgba(30,41,59,0.5), rgba(15,23,42,0.35)); color: inherit; text-decoration: none; box-shadow: 0 20px 45px -28px rgba(0,0,0,0.9); transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
+  a.exh-card:hover { border-color: rgb(var(--color-primary-300) / 0.5); transform: translateY(-3px); box-shadow: 0 26px 55px -26px rgba(0,0,0,0.95); }
+  .exh-card-art { display: flex; align-items: center; justify-content: center; height: 150px; background: radial-gradient(ellipse at 50% 60%, rgba(148,163,184,0.10), transparent 70%), rgba(2,6,23,0.35); border-bottom: 1px solid rgba(148,163,184,0.1); }
+  .exh-card-img { width: auto; height: 104px; max-width: 70%; object-fit: contain; transition: transform .35s ease; }
+  a.exh-card:hover .exh-card-img { transform: scale(1.06); }
+  .exh-card-body { display: flex; flex-direction: column; flex: 1; padding: 1.15rem 1.35rem 1.25rem; }
+  .exh-card-title { margin-bottom: 0.45rem; font-size: 1.2rem; font-weight: 700; line-height: 1.25; color: #f1f5f9; }
+  .exh-card-text { font-size: 0.93rem; line-height: 1.55; color: #a3afc2; }
+  .exh-card-link { margin-top: auto; padding-top: 0.9rem; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--exh-acc); }
+  .exh-card--soon { align-items: center; justify-content: center; min-height: 220px; text-align: center; border-style: dashed; background: none; box-shadow: none; color: #64748b; }
+  .exh-soon-mark { font-size: 2rem; line-height: 1; color: #475569; }
+  .exh-card--soon .exh-card-body { flex: 0; padding-top: 0.5rem; }
+  .exh-card--soon .exh-card-title { color: #94a3b8; font-size: 1.05rem; }
+  .exh-card--soon .exh-card-text { color: #64748b; }
+  @media (max-width: 640px) { .exh-wrap { padding-top: 2rem; } .exh-card-art { height: 130px; } }
 </style>

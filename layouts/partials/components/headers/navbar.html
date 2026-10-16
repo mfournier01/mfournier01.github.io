@@ -189,6 +189,11 @@
           {{ if eq . "fr" }}<span aria-hidden="true" class="opacity-50">/</span>{{ end }}
         {{ end }}
       </div>
+      {{ else }}
+      {{/* Untranslated page (e.g. the Explorers): invisible placeholder of the same size, so the toolbar keeps its layout. */}}
+      <div class="lang-switch lang-placeholder pl-1 pr-3 text-sm flex items-center gap-1" aria-hidden="true">
+        <span class="font-bold">FR</span><span>/</span><span>EN</span>
+      </div>
       {{ end }}
 
       <!-- CTA button -->

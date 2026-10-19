@@ -8,16 +8,15 @@ authors:
 - G. M. Voit
 - B. D. Wibking
 - D. Prasad
-date: "2026-04-30"
+date: "2026-10-13"
 doi: "10.1051/0004-6361/202660715"
-url_preprint: "https://arxiv.org/abs/2605.00563"
 
 first_author: true
 
 citations: 1
 
 # Schedule page publish date (NOT publication's date).
-publishDate: "2026-04-30"
+publishDate: "2026-10-13"
 
 # Publication type.
 publication_types: ["article-journal"]

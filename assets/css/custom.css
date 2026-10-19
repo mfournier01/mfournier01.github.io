@@ -548,3 +548,8 @@ a.nav-link[href$="/explorers/"]:hover {
 @media (max-width: 1023px) { #site-header .navbar-brand { font-size: 1.1rem; } }
 @media (max-width: 400px) { #site-header .navbar-brand { font-size: 1rem; } #site-header #search_toggle, #site-header .theme-toggle { padding-left: 0.35rem; padding-right: 0.35rem; } }
 
+/* News (event) pages: a centered 60rem column, wider than the ~65ch prose default. */
+.news-main { max-width: calc(60rem + 6rem); margin-left: auto; margin-right: auto; }
+.news-meta, .news-body { max-width: none; }
+.news-body figure img, .news-main .featured-image { width: 100%; }
+.news-main .featured-image-wrapper { max-width: 100% !important; max-height: none !important; margin-left: auto; margin-right: auto; }

@@ -1,0 +1,25 @@
+{{ define "main" }}
+{{/* News index: latest item as a wide hero card, the rest in a two-column
+     grid grouped by year. Card markup mirrors views/news-timeline.html. */}}
+{{ $fr := eq .Lang "fr" }}
+{{ $pages := .Pages.ByDate.Reverse }}
+<div class="nl-wrap">
+  <header class="nl-head">
+    <h1 class="nl-title">{{ .Title }}</h1>
+    <p class="nl-intro">{{ if $fr }}Conférences, exposés et étapes de parcours.{{ else }}Conferences, talks and career milestones.{{ end }}</p>
+  </header>
+
+  {{ range first 1 $pages }}
+    {{ partial "news-card.html" (dict "item" . "hero" true) }}
+  {{ end }}
+
+  {{ range (after 1 $pages).GroupByDate "2006" }}
+  <section class="nl-year">
+    <h2 class="nl-year-label"><span>{{ .Key }}</span></h2>
+    <ol class="nl-grid">
+      {{ range .Pages }}<li>{{ partial "news-card.html" (dict "item" . "hero" false) }}</li>{{ end }}
+    </ol>
+  </section>
+  {{ end }}
+</div>
+{{ end }}

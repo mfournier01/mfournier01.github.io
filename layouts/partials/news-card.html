@@ -1,0 +1,25 @@
+{{/* One news card for the News index (layouts/event/list.html).
+     `hero` makes it a wide card with the image beside the text. */}}
+{{ $item := .item }}
+{{ $resource := partial "functions/get_featured_image.html" $item }}
+{{ $anchor := $item.Params.image.focal_point | default "Smart" }}
+{{ $place := slice }}
+{{ with $item.Params.address }}{{ with .city }}{{ $place = $place | append . }}{{ end }}{{ with .country }}{{ $place = $place | append . }}{{ end }}{{ end }}
+<a class="nt-card nl-card{{ if .hero }} nl-hero{{ end }}" href="{{ $item.Params.external_link | default $item.RelPermalink }}">
+  {{ with $resource }}
+    {{ $img := .Fill (printf "%s %s q85" (cond $.hero "1600x1000" "1200x675") $anchor) }}
+    {{ if ne $img.MediaType.SubType "gif" }}{{ $img = $img.Process "webp q85" }}{{ end }}
+    <div class="nt-img"><img src="{{ $img.RelPermalink }}" width="{{ $img.Width }}" height="{{ $img.Height }}" alt="{{ $item.Title | plainify }}" loading="{{ if $.hero }}eager{{ else }}lazy{{ end }}"></div>
+  {{ end }}
+  <div class="nt-body">
+    {{ if .hero }}<span class="nl-badge">{{ if eq $item.Lang "fr" }}À la une{{ else }}Latest{{ end }}</span>{{ end }}
+    <div class="nt-meta">
+      <time datetime="{{ time.Format "2006-01-02" $item.Date }}">{{ $item.Date | time.Format ":date_medium" }}</time>
+      {{ with $place }}<span class="nt-sep">·</span><span>{{ delimit . ", " }}</span>{{ end }}
+    </div>
+    <h3 class="nt-title">{{ $item.Title }}</h3>
+    {{ with $item.Params.event }}<div class="nt-event">{{ . }}</div>{{ end }}
+    <p class="nt-sum">{{ ($item.Params.summary | default $item.Summary) | plainify | htmlUnescape | chomp }}</p>
+    <span class="nt-more">{{ if eq $item.Lang "fr" }}Lire la suite{{ else }}Read more{{ end }} &rarr;</span>
+  </div>
+</a>

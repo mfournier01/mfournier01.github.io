@@ -1,0 +1,538 @@
+<!--
+  Metals on the fly in RAMSES-RT: a short explorer on non-equilibrium metal chemistry and
+  cooling coupled to radiation hydrodynamics, after Katz (2022; arXiv:2202.04083),
+  the RAMSES-RTZ code. Companion to the Molecular gas and thermochemistry page.
+  Vanilla JS + inline SVG; KaTeX from a CDN.
+  Hugo parses this file as a template: never write a double opening curly brace in it.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+
+<div class="rz-wrap">
+
+  <h1 class="rz-title">Metals on the fly in RAMSES-RT</h1>
+  <div class="rz-box">
+    <p>
+      Almost everything we know about the gas in galaxies comes from lines of <strong>metals</strong>: [O III] and [N II] in H II regions, [C II] in neutral gas, Mg II and C IV in absorption. Each line comes from one ionization state of one element, so predicting it from a simulation needs the abundance of that <em>ion</em>, not just of the element. Most simulations get it by assuming equilibrium, with collisions alone or with a uniform UV background. Inside a galaxy both assumptions fail: the gas shields itself from the background, and the local radiation from young stars dominates and changes on the timescale of the stars themselves.
+    </p>
+    <p>
+      This page describes how RAMSES-RTZ (Katz 2022) removes those assumptions. It follows the ionization states of C, N, O, Ne, Mg, Si, S and Fe out of equilibrium, ionized by the radiation that RAMSES-RT transports through the simulation on the fly. It then computes the cooling, and the emission lines, from the same ions. It is a companion to <a class="rz-link" href="/molecular-explorer/">Molecular gas and thermochemistry</a>, which explains the chemistry and the cooling function this code implements. Here the focus is on how a simulation code follows them. The four figures marked <span class="rz-badge">interactive</span> are deliberately simple models of what the code does.
+    </p>
+  </div>
+
+  <!-- ===================================================== 1. radiation -->
+  <h2 class="rz-h2" id="sec-rt">Radiation from the sources, not from a background</h2>
+  <div class="rz-tldr"><span>In this section</span>Why equilibrium and a UV background are not enough inside galaxies, how RAMSES-RT carries the radiation, and which photons can ionize which ions.</div>
+  <p class="rz-p">
+    Metal ions are usually computed from tables. Gas in <strong>collisional ionization equilibrium</strong> (CIE) has ionization states that depend only on its temperature (Gnat and Sternberg 2007). Adding a redshift-dependent UV background gives photoionization equilibrium tables that depend on density and redshift as well (Wiersma, Schaye and Smith 2009). Both fail where most of the observable emission is produced. Dense gas shields itself from the background, and near young stars the local radiation is orders of magnitude stronger than the background, with a different spectrum. The ionization also takes time: if the gas cools or the radiation switches off faster than the ions recombine, the gas stays more ionized than equilibrium would say.
+  </p>
+  <p class="rz-p">
+    RAMSES-RT (Rosdahl et al. 2013; Rosdahl and Teyssier 2015) transports radiation with the <strong>M1 moment method</strong>: each cell carries a photon density and flux per frequency group, closed with the M1 relation for the pressure tensor (Levermore 1984). The cost does not grow with the number of sources, so a whole galaxy can have every star particle shine. It uses the <strong>reduced speed of light</strong> approximation: in the isolated galaxy of the paper, the light travels at $c/100$, which keeps the radiation time step close to the hydrodynamical one. The spectrum is split into a small number of photon groups. The cross sections of each group are averaged over the spectra of the stars, weighted by luminosity, and updated as the stellar population ages.
+  </p>
+  <div class="rz-labbox">
+    <div class="rz-figtitle">The eight photon groups and the ionization thresholds of the metals <span class="rz-badge">click an element</span></div>
+    <div class="rz-chips" id="rz-el-chips"></div>
+    <div class="rz-scroll"><svg class="rz-svg" id="rz-bins" viewBox="0 0 900 300" role="img" aria-label="Photon energy groups of RAMSES-RT and ionization energies of the selected element"></svg></div>
+    <div class="rz-panel" id="rz-bins-panel"></div>
+    <p class="rz-note2"><strong>Reading the figure.</strong> The horizontal axis is photon energy on a logarithmic scale. The shaded bands are the eight groups used in the paper, with edges at 0.1, 1.0, 5.6, 11.2, 13.6, 15.2, 24.59, 54.42 and 500 eV (as in Kimm et al. 2017). The numbers above them label the groups: 1, infrared; 2, optical; 3, the Habing band of far-UV photons that heat dust; 4, the Lyman-Werner band that dissociates H₂; 5 to 8, photons that ionize H, H₂, He and He⁺. The grey ticks under the axis are the thresholds of H, He and He⁺. The colored ticks are the energies needed to remove one more electron from each ion of the selected element (NIST ionization energies): the tick labeled O II, for example, is the energy to turn O II into O III. A tick to the left of 13.6 eV can be reached by photons that are not absorbed by neutral hydrogen.</p>
+  </div>
+  <p class="rz-punch">Carbon, magnesium, silicon, sulfur and iron are ionized by photons that pass through neutral hydrogen, so C II, Mg II, Si II and Fe II trace neutral gas. Oxygen and nitrogen hold on to their first electron as long as hydrogen does.</p>
+  <p class="rz-p">
+    The group edges do not have to fall on the thresholds of every ion. In a test of a Strömgren sphere around a 15 $M_\odot$ star, the paper reran the calculation with 17 groups whose edges match the ionization energies of the oxygen ions, and found almost no change. Because the cross sections are averaged over the spectrum within each group, a coarse sampling captures the photoionization rates and the self-shielding well enough. The averaging works best when the bright sources have similar spectra. With very different sources in the same volume, such as an AGN and stars, more groups are needed (Sect. <a class="rz-xref" data-go="sec-caveats">Caveats</a>).
+  </p>
+
+  <!-- ===================================================== 2. network -->
+  <h2 class="rz-h2" id="sec-net">The network: making and destroying an ion</h2>
+  <div class="rz-tldr"><span>In this section</span>The rate equations for each ion, the processes they include and leave out, and a toy version for oxygen in which you can switch charge exchange off.</div>
+  <p class="rz-p">
+    Each ionization state $i$ of an element, with number density $n_i$, is created when the state above it recombines and when the state below it is ionized:
+  </p>
+  <div class="rz-eq">\frac{dn_i}{dt}\Big|_{\rm creation}=n_{i+1}\,\alpha_{i+1}\,n_e+\sum_k\big[n_{i+1}\,\xi_{i+1}+n_{i-1}\,\chi_{i-1}\big]\,n_k+n_{i-1}\big(\beta_{i-1}\,n_e+\Gamma_{i-1}\big)</div>
+  <p class="rz-p">and destroyed when it recombines or is ionized itself:</p>
+  <div class="rz-eq">\frac{dn_i}{dt}\Big|_{\rm destruction}=-\,n_i\,\alpha_i\,n_e-\sum_k\big[n_i\,\xi_i+n_i\,\chi_i\big]\,n_k-n_i\big(\beta_i\,n_e+\Gamma_i\big)</div>
+  <p class="rz-p">
+    Here $\alpha$ is the total recombination rate coefficient (radiative plus dielectronic), $\beta$ the collisional ionization rate coefficient by electrons, $\xi$ and $\chi$ the coefficients of charge exchange recombination and ionization with a partner $k$ of density $n_k$, and $\Gamma$ the photoionization rate. The subscripts refer to the ion that reacts: $\alpha_{i+1}$ is the recombination of the state above $i$. All the coefficients depend on temperature, $\Gamma$ depends on the local radiation, and the electron density $n_e$ couples every element to every other.
+  </p>
+  <ul class="rz-steps">
+    <li><strong>Recombination:</strong> radiative and dielectronic rates mostly from Badnell (2006) and Badnell et al. (2003), with older fits for the low ionization states of the heavier elements. Suppression of dielectronic recombination at high density is not included. It matters above about $10^5\ {\rm cm^{-3}}$.</li>
+    <li><strong>Collisional ionization:</strong> the fits of Voronov (1997).</li>
+    <li><strong>Photoionization:</strong> cross sections of Verner et al. (1996), integrated over each photon group with the radiation transported by RAMSES-RT. Metals also absorb photons, so they act as sinks for the radiation.</li>
+    <li><strong>Charge exchange with hydrogen:</strong> mostly from Kingdon and Ferland (1996), with updated rates for low ionization states of oxygen (Stancil et al. 1999; Barragán et al. 2006). Exchanges with helium, and between metals, are left out, as is Auger ionization.</li>
+  </ul>
+  <p class="rz-p">
+    The fiducial network follows C, N, O, Ne, Mg, Si, S and Fe together with H, He and H₂, all non-equilibrium. Any other ion can be added. It can also be stopped below full ionization to save memory: the isolated galaxy of the paper keeps eight states of O, seven of N, and six each of C, Si, Mg, Fe, S and Ne. The paper recommends following at least two states above any ion of interest, so that its recombination from above is right.
+  </p>
+
+  <div class="rz-labbox">
+    <div class="rz-figtitle">A toy oxygen network starting from neutral gas <span class="rz-badge">interactive</span></div>
+    <div class="rz-ctlrow">
+      <div class="rz-seg" id="rz-cx" role="group" aria-label="Charge exchange"><button type="button" data-v="1" class="rz-seg-on">charge exchange on</button><button type="button" data-v="0">off</button></div>
+      <div class="rz-seg" id="rz-uv" role="group" aria-label="Radiation"><button type="button" data-v="1" class="rz-seg-on">radiation on</button><button type="button" data-v="0">off</button></div>
+    </div>
+    <div class="rz-slgrid">
+      <div class="rz-sl"><label>Hydrogen density: <output id="rz-o-n"></output></label><input type="range" id="rz-s-n" min="-3" max="2" step="0.05" value="-1"></div>
+      <div class="rz-sl"><label>Temperature: <output id="rz-o-T"></output></label><input type="range" id="rz-s-T" min="3.3" max="5.6" step="0.01" value="3.55"></div>
+      <div class="rz-sl"><label>H photoionization rate: <output id="rz-o-G"></output></label><input type="range" id="rz-s-G" min="-16" max="-11" step="0.05" value="-13.5"></div>
+    </div>
+    <div class="rz-scroll"><svg class="rz-svg" id="rz-ev" viewBox="0 0 900 380" role="img" aria-label="Ionization fractions of oxygen against time"></svg></div>
+    <div class="rz-out" id="rz-ev-out"></div>
+    <p class="rz-note2"><strong>Reading the figure.</strong> The solid lines are the fractions of oxygen in O I (grey), O II (sky), O III (pink) and O IV (amber), integrated with the fast solver of the next section from a fully neutral start at $t=0$; the time axis is logarithmic, so the plot begins at $10^{-4}$ Myr. The dotted lines are the equilibrium fractions. Hydrogen is held at its own equilibrium ionization, which sets the electron density. Collisional ionization uses the Voronov (1997) fits and the hydrogen recombination is case B. The oxygen recombination rates, the ratios of the oxygen to the hydrogen photoionization rates (1.5, 0.08 and 0.005 for O I, O II and O III, for a soft stellar spectrum) and the charge exchange rates are round values chosen to show the behavior, not the rates of the code. The chain stops at O IV. With the defaults, the gas is close to the charge exchange test of the paper ($n_{\rm H}=0.1\ {\rm cm^{-3}}$, $T\approx3500$ K, a $z=0$ UV background).</p>
+  </div>
+  <p class="rz-p">
+    Switch charge exchange off with the defaults, and O I drops while O II takes over. With it on, the reaction O + H⁺ ⇌ O⁺ + H is so fast and so nearly resonant (the two ionization energies differ by 0.02 eV) that it fixes $n({\rm O^+})/n({\rm O})\approx\tfrac{8}{9}\,n({\rm H^+})/n({\rm H})$: oxygen is exactly as ionized as hydrogen, whatever the radiation does to it directly (Field and Steigman 1971). The paper finds the same for N and Fe, and in its Strömgren sphere test the O I ionization front sits on top of the H I front for the same reason.
+  </p>
+  <p class="rz-punch">Without charge exchange, a code would put the oxygen of warm neutral gas in the wrong ionization state: the [O I] and [O II] lines would come from the wrong gas.</p>
+
+  <!-- ===================================================== 3. solvers -->
+  <h2 class="rz-h2" id="sec-solve">Solving it cheaply</h2>
+  <div class="rz-tldr"><span>In this section</span>Why the network is split from the temperature and the radiation, and the two solvers that integrate it: an accurate implicit one and a fast semi-implicit one.</div>
+  <p class="rz-p">
+    In principle the temperature, the photon densities and every ion should be integrated together and implicitly, since they all depend on each other. That is easy to write and slow to run, because the couplings force many small substeps. RAMSES-RTZ splits the problem instead. The temperature, the photon densities, H, H₂, He and the electrons are updated first, as in RAMSES-RT (Rosdahl et al. 2013; Katz et al. 2017). The metal ions are then integrated with those held fixed, with one of two interchangeable solvers.
+  </p>
+  <ul class="rz-steps">
+    <li><strong>Accurate:</strong> the implicit backward differentiation (BDF) method of DVODE, called for each element, with an analytic Jacobian. This is the reference.</li>
+    <li><strong>Fast:</strong> one semi-implicit pass from the ground state upward, as already used for hydrogen and helium in RAMSES-RT (after Anninos et al. 1997). Each fraction is updated with the creation term $C$ and destruction term $D$ of the equations above:</li>
+  </ul>
+  <div class="rz-eq">x_i^{t+\Delta t}=\frac{x_i^t+C\,\Delta t}{1+D\,\Delta t}</div>
+  <p class="rz-p">
+    The states below $i$ enter $C$ with their already updated values, and the states above with their old ones. The step is cut whenever any quantity would change by more than 10 per cent (the "10 per cent rule"). The toy figure above uses this scheme and reports how many substeps that rule needed. Because the radiation Courant condition keeps the simulation time step short (about $10^4$ yr in high-resolution cosmological runs), the rule is rarely triggered.
+  </p>
+  <p class="rz-p">
+    In the benchmarks of the paper, the two solvers reach the same ionization fractions, both along the way and at equilibrium. The fast one makes the whole run 4.5 times faster, and the chemistry alone 15 times faster. Memory is the remaining cost: following all the ions of the fiducial elements raises the number of quantities per cell from about 18 to more than 100.
+  </p>
+
+  <!-- ===================================================== 4. cooling -->
+  <h2 class="rz-h2" id="sec-cool">Cooling from the ions</h2>
+  <div class="rz-tldr"><span>In this section</span>How the cooling rate is computed from the ions the code follows, and why a two- or three-level atom is enough below the critical density.</div>
+  <p class="rz-p">
+    Once the ions are known, the cooling no longer needs to assume anything about how the gas got there (see the <a class="rz-link" href="/molecular-explorer/#sec-cooling">cooling function</a> on the companion page). Hydrogen and helium cool out of equilibrium, as in RAMSES-RT. Above $10^4$ K the metal cooling sums the ion-by-ion rates tabulated by Oppenheimer and Schaye (2013), weighted by the ions the code follows. Ions it does not follow are given their CIE abundance, rescaled so that each element adds up to one. At or below $10^4$ K, metal cooling comes from fine-structure lines and molecular hydrogen (Katz et al. 2017). The code computes these lines directly for O I, O II, O III, C I, C II, Si I, Si II, N II, Fe I, Fe II, S I and Ne II.
+  </p>
+  <p class="rz-p">
+    Two simplifications keep this cheap. The lines are assumed <strong>optically thin</strong>, which holds below roughly the critical density of each transition. And each ion is treated as a <strong>two- or three-level atom</strong>, so its level populations have a closed analytic solution instead of needing a linear solver. Collisions with electrons, H, H⁺ and H₂ excite the levels where data exist, and the cosmic microwave background can be included in the excitation. The figure below shows the two-level case.
+  </p>
+  <div class="rz-labbox">
+    <div class="rz-figtitle">Cooling per ion of a two-level atom against density <span class="rz-badge">interactive</span></div>
+    <div class="rz-chips" id="rz-lv-chips"></div>
+    <div class="rz-slgrid">
+      <div class="rz-sl"><label>Temperature: <output id="rz-o-lT"></output></label><input type="range" id="rz-s-lT" min="1.5" max="4.3" step="0.01" value="2"></div>
+      <div class="rz-sl"><label>Density of collision partners: <output id="rz-o-ln"></output></label><input type="range" id="rz-s-ln" min="-2" max="6" step="0.05" value="2"></div>
+    </div>
+    <div class="rz-scroll"><svg class="rz-svg" id="rz-lv" viewBox="0 0 900 360" role="img" aria-label="Cooling rate per ion of a two-level atom against the density of collision partners"></svg></div>
+    <div class="rz-out" id="rz-lv-out"></div>
+    <p class="rz-note2"><strong>Reading the figure.</strong> The solid line is the energy radiated per second per ion, $L=f_u\,A_{ul}\,h\nu$. The fraction in the upper level is $f_u=n\,q_{lu}/\big(n\,(q_{lu}+q_{ul})+A_{ul}\big)$, with de-excitation coefficient $q_{ul}$, excitation coefficient $q_{lu}=q_{ul}\,(g_u/g_l)\,e^{-h\nu/k_BT}$ and spontaneous decay rate $A_{ul}$. The dashed lines are the two limits. At low density every excitation gives a photon, so $L=n\,q_{lu}\,h\nu$. At high density the levels reach their Boltzmann ratio and $L$ no longer grows (LTE). They cross at the critical density $n_{\rm crit}=A_{ul}/q_{ul}$ (vertical line); the dot marks the chosen density. Atomic data: [C II] 158 µm with $A=2.3\times10^{-6}\ {\rm s^{-1}}$ and $h\nu/k_B=91.2$ K; [Ne II] 12.8 µm with $A=8.6\times10^{-3}\ {\rm s^{-1}}$ and $h\nu/k_B=1123$ K. The collision rates are the fits of Hollenbach and McKee (1989) for [C II], and an effective collision strength of 0.28 for [Ne II]; the collision data are written from memory and indicative.</p>
+  </div>
+  <p class="rz-punch">Below the critical density each collision makes a photon that escapes, so the cooling, and the line, follow directly from the ion abundance. That is why an accurate ion abundance is what matters most.</p>
+  <p class="rz-p">
+    The same level populations give the <strong>emission lines</strong>. A line not used for cooling, such as [O III] 5007 Å or the Balmer lines, is computed with PyNeb (Luridiana et al. 2015) from the ion abundance, the electron density and the temperature of each cell. No photoionization model is assumed.
+  </p>
+
+  <!-- ===================================================== 5. results -->
+  <h2 class="rz-h2" id="sec-res">What it changes</h2>
+  <div class="rz-tldr"><span>In this section</span>The tests against CLOUDY, what the ions look like in a simulated dwarf galaxy, and how much the line luminosities change when equilibrium is assumed instead.</div>
+  <p class="rz-p">
+    The code is tested against CLOUDY (Ferland et al. 2017) in static boxes, one physical process at a time: collisional ionization from $10^4$ to $10^8$ K, photoionization by the $z=0$ background of Haardt and Madau (2012) from $10^{-3}$ to $10^3\ {\rm cm^{-3}}$, both together, charge exchange, a Strömgren sphere with radiative transfer, and the collapse of a cloud at metallicities from $10^{-5}$ to 1 solar (after Omukai et al. 2005). In every case it reaches the equilibrium fractions of CLOUDY. The remaining differences come from different atomic data and, near the star, from resolution. In the Strömgren test, O IV reaches only about 20 per cent close to the source, where CLOUDY gives almost full ionization: cells of about 100 pc cannot resolve a region that CLOUDY resolves with zones of $10^{-2}$ pc.
+  </p>
+  <p class="rz-p">
+    Applied to an isolated dwarf galaxy (the G8 setup of Rosdahl et al. 2015, with a circular velocity of about 30 km/s, a metallicity of 0.13 solar and 18 pc resolution), the ions separate by where they live. O I sits in the dense disk with H I. O II fills the disk and the gas raining back onto it. O III sits in gas heated by supernovae, because few photons above 35 eV reach it. The ions are also out of equilibrium: highly ionized oxygen such as O VII and O VIII survives in gas at $10^{-1}\ {\rm cm^{-3}}$ and below $10^4$ K, because it cooled faster than it recombined (an <strong>ionization lag</strong>). With the ions, the electron density and the temperature known in every cell, the Hα, [O II] and [O III] luminosities follow directly. So do the ionization correction factors that observers apply to turn line ratios into abundances.
+  </p>
+  <div class="rz-labbox">
+    <div class="rz-figtitle">Luminosity of the galaxy disk at 200 Myr, by how the ions are computed <span class="rz-badge">click a line</span></div>
+    <div class="rz-chips" id="rz-tb-chips"></div>
+    <div class="rz-scroll"><svg class="rz-svg" id="rz-tb" viewBox="0 0 900 300" role="img" aria-label="Line luminosities of the simulated galaxy for different ionization models"></svg></div>
+    <p class="rz-note2"><strong>Reading the figure.</strong> Each bar is the luminosity of the selected line, $\log_{10}(L/{\rm erg\,s^{-1}})$, computed from the same snapshot with the ions taken from the non-equilibrium calculation (top) or from one of four equilibrium models. Each model uses the temperature of the simulation. A: collisional equilibrium for every element, as in a simulation with no radiation. B: equilibrium with the $z=0$ background and self-shielding, as with a background but no transfer. C: equilibrium of all species, including hydrogen, with the local radiation field of the simulation, as in post-processing a radiation-hydrodynamics run with CLOUDY. D: like C, but with the non-equilibrium H, He and electrons of the simulation. The factor on the right is the ratio to the non-equilibrium value. Values from Table 2 of Katz (2022).</p>
+  </div>
+  <p class="rz-p">
+    Most of the line emission comes from the Strömgren spheres around young stars, so models A and B, which ignore local radiation, underpredict [O III] 5007 Å by a factor of about 30. Adding the local radiation (C) fixes most of that but overpredicts [O II] about fourfold. Using the non-equilibrium hydrogen and electrons as well (D) gives the closest values, yet still falls short of [O III] by a factor of 1.7. A code run without non-equilibrium metals would also have had a different temperature, so the paper calls these differences a minimum.
+  </p>
+  <p class="rz-punch">Equilibrium chemistry with the local radiation gets line luminosities to within a factor of a few. Getting them right needs the ions to be followed in time.</p>
+
+  <!-- ===================================================== 6. caveats -->
+  <h2 class="rz-h2" id="sec-caveats">Caveats</h2>
+  <div class="rz-tldr"><span>In this section</span>What the model leaves out and where resolution limits it, as listed in the paper.</div>
+  <ul class="rz-steps">
+    <li><strong>Missing processes:</strong> Auger ionization, suppression of dielectronic recombination and charge exchange with helium. The model is not meant for dense shielded gas where dust and molecules such as CO dominate the cooling. That regime is the subject of the <a class="rz-link" href="/molecular-explorer/#ch-co">companion page</a>.</li>
+    <li><strong>Simple atoms:</strong> two- and three-level atoms are accurate at low temperature but not at $T\gtrsim10^4$ K, where the tabulated cooling is used instead.</li>
+    <li><strong>Resolution:</strong> unresolved Strömgren spheres miss the highly ionized gas next to the stars. This may be why the simulated galaxy sits below the SDSS galaxies in the [O III]/Hβ versus [N II]/Hα (BPT) diagram. Cells whose star should create a Strömgren sphere smaller than half a cell are given a temperature floor of $10^4$ K when the nebular lines are computed.</li>
+    <li><strong>Spectra:</strong> one luminosity-weighted cross section per group works when the sources are alike. With AGN and stars together, more groups or local cross sections are needed.</li>
+    <li><strong>Atomic data:</strong> rates are uncertain, extrapolated outside their range, or missing (many charge exchanges with helium). Different codes use different values, such as the hydrogen recombination of RAMSES-RT (Hui and Gnedin 1997) and of CLOUDY.</li>
+    <li><strong>Feedback:</strong> metals returned by supernovae and winds are given the ionization state of the gas they are injected into, so the ions right after an event are not reliable until the network has had time to respond.</li>
+  </ul>
+
+  <!-- ===================================================== references -->
+  <h2 class="rz-h2" id="sec-refs">References</h2>
+  <ul class="rz-refs">
+    <li class="rz-ref-group">The code</li>
+    <li>Katz H., 2022, MNRAS, 512, 348 (arXiv:2202.04083; journal reference cited from memory): RAMSES-RTZ: Non-equilibrium metal chemistry and cooling coupled to on-the-fly radiation hydrodynamics. The source of this page.</li>
+    <li>Teyssier R., 2002, A&amp;A, 385, 337; Rosdahl J. et al., 2013, MNRAS, 436, 2188; Rosdahl J., Teyssier R., 2015, MNRAS, 449, 4380 (RAMSES and RAMSES-RT).</li>
+    <li>Levermore C. D., 1984, J. Quant. Spectrosc. Radiat. Transfer, 31, 149 (M1 closure); Katz H. et al., 2017, MNRAS, 468, 4831 (variable speed of light, H₂); Kimm T. et al., 2017, MNRAS, 466, 4826 (photon groups).</li>
+    <li>Anninos P. et al., 1997, New Astron., 2, 209 (semi-implicit update).</li>
+    <li class="rz-ref-group">Atomic data</li>
+    <li>Badnell N. R., 2006, ApJS, 167, 334; Badnell N. R. et al., 2003, A&amp;A, 406, 1151 (recombination).</li>
+    <li>Voronov G. S., 1997, At. Data Nucl. Data Tables, 65, 1 (collisional ionization).</li>
+    <li>Verner D. A. et al., 1996, ApJ, 465, 487 (photoionization cross sections).</li>
+    <li>Kingdon J. B., Ferland G. J., 1996, ApJS, 106, 205; Stancil P. C. et al., 1999, A&amp;AS, 140, 225; Barragán P. et al., 2006, ApJ, 636, 544 (charge exchange). Field G. B., Steigman G., 1971, ApJ, 166, 59 (the locking of oxygen to hydrogen; cited from memory).</li>
+    <li>Hollenbach D., McKee C. F., 1989, ApJ, 342, 306 (fine-structure data); Oppenheimer B. D., Schaye J., 2013, MNRAS, 434, 1043 (ion-by-ion cooling).</li>
+    <li class="rz-ref-group">Equilibrium models and comparison</li>
+    <li>Gnat O., Sternberg A., 2007, ApJS, 168, 213; Wiersma R. P. C., Schaye J., Smith B. D., 2009, MNRAS, 393, 99.</li>
+    <li>Ferland G. J. et al., 2017, Rev. Mex. Astron. Astrofis., 53, 385 (CLOUDY); Haardt F., Madau P., 2012, ApJ, 746, 125; Omukai K. et al., 2005, ApJ, 626, 627; Luridiana V., Morisset C., Shaw R. A., 2015, A&amp;A, 573, A42 (PyNeb).</li>
+    <li>Rosdahl J. et al., 2015, MNRAS, 451, 34 (the G8 galaxy).</li>
+  </ul>
+</div>
+
+<style>
+  .rz-wrap * { font-style: normal; }
+  .rz-wrap em, .rz-wrap i { font-style: italic; }
+  .rz-wrap { width: 100%; max-width: 900px; margin: 0 auto; padding: 0 1rem 4rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; font-size: 1rem; line-height: 1.6; box-sizing: border-box; }
+  .rz-title { margin: 0 0 1rem; font-size: 2.2rem; font-weight: 700; line-height: 1.2; color: #e2e8f0; text-align: center; }
+  .rz-box { max-width: 760px; margin: 0 auto 2.5rem; padding: 1.1rem 1.4rem 0.5rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.75rem; background: rgba(148,163,184,0.1); }
+  .rz-box p { margin: 0 0 0.7rem; }
+  .rz-h2 { margin: 3rem 0 0.8rem; font-size: 1.7rem; font-weight: 700; line-height: 1.25; color: #e2e8f0; padding-bottom: 0.4rem; border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, #fb923c, #a78bfa, transparent) 1; scroll-margin-top: 90px; }
+  .rz-tldr { max-width: 760px; margin: 0.1rem 0 0.9rem; padding: 0.45rem 0.9rem; border: 1px solid rgba(148,163,184,0.22); border-left: 3px solid #38bdf8; border-radius: 0.5rem; background: rgba(56,189,248,0.07); font-size: 0.9rem; line-height: 1.45; }
+  .rz-tldr span { margin-right: 0.55rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #38bdf8; }
+  .rz-p { margin: 0 0 0.8rem; max-width: 760px; }
+  .rz-punch { max-width: 760px; margin: 0.4rem 0 1.2rem; padding: 0.5rem 0.9rem; border-left: 3px solid #fbbf24; background: rgba(251,191,36,0.07); border-radius: 0 0.5rem 0.5rem 0; font-weight: 700; color: #f1f5f9; }
+  .rz-steps { max-width: 760px; margin: 0.2rem 0 1rem; padding-left: 1.4rem; }
+  .rz-steps li { margin: 0.35rem 0; }
+  .rz-eq { margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
+  .rz-wrap .rz-eq .katex-display { margin: 0.4em 0; }
+  .rz-wrap .katex { color: inherit; }
+  .rz-link, .rz-xref { color: #fbbf24; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+  .rz-link:hover, .rz-xref:hover { text-decoration-style: solid; }
+  .rz-labbox { padding: 1rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); margin: 0.6rem 0 1rem; }
+  .rz-wrap .rz-figtitle { margin: 0 0 0.6rem; font-size: 0.95rem; font-style: italic; color: #94a3b8; }
+  .rz-badge { display: inline-block; padding: 0.05rem 0.55rem; border-radius: 999px; border: 1px solid rgba(251,191,36,0.55); color: #fbbf24; font-size: 0.78rem; font-style: normal; letter-spacing: 0.03em; vertical-align: 0.1em; }
+  .rz-note2 { margin: 0.5rem 0 0; font-size: 0.85rem; line-height: 1.5; color: #94a3b8; }
+  .rz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rz-svg { display: block; width: 100%; height: auto; min-width: 520px; }
+  .rz-svg text { font-family: 'STIX Two Text', serif; paint-order: stroke; stroke: #0b1220; stroke-width: 3px; stroke-linejoin: round; stroke-opacity: 0.85; }
+  .rz-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.6rem; }
+  .rz-chip { padding: 0.22rem 0.75rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #e2e8f0; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+  .rz-chip:hover { border-color: #fbbf24; }
+  .rz-chip.rz-on { border-color: #fbbf24; background: rgba(251,191,36,0.16); color: #fbbf24; font-weight: 700; }
+  .rz-ctlrow { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0 0 0.4rem; }
+  .rz-seg { display: inline-flex; border: 1px solid rgba(148,163,184,0.4); border-radius: 999px; overflow: hidden; }
+  .rz-seg button { padding: 0.3rem 0.9rem; border: 0; background: transparent; color: #cbd5e1; font-family: inherit; font-size: 0.88rem; cursor: pointer; }
+  .rz-seg button.rz-seg-on { background: rgba(251,191,36,0.2); color: #fbbf24; font-weight: 700; }
+  .rz-slgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.3rem 1.2rem; margin: 0.5rem 0 0.6rem; }
+  .rz-sl label { display: block; font-size: 0.9rem; }
+  .rz-sl output { color: #fbbf24; font-weight: 700; }
+  .rz-sl input[type=range] { width: 100%; accent-color: #fbbf24; margin: 0.1rem 0 0; }
+  .rz-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.35rem 1rem; margin: 0.6rem 0 0.2rem; font-size: 0.85rem; color: #94a3b8; }
+  .rz-out b { display: block; font-size: 1.02rem; color: #fbbf24; font-weight: 700; }
+  .rz-panel { margin-top: 0.7rem; padding: 0.8rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-left: 4px solid var(--c, #94a3b8); border-radius: 0.7rem; background: linear-gradient(180deg, rgba(30,41,59,0.6), rgba(15,23,42,0.4)); font-size: 0.93rem; }
+  .rz-panel ul { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+  .rz-panel li { margin: 0.15rem 0; }
+  .rz-refs { max-width: 760px; margin: 0.5rem 0 0; padding-left: 0; list-style: none; font-size: 0.9rem; line-height: 1.5; color: #94a3b8; }
+  .rz-refs li { margin: 0.25rem 0; padding-left: 1.2rem; text-indent: -1.2rem; }
+  .rz-refs li.rz-ref-group { padding-left: 0; text-indent: 0; margin: 1rem 0 0.2rem; font-weight: 700; color: #cbd5e1; font-size: 0.95rem; }
+  @keyframes rz-flash { 0% { background: rgba(251,191,36,0.28); } 100% { background: rgba(251,191,36,0); } }
+  .rz-flash { animation: rz-flash 1.6s ease-out; border-radius: 0.4rem; }
+  @media (max-width: 640px) { .rz-title { font-size: 1.8rem; } .rz-h2 { font-size: 1.45rem; } .rz-labbox { padding: 0.8rem 0.8rem; } }
+</style>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var wrap = document.querySelector('.rz-wrap');
+  var AXready = [];                     // figures drawn once KaTeX has loaded
+  function $(s) { return wrap.querySelector(s); }
+  function sv(tag, a, t) { var n = document.createElementNS(NS, tag); for (var k in a) n.setAttribute(k, a[k]); if (t !== undefined) n.textContent = t; return n; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function tex(s, d) { if (!window.katex) return s; try { return window.katex.renderToString(s, { throwOnError: false, displayMode: !!d }); } catch (e) { return s; } }
+  function mixed(s) { return s.replace(/\$([^$]+)\$/g, function (m, a) { return tex(a); }); }
+  function sci(v, d) {
+    if (!isFinite(v) || v === 0) return '0';
+    var e = Math.floor(Math.log10(Math.abs(v)) + 1e-9), m = v / Math.pow(10, e), ms = m.toFixed(d === undefined ? 1 : d);
+    if (parseFloat(ms) >= 10) { ms = (1).toFixed(d === undefined ? 1 : d); e += 1; }
+    return '$' + (parseFloat(ms) === 1 ? '' : ms + '\\times ') + '10^{' + e + '}$';
+  }
+  function chips(host, items, onPick, start) {
+    var bs = items.map(function (it, i) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'rz-chip' + (i === start ? ' rz-on' : ''); b.innerHTML = it.label;
+      b.addEventListener('click', function () { bs.forEach(function (x) { x.classList.remove('rz-on'); }); b.classList.add('rz-on'); onPick(i); });
+      host.appendChild(b); return b;
+    });
+  }
+  function seg(host, onPick) {
+    var bs = Array.prototype.slice.call(host.querySelectorAll('button'));
+    bs.forEach(function (b) { b.addEventListener('click', function () { bs.forEach(function (x) { x.classList.remove('rz-seg-on'); }); b.classList.add('rz-seg-on'); onPick(b.getAttribute('data-v')); }); });
+  }
+
+  // ---------------------------------------------------------------- 1. photon groups
+  (function () {
+    var svg = $('#rz-bins'), panel = $('#rz-bins-panel'), host = $('#rz-el-chips');
+    var EDGES = [0.1, 1.0, 5.6, 11.2, 13.6, 15.2, 24.59, 54.42, 500];
+    var NAMES = ['infrared', 'optical', 'Habing band (dust heating)', 'Lyman-Werner (H₂ dissociation)', 'H-ionizing', 'H₂-ionizing', 'He-ionizing', 'He⁺-ionizing'];
+    var BCOL = ['#7f1d1d', '#9a3412', '#a16207', '#4d7c0f', '#0e7490', '#1d4ed8', '#6d28d9', '#a21caf'];
+    var ROMAN = ['I', 'II', 'III', 'IV'];
+    var EL = [
+      { s: 'C', ie: [11.260, 24.383, 47.888], c: '#34d399' },
+      { s: 'N', ie: [14.534, 29.601, 47.445], c: '#38bdf8' },
+      { s: 'O', ie: [13.618, 35.121, 54.936], c: '#fb923c' },
+      { s: 'Ne', ie: [21.565, 40.963, 63.45], c: '#f472b6' },
+      { s: 'Mg', ie: [7.646, 15.035, 80.14], c: '#a3e635' },
+      { s: 'Si', ie: [8.152, 16.346, 33.493], c: '#fbbf24' },
+      { s: 'S', ie: [10.360, 23.338, 34.79], c: '#2dd4bf' },
+      { s: 'Fe', ie: [7.902, 16.199, 30.65], c: '#a78bfa' }
+    ];
+    var X0 = 50, X1 = 870, LMIN = -1, LMAX = Math.log10(500);
+    function X(E) { return X0 + (Math.log10(E) - LMIN) / (LMAX - LMIN) * (X1 - X0); }
+    var cur = 2;
+    function groupsAbove(E) { var g = []; for (var i = 0; i < 8; i++) if (EDGES[i + 1] > E) g.push(i + 1); return g; }
+    function draw() {
+      svg.innerHTML = '';
+      var Y0 = 70, Y1 = 150;
+      for (var i = 0; i < 8; i++) {
+        var a = X(EDGES[i]), b = X(EDGES[i + 1]);
+        svg.appendChild(sv('rect', { x: a, y: Y0, width: b - a, height: Y1 - Y0, fill: BCOL[i], 'fill-opacity': 0.35, stroke: BCOL[i], 'stroke-opacity': 0.9 }));
+        // numbers above, staggered where the groups are narrow
+        var cx = (a + b) / 2, lift = (i === 4 || i === 3) ? (i === 4 ? 26 : 8) : 8;
+        if (i === 4) svg.appendChild(sv('line', { x1: cx, y1: Y0, x2: cx, y2: Y0 - lift + 4, stroke: '#94a3b8', 'stroke-width': 1 }));
+        svg.appendChild(sv('text', { x: cx, y: Y0 - lift, fill: '#e2e8f0', 'font-size': 15, 'text-anchor': 'middle' }, String(i + 1)));
+      }
+      // axis
+      svg.appendChild(sv('line', { x1: X0, y1: Y1, x2: X1, y2: Y1, stroke: '#94a3b8' }));
+      [0.1, 1, 10, 100].forEach(function (E) {
+        svg.appendChild(sv('line', { x1: X(E), y1: Y1, x2: X(E), y2: Y1 + 5, stroke: '#94a3b8' }));
+        svg.appendChild(sv('text', { x: X(E), y: Y1 + 20, fill: '#94a3b8', 'font-size': 14, 'text-anchor': 'middle' }, (E < 1 ? E : E) + ' eV'));
+      });
+      svg.appendChild(sv('text', { x: X1, y: Y1 + 20, fill: '#94a3b8', 'font-size': 14, 'text-anchor': 'end' }, '500'));
+      // H, He thresholds
+      [[13.598, 'H'], [24.587, 'He'], [54.418, 'He⁺']].forEach(function (p) {
+        svg.appendChild(sv('line', { x1: X(p[0]), y1: Y0 - 2, x2: X(p[0]), y2: Y1 + 26, stroke: '#94a3b8', 'stroke-dasharray': '3 3' }));
+        svg.appendChild(sv('text', { x: X(p[0]), y: Y1 + 40, fill: '#94a3b8', 'font-size': 13, 'text-anchor': 'middle' }, p[1]));
+      });
+      // element thresholds
+      var el = EL[cur];
+      el.ie.forEach(function (E, k) {
+        var x = X(E), y = Y1 + 70 + k * 22;
+        svg.appendChild(sv('line', { x1: x, y1: Y0, x2: x, y2: y - 12, stroke: el.c, 'stroke-width': 2.2 }));
+        svg.appendChild(sv('circle', { cx: x, cy: Y0, r: 3.5, fill: el.c }));
+        svg.appendChild(sv('text', { x: x + (x > 700 ? -5 : 5), y: y, fill: el.c, 'font-size': 14, 'text-anchor': x > 700 ? 'end' : 'start' }, el.s + ' ' + ROMAN[k] + ' → ' + el.s + ' ' + ROMAN[k + 1] + ': ' + E.toFixed(1) + ' eV'));
+      });
+      svg.appendChild(sv('text', { x: X0, y: 24, fill: '#cbd5e1', 'font-size': 14 }, 'Photon groups of RAMSES-RT and the ionization energies of ' + el.s));
+      var html = '<ul>';
+      el.ie.forEach(function (E, k) {
+        var g = groupsAbove(E), what;
+        if (E < 13.598) what = 'photons that neutral hydrogen lets through can do it, so ' + el.s + ' ' + ROMAN[k + 1] + ' exists in H I gas exposed to far-UV light';
+        else if (E < 24.587) what = 'only photons that also ionize hydrogen: ' + el.s + ' ' + ROMAN[k + 1] + ' lives in H II regions';
+        else if (E < 54.418) what = 'only photons that also ionize helium: ' + el.s + ' ' + ROMAN[k + 1] + ' needs hot stars, or collisions in hot gas';
+        else what = 'only photons beyond the He⁺ edge, which normal stars hardly emit: ' + el.s + ' ' + ROMAN[k + 1] + ' comes mostly from collisions or hard sources such as AGN';
+        html += '<li><strong>' + el.s + ' ' + ROMAN[k] + ' → ' + el.s + ' ' + ROMAN[k + 1] + '</strong> (' + E.toFixed(2) + ' eV): ' + (g.length > 1 ? 'groups ' + g[0] + '–' + g[g.length - 1] : 'group ' + g[0]) + '; ' + what + '.</li>';
+      });
+      panel.style.setProperty('--c', el.c);
+      panel.innerHTML = html + '</ul>';
+    }
+    chips(host, EL.map(function (e) { return { label: e.s }; }), function (i) { cur = i; draw(); }, cur);
+    draw();
+  })();
+
+  // ---------------------------------------------------------------- 2. toy oxygen network
+  (function () {
+    var svg = $('#rz-ev'), out = $('#rz-ev-out');
+    var sN = $('#rz-s-n'), sT = $('#rz-s-T'), sG = $('#rz-s-G');
+    var cx = true, uv = true;
+    var EVK = 11604.5;
+    function voronov(dE, P, A, X, K, T) { var U = dE / (T / EVK); if (U > 80) return 0; return A * (1 + P * Math.sqrt(U)) / (X + U) * Math.pow(U, K) * Math.exp(-U); }
+    // collisional ionization (Voronov 1997): H, O I, O II, O III
+    function betaH(T) { return voronov(13.6, 0, 2.91e-8, 0.232, 0.39, T); }
+    var BO = [[13.6, 0, 3.59e-8, 0.073, 0.34], [35.1, 1, 1.39e-8, 0.212, 0.22], [54.9, 1, 9.31e-9, 0.270, 0.27]];
+    function alphaB(T) { return 2.59e-13 * Math.pow(T / 1e4, -0.7); }
+    var AO = [3.1e-13, 2.0e-12, 5.1e-12];       // recombination into O I, O II, O III at 1e4 K (illustrative)
+    var SO = [1.5, 0.08, 0.005];                 // Gamma(O I, O II, O III) / Gamma(H)
+    function hEq(n, T, G) {                      // equilibrium x = n(H+)/n(H), electrons from H only
+      var a = alphaB(T), b = betaH(T), lo = 0, hi = 1;
+      for (var k = 0; k < 60; k++) { var x = 0.5 * (lo + hi); var f = (1 - x) * (G + b * x * n) - a * x * x * n; if (f > 0) lo = x; else hi = x; }
+      return Math.max(0.5 * (lo + hi), 1e-6);
+    }
+    var COL = ['#cbd5e1', '#38bdf8', '#f472b6', '#fbbf24'], LAB = ['O I', 'O II', 'O III', 'O IV'];
+    var PX0 = 70, PX1 = 860, PY0 = 25, PY1 = 320, TL0 = -4, TL1 = 3;
+    function PX(lt) { return PX0 + (lt - TL0) / (TL1 - TL0) * (PX1 - PX0); }
+    function PY(f) { return PY1 - f * (PY1 - PY0); }
+    function run() {
+      var n = Math.pow(10, +sN.value), T = Math.pow(10, +sT.value), G = uv ? Math.pow(10, +sG.value) : 0;
+      $('#rz-o-n').innerHTML = mixed(sci(n, 0) + ' cm⁻³'); $('#rz-o-T').textContent = Math.round(T).toLocaleString('en-US') + ' K';
+      $('#rz-o-G').innerHTML = uv ? mixed(sci(G, 0) + ' s⁻¹') : 'off';
+      var xh = hEq(n, T, G), ne = xh * n, nH0 = (1 - xh) * n, nHp = xh * n;
+      // rates per ion: up U[i] (i -> i+1), down D[i] (i -> i-1)
+      var U = [], D = [0];
+      for (var i = 0; i < 3; i++) {
+        var u = voronov(BO[i][0], BO[i][1], BO[i][2], BO[i][3], BO[i][4], T) * ne + G * SO[i];
+        if (i === 0 && cx) u += 6e-10 * Math.pow(T / 1e4, 0.3) * (8 / 9) * Math.exp(-227 / T) * nHp;   // O + H+ -> O+ + H
+        U.push(u);
+      }
+      U.push(0);
+      var CXD = [6e-10, 1.0e-9, 1.5e-9];
+      for (var j = 1; j < 4; j++) {
+        var d = AO[j - 1] * Math.pow(T / 1e4, -0.7) * ne;
+        if (cx) d += (j === 1 ? CXD[0] * Math.pow(T / 1e4, 0.3) : CXD[j - 1]) * nH0;                   // O(j)+ + H -> O(j-1)+ + H+
+        D.push(d);
+      }
+      // equilibrium of the chain: zero net flux on every rung
+      var r = [1]; for (var k = 1; k < 4; k++) r.push(r[k - 1] * (D[k] > 0 ? U[k - 1] / D[k] : 1e30));
+      var s = r.reduce(function (a, b) { return a + b; }, 0), eq = r.map(function (v) { return v / s; });
+      // integrate with the fast semi-implicit scheme and the 10 per cent rule
+      // the first interval runs from t = 0 (all neutral) to the left edge of the plot
+      var x = [1, 0, 0, 0], MYR = 3.156e13, pts = [], subs = 0, tPrev = 0, NOUT = 280;
+      for (var p = 0; p <= NOUT; p++) {
+        var lt = TL0 + (TL1 - TL0) * p / NOUT, tNext = Math.pow(10, lt) * MYR;
+        var t = tPrev, dt = tNext - tPrev, guard = 0;
+        while (t < tNext - 1e-6 * dt && guard < 4000) {
+          guard++;
+          var h = Math.min(dt, tNext - t), y = x.slice();
+          for (var q = 0; q < 4; q++) {
+            var C = (q > 0 ? y[q - 1] * U[q - 1] : 0) + (q < 3 ? x[q + 1] * D[q + 1] : 0);
+            var De = U[q] + D[q];
+            y[q] = (x[q] + C * h) / (1 + De * h);
+          }
+          var tot = y[0] + y[1] + y[2] + y[3]; for (var m = 0; m < 4; m++) y[m] /= tot;
+          var big = false; for (var m2 = 0; m2 < 4; m2++) if (Math.abs(y[m2] - x[m2]) > 0.1 * Math.max(x[m2], 0.01)) big = true;
+          if (big && h > 1e-9 * MYR) { dt = h / 2; subs++; continue; }
+          x = y; t += h; dt = Math.min(dt * 1.5, tNext - tPrev);
+        }
+        tPrev = tNext; pts.push([lt, x.slice()]);
+      }
+      // draw
+      svg.innerHTML = '';
+      for (var gy = 0; gy <= 1.0001; gy += 0.2) {
+        svg.appendChild(sv('line', { x1: PX0, y1: PY(gy), x2: PX1, y2: PY(gy), stroke: 'rgba(148,163,184,0.12)' }));
+        svg.appendChild(sv('text', { x: PX0 - 8, y: PY(gy) + 5, fill: '#94a3b8', 'font-size': 14, 'text-anchor': 'end' }, gy.toFixed(1)));
+      }
+      for (var lt2 = TL0; lt2 <= TL1; lt2++) svg.appendChild(sv('text', { x: PX(lt2), y: PY1 + 22, fill: '#94a3b8', 'font-size': 14, 'text-anchor': 'middle' }, lt2 === 0 ? '1' : '10' + (lt2 < 0 ? '⁻' : '') + ['⁰', '¹', '²', '³', '⁴'][Math.abs(lt2)]));
+      svg.appendChild(sv('text', { x: (PX0 + PX1) / 2, y: PY1 + 50, fill: '#cbd5e1', 'font-size': 15, 'text-anchor': 'middle', 'font-style': 'italic' }, 'time since the start [Myr]'));
+      svg.appendChild(sv('text', { x: 18, y: (PY0 + PY1) / 2, fill: '#cbd5e1', 'font-size': 15, 'text-anchor': 'middle', 'font-style': 'italic', transform: 'rotate(-90 18 ' + (PY0 + PY1) / 2 + ')' }, 'ionization fraction'));
+      for (var ii = 0; ii < 4; ii++) {
+        svg.appendChild(sv('line', { x1: PX0, y1: PY(eq[ii]), x2: PX1, y2: PY(eq[ii]), stroke: COL[ii], 'stroke-dasharray': '2 5', 'stroke-width': 2, 'stroke-opacity': 0.8 }));
+        var d2 = pts.map(function (pp, k) { return (k ? 'L' : 'M') + PX(pp[0]).toFixed(1) + ' ' + PY(pp[1][ii]).toFixed(1); }).join(' ');
+        svg.appendChild(sv('path', { d: d2, fill: 'none', stroke: COL[ii], 'stroke-width': 2.6 }));
+        svg.appendChild(sv('text', { x: PX1 - 4 - (3 - ii) * 62, y: PY0 + 16, fill: COL[ii], 'font-size': 15, 'text-anchor': 'end' }, LAB[ii]));
+      }
+      var fin = pts[pts.length - 1][1];
+      out.innerHTML = mixed('<div>H ionized<b>' + (100 * xh).toFixed(xh < 0.01 ? 2 : 0) + '%</b></div>' +
+        '<div>O I at 1 Gyr<b>' + (100 * fin[0]).toFixed(0) + '%</b></div>' +
+        '<div>O II at 1 Gyr<b>' + (100 * fin[1]).toFixed(0) + '%</b></div>' +
+        '<div>O II/O I vs H⁺/H<b>' + (fin[0] > 1e-6 ? (fin[1] / fin[0]).toPrecision(2) : '∞') + ' vs ' + (xh / (1 - xh)).toPrecision(2) + '</b></div>' +
+        '<div>Substeps cut by the 10% rule<b>' + subs + '</b></div>');
+    }
+    [sN, sT, sG].forEach(function (s) { s.addEventListener('input', run); });
+    seg($('#rz-cx'), function (v) { cx = v === '1'; run(); });
+    seg($('#rz-uv'), function (v) { uv = v === '1'; sG.disabled = !uv; run(); });
+    AXready.push(run);
+  })();
+
+  // ---------------------------------------------------------------- 3. two-level atom
+  (function () {
+    var svg = $('#rz-lv'), out = $('#rz-lv-out'), host = $('#rz-lv-chips');
+    var sT = $('#rz-s-lT'), sn = $('#rz-s-ln');
+    var KB = 1.380649e-16;
+    var CASES = [
+      { label: '[C II] 158 µm, H atoms', A: 2.29e-6, Tul: 91.2, gl: 2, gu: 4, q: function (T) { return 8.0e-10 * Math.pow(T / 100, 0.07); }, T0: 2, who: 'H atoms', c: '#34d399' },
+      { label: '[C II] 158 µm, electrons', A: 2.29e-6, Tul: 91.2, gl: 2, gu: 4, q: function (T) { return 2.8e-7 * Math.pow(T / 100, -0.5); }, T0: 3.9, who: 'electrons', c: '#38bdf8' },
+      { label: '[Ne II] 12.8 µm, electrons', A: 8.59e-3, Tul: 1123, gl: 4, gu: 2, q: function (T) { return 8.629e-6 * 0.28 / (2 * Math.sqrt(T)); }, T0: 3.9, who: 'electrons', c: '#f472b6' }
+    ];
+    var cur = 0;
+    var X0 = 80, X1 = 860, Y0 = 20, Y1 = 300, LN0 = -2, LN1 = 6;
+    function X(l) { return X0 + (l - LN0) / (LN1 - LN0) * (X1 - X0); }
+    function draw() {
+      var c = CASES[cur], T = Math.pow(10, +sT.value), ln = +sn.value;
+      $('#rz-o-lT').textContent = Math.round(T).toLocaleString('en-US') + ' K';
+      $('#rz-o-ln').innerHTML = mixed(sci(Math.pow(10, ln), 0) + ' cm⁻³ (' + c.who + ')');
+      var qul = c.q(T), qlu = qul * c.gu / c.gl * Math.exp(-c.Tul / T), hnu = KB * c.Tul;
+      function L(n) { return n * qlu / (n * (qlu + qul) + c.A) * c.A * hnu; }
+      var lte = qlu / (qlu + qul) * c.A * hnu, ncrit = c.A / qul;
+      var ys = [], k, lmax = Math.log10(lte) + 0.6, lmin = Math.log10(L(Math.pow(10, LN0))) - 0.4;
+      function Y(v) { return Y1 - (Math.log10(v) - lmin) / (lmax - lmin) * (Y1 - Y0); }
+      svg.innerHTML = '';
+      for (var e = Math.ceil(lmin); e <= Math.floor(lmax); e++) {
+        svg.appendChild(sv('line', { x1: X0, y1: Y(Math.pow(10, e)), x2: X1, y2: Y(Math.pow(10, e)), stroke: 'rgba(148,163,184,0.12)' }));
+        svg.appendChild(sv('text', { x: X0 - 8, y: Y(Math.pow(10, e)) + 5, fill: '#94a3b8', 'font-size': 13, 'text-anchor': 'end' }, '10' + String(e).replace('-', '⁻').replace(/[0-9]/g, function (d) { return '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]; })));
+      }
+      for (var l = LN0; l <= LN1; l += 2) svg.appendChild(sv('text', { x: X(l), y: Y1 + 22, fill: '#94a3b8', 'font-size': 14, 'text-anchor': 'middle' }, '10' + String(l).replace('-', '⁻').replace(/[0-9]/g, function (d) { return '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]; })));
+      svg.appendChild(sv('text', { x: (X0 + X1) / 2, y: Y1 + 48, fill: '#cbd5e1', 'font-size': 15, 'text-anchor': 'middle', 'font-style': 'italic' }, 'density of ' + c.who + ' [cm⁻³]'));
+      svg.appendChild(sv('text', { x: 16, y: (Y0 + Y1) / 2, fill: '#cbd5e1', 'font-size': 15, 'text-anchor': 'middle', 'font-style': 'italic', transform: 'rotate(-90 16 ' + (Y0 + Y1) / 2 + ')' }, 'energy radiated per ion [erg/s]'));
+      // limits
+      var lowD = 'M' + X(LN0) + ' ' + Y(Math.pow(10, LN0) * qlu * hnu) + ' L' + X(Math.log10(lte / (qlu * hnu))) + ' ' + Y(lte);
+      svg.appendChild(sv('path', { d: lowD, stroke: '#94a3b8', 'stroke-dasharray': '5 5', fill: 'none' }));
+      svg.appendChild(sv('line', { x1: X(Math.log10(ncrit) - 1.2), y1: Y(lte), x2: X1, y2: Y(lte), stroke: '#94a3b8', 'stroke-dasharray': '5 5' }));
+      svg.appendChild(sv('text', { x: X1 - 4, y: Y(lte) - 8, fill: '#94a3b8', 'font-size': 13, 'text-anchor': 'end' }, 'LTE: levels in Boltzmann ratio'));
+      if (Math.log10(ncrit) > LN0 && Math.log10(ncrit) < LN1) {
+        svg.appendChild(sv('line', { x1: X(Math.log10(ncrit)), y1: Y0, x2: X(Math.log10(ncrit)), y2: Y1, stroke: '#fbbf24', 'stroke-dasharray': '3 4' }));
+        svg.appendChild(sv('text', { x: X(Math.log10(ncrit)) + 6, y: Y1 - 8, fill: '#fbbf24', 'font-size': 13 }, 'critical density'));
+      }
+      var d = ''; for (k = 0; k <= 200; k++) { var ll = LN0 + (LN1 - LN0) * k / 200; d += (k ? 'L' : 'M') + X(ll).toFixed(1) + ' ' + Y(L(Math.pow(10, ll))).toFixed(1); }
+      svg.appendChild(sv('path', { d: d, stroke: c.c, 'stroke-width': 2.8, fill: 'none' }));
+      var nn = Math.pow(10, ln);
+      svg.appendChild(sv('circle', { cx: X(ln), cy: Y(L(nn)), r: 6, fill: c.c, stroke: '#0b1220', 'stroke-width': 2 }));
+      var fu = nn * qlu / (nn * (qlu + qul) + c.A);
+      out.innerHTML = mixed('<div>Critical density<b>' + sci(ncrit, 1) + ' cm⁻³</b></div>' +
+        '<div>Fraction in upper level<b>' + (fu < 0.001 ? sci(fu, 1) : fu.toPrecision(2)) + '</b></div>' +
+        '<div>Photons per excitation<b>' + (c.A / (c.A + nn * qul) * 100).toPrecision(2) + '%</b></div>' +
+        '<div>Energy per ion<b>' + sci(L(nn), 1) + ' erg/s</b></div>');
+    }
+    chips(host, CASES, function (i) { cur = i; sT.value = CASES[i].T0; sn.value = CASES[i].who === 'electrons' ? 1 : 2; draw(); }, 0);
+    [sT, sn].forEach(function (s) { s.addEventListener('input', draw); });
+    AXready.push(draw);
+  })();
+
+  // ---------------------------------------------------------------- 4. Table 2
+  (function () {
+    var svg = $('#rz-tb'), host = $('#rz-tb-chips');
+    var LINES = ['[O II] 3726 Å', '[O II] 3728 Å', '[O III] 5007 Å'];
+    var MOD = [
+      ['Non-equilibrium', [38.28, 38.43, 38.96], '#fbbf24'],
+      ['A: collisional equilibrium', [37.95, 38.12, 37.45], '#94a3b8'],
+      ['B: + UV background', [37.94, 38.11, 37.45], '#94a3b8'],
+      ['C: + local radiation', [38.87, 38.97, 38.81], '#38bdf8'],
+      ['D: C + non-eq. H, e⁻', [38.21, 38.35, 38.74], '#34d399']
+    ];
+    var cur = 2, LMIN = 37, LMAX = 39.2, X0 = 250, X1 = 790;
+    function X(v) { return X0 + (v - LMIN) / (LMAX - LMIN) * (X1 - X0); }
+    function draw() {
+      svg.innerHTML = '';
+      for (var v = 37; v <= 39; v += 0.5) {
+        svg.appendChild(sv('line', { x1: X(v), y1: 20, x2: X(v), y2: 262, stroke: 'rgba(148,163,184,0.12)' }));
+        svg.appendChild(sv('text', { x: X(v), y: 284, fill: '#94a3b8', 'font-size': 14, 'text-anchor': 'middle' }, v.toFixed(1)));
+      }
+      var ref = MOD[0][1][cur];
+      MOD.forEach(function (m, i) {
+        var y = 28 + i * 47, val = m[1][cur], ratio = Math.pow(10, val - ref);
+        svg.appendChild(sv('text', { x: X0 - 12, y: y + 20, fill: i ? '#cbd5e1' : '#fbbf24', 'font-size': 15, 'text-anchor': 'end', 'font-weight': i ? 400 : 700 }, m[0]));
+        svg.appendChild(sv('rect', { x: X0, y: y + 4, width: X(val) - X0, height: 24, rx: 4, fill: m[2], 'fill-opacity': i ? 0.55 : 0.85 }));
+        svg.appendChild(sv('text', { x: X(val) + 8, y: y + 21, fill: '#e2e8f0', 'font-size': 14 }, val.toFixed(2)));
+        if (i) svg.appendChild(sv('text', { x: 880, y: y + 21, fill: ratio < 0.5 || ratio > 2 ? '#f472b6' : '#94a3b8', 'font-size': 14, 'text-anchor': 'end' }, '×' + (ratio < 0.1 ? ratio.toFixed(3) : ratio.toFixed(2))));
+      });
+      svg.appendChild(sv('line', { x1: X(ref), y1: 20, x2: X(ref), y2: 262, stroke: '#fbbf24', 'stroke-dasharray': '4 4' }));
+    }
+    chips(host, LINES.map(function (l) { return { label: l }; }), function (i) { cur = i; draw(); }, cur);
+    draw();
+  })();
+
+  // ---------------------------------------------------------------- cross-references and maths
+  wrap.addEventListener('click', function (e) {
+    var a = e.target.closest('.rz-xref'); if (!a) return;
+    var t = document.getElementById(a.getAttribute('data-go')); if (!t) return;
+    t.scrollIntoView({ behavior: 'smooth', block: 'start' }); t.classList.remove('rz-flash'); void t.offsetWidth; t.classList.add('rz-flash');
+  });
+  function renderTextMath(root) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) {
+      if (!n.nodeValue || n.nodeValue.indexOf('$') < 0) return NodeFilter.FILTER_REJECT;
+      var p = n.parentNode; if (p.closest && p.closest('svg, script, style, .katex, .rz-eq')) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT; } });
+    var ns = []; while (w.nextNode()) ns.push(w.currentNode);
+    ns.forEach(function (n) {
+      var parts = n.nodeValue.split(/\$([^$]+)\$/); if (parts.length < 3) return;
+      var f = document.createDocumentFragment();
+      parts.forEach(function (s, i) { if (i % 2 === 0) { if (s) f.appendChild(document.createTextNode(s)); } else { var sp = document.createElement('span'); sp.innerHTML = tex(s); f.appendChild(sp); } });
+      n.parentNode.replaceChild(f, n);
+    });
+  }
+  function renderAll(k) {
+    if (!window.katex) { if ((k || 0) < 40) setTimeout(function () { renderAll((k || 0) + 1); }, 100); else AXready.forEach(function (f) { f(); }); return; }
+    Array.prototype.forEach.call(wrap.querySelectorAll('.rz-eq'), function (e) { try { window.katex.render(e.textContent, e, { throwOnError: false, displayMode: true }); } catch (x) {} });
+    renderTextMath(wrap);
+    AXready.forEach(function (f) { f(); });
+  }
+  renderAll(0);
+})();
+</script>

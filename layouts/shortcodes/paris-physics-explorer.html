@@ -1,0 +1,1454 @@
+<!--
+  Paris and its physics, 1200-2026: a history-of-science explorer on the University of Paris
+  and the institutions around it, seen by a physicist. Vanilla JS + inline SVG; Leaflet from a CDN
+  and OpenStreetMap tiles for the map (darkened with a CSS filter).
+  Hugo parses this file as a template: never write a double opening curly brace in it.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<div class="hp-wrap">
+
+  <div class="hp-kicker">History of science</div>
+  <h1 class="hp-title">Paris and its physics, 1200–2026</h1>
+  <div class="hp-box">
+    <p>
+      The University of Paris is one of the oldest universities in the world, yet for most of its history it was <strong>not</strong> where Parisian physics was done. Physics happened in a crowd of institutions around it: the Collège de France, the Académie des sciences and the Observatoire under the kings; the grandes écoles after the Revolution; the Institut du Radium, the CNRS and the CEA in the twentieth century; and, since the 1960s, joint laboratories that belong to several bodies at once. The university itself was abolished in 1793, rebuilt in 1896, split into thirteen in 1970, and has been reassembled into a few large universities since 2018.
+    </p>
+    <p>
+      This page follows that story from a physicist’s point of view, with an emphasis on astrophysics, nuclear and particle physics, and cosmic rays. Its centerpiece is an <strong>atlas</strong>: a timeline of about seventy institutions, laboratories and machines, linked to a map that you can play forward in time. Every chapter opens with a short box that says where it is going, and a <i class="hp-map-live" style="font-style:normal">✦</i> marks an interactive figure.
+    </p>
+    <p>
+      A bar on the timeline runs from a founding to a closure or a merger. Many institutions changed name, status and address several times, so a single bar simplifies, and the entry for each one says what it hides. Dates marked “c.” are approximate, map positions are good to a few hundred meters, and the references say which claims were checked and which were written from memory.
+    </p>
+  </div>
+
+  <!-- ========================= the atlas ========================= -->
+  <h2 class="hp-h2" id="sec-atlas" data-map="spot">The atlas: institutions in time and space</h2>
+  <div class="hp-tldr"><span>In this section</span>Every institution on this page on one timeline, from the medieval university to the 2020 mergers, linked to a map of where each one stood in any given year. Pick a field to see only its institutions, drag the year, or press play to watch physics move across the Paris region.</div>
+  <p class="hp-lead">Click a bar or a map marker to read its story; click a diamond for a discovery or a milestone. The gold line on the timeline is the year shown on the map. Drag it along the time axis, or use the slider under the timeline.</p>
+
+  <div class="hp-labbox" id="hp-atlas">
+    <div class="hp-figtitle">Paris physics, 1200–2026 <span class="hp-badge">interactive</span></div>
+    <div class="hp-ctl-row">
+      <span class="hp-ctl-lab">Field</span>
+      <div class="hp-chips" id="hp-fields"></div>
+    </div>
+    <div class="hp-ctl-row">
+      <span class="hp-ctl-lab">Period</span>
+      <div class="hp-seg" id="hp-views">
+        <button type="button" data-v="all" class="hp-seg-on">1150–2026</button><button type="button" data-v="modern">1780–2026</button><button type="button" data-v="c20">1890–2026</button><button type="button" data-v="post">1940–2026</button>
+      </div>
+      <label class="hp-check"><input type="checkbox" id="hp-keepgen" checked> keep universities and schools when filtering</label>
+    </div>
+    <div class="hp-legend" id="hp-legend"></div>
+    <div class="hp-tl-scroll" id="hp-tl-scroll"><svg class="hp-svg" id="hp-tl" role="img" aria-label="Timeline of the physics institutions of Paris"></svg></div>
+    <div class="hp-tip" id="hp-tip"></div>
+
+    <div class="hp-yearbar">
+      <button type="button" class="hp-play" id="hp-play" aria-label="Play the map forward in time">▶</button>
+      <div class="hp-year-big" id="hp-year-big">1938</div>
+      <input type="range" id="hp-year" min="0" max="1000" step="1" aria-label="Year shown on the map">
+    </div>
+    <div class="hp-ctl-row hp-ctl-row--map">
+      <span class="hp-ctl-lab">Map</span>
+      <div class="hp-seg hp-seg--sm" id="hp-mviews">
+        <button type="button" data-m="latin">Latin Quarter</button><button type="button" data-m="paris">Paris</button><button type="button" data-m="idf" class="hp-seg-on">Paris region</button><button type="button" data-m="saclay">Saclay plateau</button><button type="button" data-m="france">France</button>
+      </div>
+      <label class="hp-check"><input type="checkbox" id="hp-ghost" checked> closed institutions</label>
+      <label class="hp-check"><input type="checkbox" id="hp-trails"> moves</label>
+      <label class="hp-check"><input type="checkbox" id="hp-cog" checked> center of gravity</label>
+    </div>
+    <div class="hp-out" id="hp-out"></div>
+    <div class="hp-atlas-grid">
+      <div class="hp-mapwrap"><div class="hp-leaf" id="hp-leaf"></div><div class="hp-leaf-msg" id="hp-leaf-msg">Loading the map…</div></div>
+      <div class="hp-panel" id="hp-panel"></div>
+    </div>
+    <p class="hp-note2"><strong>Reading the atlas.</strong> Bar colors give the kind of institution (legend above). A bar that reaches the right edge is still active; a dashed connector joins an institution to what it became (a merger, a split, a spin-off, or an heir after a gap). A small white tick on a bar marks a move to a new site, and the map follows it. On the map, filled disks are the institutions active in the chosen year, hollow gray rings those already closed, and the gold path traces the <em>center of gravity</em>: the mean position of the active institutions of the chosen field in the Paris region (Nançay is left out). Coordinates are approximate.</p>
+  </div>
+  <div class="hp-pit"><b>The punchline.</b> Press play from 1900 and watch Parisian physics leave the Latin Quarter. The center of gravity of the institutions on this page is about 1 km from the Sorbonne in 1900, 4 km away in 1956, and about 9 km to the south-west by 1980, where it has stayed. Pick nuclear or particle physics and untick the universities and schools: the shift reaches about 11 km, because every new accelerator or reactor needed land and shielding. The Paris-Saclay project of the 2010s gathered physics on the plateau without moving the center further, since the Paris institutions stayed and new ones opened at Paris Rive Gauche. (This counts institutions, not people or budgets.)</div>
+
+  <nav class="hp-map" id="hp-map" aria-label="Map of this page"></nav>
+
+  <!-- ========================= 1. Middle Ages ========================= -->
+  <h2 class="hp-h2" id="ch-med">A medieval university, and physics outside it (1200–1793)</h2>
+  <div class="hp-tldr"><span>In this chapter</span>What “physics” meant in a medieval faculty of arts, the Parisian masters who asked modern questions about motion, and why the physics of the Scientific Revolution in Paris was done at royal institutions rather than at the university.</div>
+
+  <h3 class="hp-h3" id="sec-arts">Natural philosophy in the faculty of arts</h3>
+  <div class="hp-tldr"><span>In this section</span>The university as a guild of masters, Aristotle as the syllabus, the condemnation of 1277, and Buridan’s and Oresme’s ideas about motion.</div>
+  <p class="hp-p">
+    The <a class="hp-go" data-id="univ-med">University of Paris</a> was not founded on a given day. It grew, in the late twelfth century, out of the schools of Notre-Dame and of the Left Bank, as a guild (<em>universitas</em>) of masters and students that obtained a royal privilege in 1200, statutes in 1215 and its autonomy from the bishop through the papal bull <em>Parens scientiarum</em> of 1231. It had four faculties: arts, theology, canon law and medicine. Students lived in colleges, among them the <a class="hp-go" data-id="sorbonne-col">Collège de Sorbonne</a> (1257), whose name came to stand for the whole university, and the <a class="hp-go" data-id="navarre">Collège de Navarre</a> (1305).
+  </p>
+  <p class="hp-p">
+    “Physics” was the <strong>natural philosophy</strong> of Aristotle, read in the faculty of arts from his <em>Physics</em> and <em>On the Heavens</em>. It was taught through commentaries and disputed questions, without measurements and without laboratories. In 1277 the bishop of Paris, Étienne Tempier, condemned 219 propositions, several of which limited what God could do, such as the claim that God could not move the outermost heavens in a straight line because that would leave a vacuum. Pierre Duhem argued in the early twentieth century that this condemnation set natural philosophy free and marked the birth of modern science. Most historians now find that overstated, but it did make it legitimate to reason about a vacuum and about other worlds as hypotheses.
+  </p>
+  <p class="hp-p">
+    The fourteenth-century Parisian masters then asked questions that look strikingly modern. <strong>Jean Buridan</strong>, twice rector of the university, explained why a thrown stone keeps moving: the thrower gives it an <em>impetus</em>, proportional to its quantity of matter and its speed, which lasts until air resistance and weight wear it down. With no resistance in the heavens, the impetus given at the Creation could keep the spheres turning forever, with no need for angels to push them. Impetus is not momentum, but it is the closest medieval idea to it. <strong>Nicole Oresme</strong>, grand master of the Collège de Navarre, drew the intensity of a quality against time as a figure, which let him show geometrically that a uniformly accelerated body covers the same distance as one moving at its mean speed. In his <em>Livre du ciel et du monde</em> (1377), written in French for Charles V, he argued that no observation or reason can prove that the Earth does not turn daily on its axis, before concluding, as was expected, that it does not.
+  </p>
+  <div class="hp-pit"><b>The punchline.</b> The Parisian masters of the fourteenth century asked modern questions about motion, but in a faculty with no instruments and a fixed syllabus. Physics remained a branch of philosophy at the university for three more centuries.</div>
+
+  <h3 class="hp-h3" id="sec-royal">The royal institutions take over (1530–1793)</h3>
+  <div class="hp-tldr"><span>In this section</span>The Collège royal, the Jardin du roi, the Académie and the Observatoire: where the physics of the seventeenth and eighteenth centuries was actually done in Paris, up to the Revolution.</div>
+  <p class="hp-p">
+    The kings did not reform the university. They built around it. François I created the <strong>lecteurs royaux</strong> in 1530, the future <a class="hp-go" data-id="cdf">Collège de France</a>: free public lectures, in subjects the university ignored, with no exams and no degrees. Louis XIII founded the <a class="hp-go" data-id="jardin">Jardin du roi</a> in 1635. Colbert then created the <a class="hp-go" data-id="acad">Académie royale des sciences</a> in 1666, with paid academicians and a budget for experiments, and the <a class="hp-go" data-id="obs">Observatoire</a> in 1667, run for four generations by the Cassini family.
+  </p>
+  <p class="hp-p">
+    The Observatory produced the first great result in Parisian physics. In 1676 Ole Rømer, working there, noticed that the eclipses of Jupiter’s moon Io came later when the Earth moved away from Jupiter and earlier when it moved closer, and he predicted that an eclipse in November 1676 would be about ten minutes late. The delay is the time light takes to cross the extra distance: <strong>light has a finite speed</strong>. Combined with the size of the Earth’s orbit, Rømer’s estimate gave Huygens about 220,000 km/s. The Observatory also defined the Paris meridian, surveyed France, and supplied the measurement of the meridian arc from Dunkirk to Barcelona (1792–1798) on which the metre was based. That work later led to the international bureau of weights and measures, the <a class="hp-go" data-id="bipm">BIPM</a> at Sèvres.
+  </p>
+  <p class="hp-p">
+    The Revolution swept all of this away. The Convention abolished the academies in August 1793 and the universities in September 1793. The Académie came back in 1795 as a class of the new Institut national, but the University of Paris did not.
+  </p>
+  <div class="hp-pit"><b>The punchline.</b> By 1793 the university that had made Paris famous had played almost no part in the Scientific Revolution: the physics of the Enlightenment was made at the Académie and the Observatoire.</div>
+
+  <!-- ========================= 2. Nineteenth century ========================= -->
+  <h2 class="hp-h2" id="ch-xix">Schools, a faculty and the age of light (1794–1895)</h2>
+  <div class="hp-tldr"><span>In this chapter</span>The grandes écoles founded by the Revolution, a faculty of sciences built for teaching, a century of discoveries in optics, heat and electromagnetism, and the birth of astrophysics at Meudon.</div>
+
+  <h3 class="hp-h3" id="sec-ecoles">The grandes écoles and the faculty of sciences</h3>
+  <div class="hp-tldr"><span>In this section</span>Why France ended up with two parallel higher-education systems, and what that meant for where research was done.</div>
+  <p class="hp-p">
+    The Revolution needed engineers, officers and teachers fast, and it created schools rather than a university. The <a class="hp-go" data-id="x">École polytechnique</a> (1794) trained engineers for the state, with Monge, Lagrange and Fourier among its teachers; it moved in 1805 into the buildings of the old Collège de Navarre on the Montagne Sainte-Geneviève. The <a class="hp-go" data-id="ens">École normale supérieure</a> (first opened in 1795, refounded in 1808, rue d’Ulm from 1847) trained teachers, and the <a class="hp-go" data-id="cnam">Conservatoire des arts et métiers</a> (1794) kept machines and instruments. Napoleon then organized an Imperial University in 1808, in which the <a class="hp-go" data-id="fac-sci">Faculté des sciences de Paris</a>, with Biot and Gay-Lussac among its professors, granted degrees and taught, but had almost no budget for research.
+  </p>
+  <p class="hp-p">
+    This produced a lasting split. The schools selected and trained the elite; the faculties examined; and research was done wherever a professor could find a laboratory, often in several institutions at once. A physicist could teach at Polytechnique, hold a chair at the Collège de France, sit at the Académie and work at the Observatory.
+  </p>
+
+  <h3 class="hp-h3" id="sec-light">A century of optics, heat and electromagnetism</h3>
+  <div class="hp-tldr"><span>In this section</span>A table of the main Parisian results of the nineteenth century and where they were made. Click a row to find it in the atlas.</div>
+  <div class="hp-table-wrap">
+    <table class="hp-table hp-table--click">
+      <thead><tr><th>Year</th><th>Who</th><th>What</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr data-id="acad" data-y="1819"><td>1819</td><td>Augustin Fresnel</td><td>Wave theory of diffraction wins the Académie prize; Poisson’s objection that it predicts a bright spot behind a disk is checked by Arago, and the spot is there.</td><td>Académie des sciences</td></tr>
+        <tr data-id="acad" data-y="1820"><td>1820</td><td>André-Marie Ampère</td><td>Weeks after Ørsted’s discovery, the forces between electric currents: electrodynamics.</td><td>Académie; Polytechnique</td></tr>
+        <tr data-id="acad" data-y="1822"><td>1822</td><td>Joseph Fourier</td><td><em>Théorie analytique de la chaleur</em>: heat diffusion, and Fourier series.</td><td>Académie</td></tr>
+        <tr data-id="x" data-y="1824"><td>1824</td><td>Sadi Carnot</td><td><em>Réflexions sur la puissance motrice du feu</em>: the efficiency of heat engines is limited by the two temperatures.</td><td>A Polytechnique graduate</td></tr>
+        <tr data-id="acad" data-y="1846"><td>1846</td><td>Urbain Le Verrier</td><td>Predicts the position of an unseen planet from the irregularities of Uranus; Neptune is found within a degree of it.</td><td>Académie; later director of the Observatoire</td></tr>
+        <tr data-id="exp" data-y="1849"><td>1849</td><td>Hippolyte Fizeau</td><td>The speed of light on Earth, with a toothed wheel and a mirror 8.6 km apart, between Suresnes and Montmartre.</td><td>Suresnes</td></tr>
+        <tr data-id="exp" data-y="1851"><td>1851</td><td>Léon Foucault</td><td>The pendulum that shows the rotation of the Earth, at the Observatoire and then under the dome of the Panthéon.</td><td>Panthéon</td></tr>
+        <tr data-id="obs" data-y="1862"><td>1862</td><td>Léon Foucault</td><td>The speed of light with a rotating mirror, about 298,000 km/s.</td><td>Observatoire</td></tr>
+        <tr data-id="fac-sci" data-y="1891"><td>1891</td><td>Gabriel Lippmann</td><td>Color photography by interference (Nobel Prize 1908).</td><td>Faculté des sciences (Sorbonne)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="hp-pit"><b>The punchline.</b> Nineteenth-century Paris led the world in optics, heat and electromagnetism, but the work was done by individuals holding several posts at once, not by the university as an institution.</div>
+
+  <h3 class="hp-h3" id="sec-meudon">Astronomy splits in two, and the university returns</h3>
+  <div class="hp-tldr"><span>In this section</span>Positional astronomy at the Observatoire, physical astronomy at Meudon, and the re-creation of the University of Paris in 1896.</div>
+  <p class="hp-p">
+    The Paris Observatory under Le Verrier remained devoted to positions and orbits, and from 1887 it hosted the international <em>Carte du Ciel</em>, a photographic map of the whole sky. The new physical astronomy, which uses spectroscopy and photography to ask what stars and the Sun are made of, found its home elsewhere: in 1876 Jules Janssen founded the <a class="hp-go" data-id="meudon">observatory of Meudon</a>, on the hill south-west of Paris, after observing the solar prominences spectroscopically during the eclipse of 1868. Meudon was joined to the Paris Observatory in 1926. There, in 1930, Bernard Lyot built the <strong>coronagraph</strong>, which hides the disk of the Sun to observe its corona without an eclipse.
+  </p>
+  <p class="hp-p">
+    Meanwhile the state rebuilt the university. The law of 1896 regrouped the Paris faculties into a <a class="hp-go" data-id="univ-1896">University of Paris</a> again, and the new Sorbonne (1885–1901) gave the Faculté des sciences laboratories at last. It was in Lippmann’s laboratory there that Maria Skłodowska started her research in 1894.
+  </p>
+
+  <!-- ========================= 3. Radioactivity ========================= -->
+  <h2 class="hp-h2" id="ch-radio">Radioactivity in the Latin Quarter (1896–1939)</h2>
+  <div class="hp-tldr"><span>In this chapter</span>Forty years in which a few streets of the Latin Quarter discovered radioactivity, artificial radioactivity and the neutron chain reaction, confirmed atoms, proposed matter waves and found cosmic-ray air showers, while France built a national research system.</div>
+
+  <h3 class="hp-h3" id="sec-curie">Within a kilometer and a half of the Panthéon</h3>
+  <div class="hp-tldr"><span>In this section</span>From Becquerel’s plates to the Institut du Radium, and how close together it all happened.</div>
+  <p class="hp-p">
+    In February and March 1896 Henri Becquerel, who held the physics chair of the <a class="hp-go" data-id="jardin">Muséum</a> after his father and grandfather, found that uranium salts fog a photographic plate with no sunlight at all: a new, spontaneous radiation. Two years later Marie and Pierre Curie, working in a shed of the <a class="hp-go" data-id="espci">École de physique et chimie</a> (ESPCI), where Pierre taught, measured the ionization produced by minerals with an electrometer built around the piezoelectric quartz that Pierre and his brother Jacques had discovered. Pitchblende was more active than its uranium could explain, and the excess led them to <strong>polonium</strong> (July 1898) and <strong>radium</strong> (December 1898, with Gustave Bémont). The 1903 Nobel Prize in physics went to all three. Pierre got a Sorbonne chair in 1904; after his death in 1906, Marie succeeded him and became the first woman to teach at the Sorbonne. The university and the Institut Pasteur then built the <a class="hp-go" data-id="radium">Institut du Radium</a> (agreed 1909, finished 1914), with a physics and chemistry laboratory directed by Marie Curie and a biology laboratory directed by Claudius Regaud.
+  </p>
+  <p class="hp-p">
+    <button type="button" class="hp-btn" data-y="1914" data-m="latin">✦ Show the Latin Quarter in 1914</button>
+    The Muséum, ESPCI, the École normale, the Institut du Radium, the Sorbonne, the Collège de France, Polytechnique and the Observatoire all lie within about 1.5 km of the Panthéon, a twenty-minute walk.
+  </p>
+
+  <h3 class="hp-h3" id="sec-atoms">Atoms, waves and a national research system</h3>
+  <div class="hp-tldr"><span>In this section</span>Perrin’s atoms, de Broglie’s waves, and how the Paris physicists built the funding bodies that became the CNRS.</div>
+  <p class="hp-p">
+    Jean Perrin, at the Faculté des sciences, measured in 1908 how small grains in suspension settle under gravity and jiggle under molecular impacts, as Einstein’s theory of Brownian motion predicted, and obtained Avogadro’s number from them. That ended the debate on the reality of atoms (Nobel Prize 1926). Paul Langevin, at the Collège de France from 1909 and later director of ESPCI, brought relativity and the new quantum theory to France. In 1924 Louis de Broglie defended at the Faculté a thesis proposing that every particle has a wave of wavelength $h/p$ attached to it, with $h$ Planck’s constant and $p$ the momentum (Nobel Prize 1929). From 1928 the <a class="hp-go" data-id="ihp">Institut Henri Poincaré</a>, funded by the Rockefeller Foundation and Edmond de Rothschild, gave theoretical physics a building of its own.
+  </p>
+  <p class="hp-p">
+    Physicists also built the institutions that pay for research. After the <a class="hp-go" data-id="onrsi">Office national des recherches scientifiques</a> (1922, with its laboratories at Bellevue) and a national research fund in the 1930s, the Popular Front government made Irène Joliot-Curie, then Jean Perrin, under-secretary of state for scientific research in 1936. That year it also founded the <a class="hp-go" data-id="iap">Institut d’astrophysique de Paris</a>, whose building next to the Observatoire was finished only in 1952. On 19 October 1939 the <a class="hp-go" data-id="cnrs">CNRS</a> was created, with full-time research positions that did not depend on teaching.
+  </p>
+
+  <h3 class="hp-h3" id="sec-nuc">From artificial radioactivity to the chain reaction</h3>
+  <div class="hp-tldr"><span>In this section</span>The Joliot-Curies’ near-miss with the neutron, their discovery of artificial radioactivity, and the 1939 measurement that made a reactor possible.</div>
+  <p class="hp-p">
+    At the Institut du Radium, Irène Curie and Frédéric Joliot had the strongest polonium sources in the world, which made them leaders in nuclear physics. In early 1932 they found that the penetrating radiation that Bothe had seen coming from beryllium knocks protons out of paraffin. They took it for gamma rays; weeks later Chadwick showed it was a neutral particle, the <strong>neutron</strong>. In January 1934 they bombarded aluminum with alpha particles and found that the target kept emitting positrons after the source was removed: they had made a new, radioactive isotope of phosphorus,
+  </p>
+  <div class="hp-eq">²⁷Al + α → ³⁰P + n, &nbsp;&nbsp; then &nbsp;&nbsp; ³⁰P → ³⁰Si + e⁺ + ν</div>
+  <p class="hp-p">
+    the first <strong>artificial radioactivity</strong> (Nobel Prize in chemistry 1935). Here α is a helium nucleus, n a neutron, e⁺ a positron and ν a neutrino; ³⁰P has a half-life of about 2.5 minutes. Frédéric Joliot moved in 1937 to the <a class="hp-go" data-id="cdf-nuc">Collège de France</a>, where he built one of the first cyclotrons in Europe, and opened a second laboratory at <a class="hp-go" data-id="ivry">Ivry</a>. In the spring of 1939, with Hans von Halban and Lew Kowarski, he showed that each fission of uranium releases more than one neutron, enough in principle for a <strong>self-sustaining chain reaction</strong>, and the group filed patents on a reactor. In 1940 Halban and Kowarski left for Britain with the world’s stock of heavy water.
+  </p>
+  <div class="hp-pit"><b>The punchline.</b> In 1939, the physics that would make nuclear reactors possible was being done a few hundred meters from the medieval colleges where Buridan and Oresme had argued about motion.</div>
+
+  <h3 class="hp-h3" id="sec-cosmic">Cosmic rays from Paris</h3>
+  <div class="hp-tldr"><span>In this section</span>Leprince-Ringuet’s cosmic-ray laboratory at Polytechnique, and how Pierre Auger’s fast coincidence counters revealed showers of particles from a single cosmic ray. A small interactive figure shows why the speed of the electronics mattered.</div>
+  <p class="hp-p">
+    In 1936 Louis Leprince-Ringuet became professor at Polytechnique and founded its first laboratory, devoted to <a class="hp-go" data-id="llr">cosmic rays</a>: a cloud chamber in a strong magnet measures the momentum of each charged particle from the curvature of its track. The group took its detectors to altitude, at Largentière in the Alps and at the Pic du Midi in the Pyrenees, where the flux is larger. In 1944 Leprince-Ringuet and Michel Lhéritier measured a particle of about a thousand electron masses, now read as an early sighting of what was later called the charged <strong>K meson</strong>.
+  </p>
+  <p class="hp-p">
+    At the same time Pierre Auger, professor at the <a class="hp-go" data-id="fac-sci">Faculté des sciences</a>, was studying coincidences between Geiger counters with Roland Maze, whose electronics could tell whether two pulses arrived within a few microseconds. In 1938 they found that counters placed several meters, then tens and hundreds of meters apart, at the Jungfraujoch at 3,450 m, still fired together far more often than chance allowed. Each coincidence was a <strong>shower</strong> of secondary particles produced in the atmosphere by a single primary cosmic ray. Auger estimated that the primaries carried at least $10^{15}$ eV, a million times more than any radioactive source. Rossi in 1934, and Kolhörster and others in 1938, had seen related effects, but Auger’s group showed how extensive the showers are. The largest cosmic-ray observatory in the world, in Argentina, bears his name.
+  </p>
+  <div class="hp-labbox">
+    <div class="hp-figtitle">Accidental and real coincidences <span class="hp-badge">interactive</span></div>
+    <div class="hp-grid2">
+      <svg class="hp-svg" id="hp-co" viewBox="0 0 520 300" role="img" aria-label="Two counters under an air shower, with accidental and real coincidences"></svg>
+      <div>
+        <div class="hp-sl"><label>Resolving time of the circuit $\tau$: <output id="hp-o-tau"></output></label><input type="range" id="hp-s-tau" min="-7" max="-2" step="0.05" value="-5.3"></div>
+        <div class="hp-sl"><label>Single-counter rate $R$: <output id="hp-o-r"></output></label><input type="range" id="hp-s-r" min="-0.5" max="2" step="0.05" value="0.5"></div>
+        <div class="hp-sl"><label>Real shower coincidences: <output id="hp-o-s"></output></label><input type="range" id="hp-s-s" min="-1" max="2" step="0.05" value="0.3"></div>
+        <div class="hp-out hp-out--col" id="hp-co-out"></div>
+      </div>
+    </div>
+    <p class="hp-note2">Two counters each fire at a rate $R$ from unrelated particles. Two independent pulses fall within the resolving time $\tau$ of each other by chance at the accidental rate $R_{\rm acc}=2\tau R^2$. A shower crossing both counters gives real coincidences at a rate $R_{\rm s}$, set here by hand (per hour). Counters were moved from a few meters to hundreds of meters apart. The bar chart compares the two over one hour of counting, on a logarithmic scale; a signal is convincing when $R_{\rm s}$ exceeds $R_{\rm acc}$ by several times the statistical fluctuation $\sqrt{N_{\rm acc}}$, where $N$ is a number of counts. The rates are illustrative, not Auger’s.</p>
+  </div>
+  <div class="hp-pit"><b>The punchline.</b> The accidental rate falls in proportion to the resolving time: a circuit a hundred times faster cuts the chance coincidences a hundredfold. Faster electronics are what turned a small excess into the discovery of air showers.</div>
+
+  <!-- ========================= 4. Big science moves south ========================= -->
+  <h2 class="hp-h2" id="ch-south">Big science moves south (1945–1970)</h2>
+  <div class="hp-tldr"><span>In this chapter</span>How the CEA and the faculty of sciences moved nuclear and particle physics out of Paris to Châtillon, Saclay and Orsay, and what was built there: reactors, a synchrocyclotron, a large linear accelerator and some of the first electron-positron colliders.</div>
+
+  <h3 class="hp-h3" id="sec-cea">The CEA: Châtillon and Saclay</h3>
+  <div class="hp-tldr"><span>In this section</span>France’s atomic energy commission, its first reactor and the Saclay center.</div>
+  <p class="hp-p">
+    The <a class="hp-go" data-id="cea">Commissariat à l’énergie atomique</a> was created in October 1945, with Frédéric Joliot as high commissioner. Its first laboratory was the Fort de Châtillon, at Fontenay-aux-Roses, where <a class="hp-go" data-id="zoe">ZOÉ</a>, the first French reactor (heavy water and uranium oxide, at almost zero power), went critical on 15 December 1948. Joliot was dismissed in 1950 for political reasons, and Francis Perrin, Jean Perrin’s son, held the post from 1951 to 1970. A much larger center opened at <a class="hp-go" data-id="saclay">Saclay</a>, on the plateau south-west of Paris, from 1952: research reactors, the <a class="hp-go" data-id="saturne">Saturne</a> proton synchrotron from 1958, a theory service, astrophysics from the 1960s, and the engineering that built large detectors. The heavy-liquid bubble chamber <strong>Gargamelle</strong>, designed and built at Saclay and run at CERN, gave the first evidence of weak neutral currents in 1973, in a collaboration led by André Lagarrigue of Orsay.
+  </p>
+
+  <h3 class="hp-h3" id="sec-orsay">The Orsay campus</h3>
+  <div class="hp-tldr"><span>In this section</span>Why the Faculty of Sciences built a campus 25 km from the Sorbonne, and the laboratories that grew there.</div>
+  <p class="hp-p">
+    Accelerators need hectares of land, shielding and electric power, none of which the Latin Quarter could offer, and the new faculty buildings at the Halle aux vins (Jussieu) were years late. Irène Joliot-Curie therefore started a nuclear physics laboratory on land at <a class="hp-go" data-id="orsay-fac">Orsay</a> in 1956; she died that year, and Frédéric Joliot, himself ill, completed it. The first physicists arrived in the spring of 1957, the <a class="hp-go" data-id="synchro">synchrocyclotron</a> delivered its first beam in June 1958, and Joliot died in August. The cyclotron of the Collège de France was moved there too. This was the <a class="hp-go" data-id="ipn">Institut de physique nucléaire</a>.
+  </p>
+  <p class="hp-p">
+    Yves Rocard’s physics laboratory at the École normale did the same for electrons: from 1955 it built the <a class="hp-go" data-id="lal">Laboratoire de l’accélérateur linéaire</a> (LAL) at Orsay, around a linear accelerator that reached 2.3 GeV by 1968. The ENS theorists followed in 1959–60 (<a class="hp-go" data-id="lpt">LPT</a>), solid-state physicists founded the <a class="hp-go" data-id="lps">Laboratoire de physique des solides</a> (1959), and the mass spectrometry and nuclear spectroscopy groups formed the <a class="hp-go" data-id="csnsm">CSNSM</a> (1962). The Orsay center became a faculty in its own right in 1965 and the university Paris XI (Paris-Sud) in 1971.
+  </p>
+  <div class="hp-pit"><b>The punchline.</b> No one planned a science city south of Paris: each laboratory left the center for its own reasons (land, power, shielding, room to grow), and the Saclay plateau became the largest concentration of physics in France by accretion.</div>
+
+  <h3 class="hp-h3" id="sec-ada">Electron-positron colliders: AdA and ACO</h3>
+  <div class="hp-tldr"><span>In this section</span>The small Italian ring that came to Orsay, and what it taught about colliding beams.</div>
+  <p class="hp-p">
+    Bruno Touschek’s <a class="hp-go" data-id="ada">AdA</a> (Anello di Accumulazione), one of the first electron-positron storage rings, was built at Frascati, near Rome, but its injector there was too weak. In 1962 it was brought to Orsay to be filled from the LAL linear accelerator, and in 1963 it produced the first observed electron-positron collisions. It also revealed the <strong>Touschek effect</strong>: particles in a bunch scatter off each other and are lost, which limits the lifetime of every stored beam since. The lab then built its own collider, <a class="hp-go" data-id="aco">ACO</a> (1965), which studied the light vector mesons, followed by <a class="hp-go" data-id="dci">DCI</a> (1976). Their synchrotron light, at first a nuisance, became a tool in itself: <a class="hp-go" data-id="lure">LURE</a> (1973) used it for materials science, until its successor <a class="hp-go" data-id="soleil">SOLEIL</a> took over at Saint-Aubin. ACO is kept today as a museum on the Orsay campus.
+  </p>
+
+  <!-- ========================= 5. astroparticles ========================= -->
+  <h2 class="hp-h2" id="ch-astro">From cosmic rays to astroparticles (1950–2026)</h2>
+  <div class="hp-tldr"><span>In this chapter</span>How Paris particle physicists left the mountains for accelerators in the 1950s, how space astrophysics grew out of rockets and the CEA, and how cosmic rays came back in the 2000s as astroparticle physics, with Paris laboratories in observatories on four continents and in space.</div>
+
+  <h3 class="hp-h3" id="sec-mount">Leaving the mountains</h3>
+  <div class="hp-tldr"><span>In this section</span>The 1953 turn from cosmic rays to accelerators.</div>
+  <p class="hp-p">
+    By the early 1950s most new particles had been found in cosmic rays, many by groups working at altitude. Leprince-Ringuet organized the 1953 international cosmic-ray conference at Bagnères-de-Bigorre, near the Pic du Midi. It is often remembered as the moment the field changed hands: the new accelerators, such as the Brookhaven Cosmotron, could make the same particles on demand, in large numbers and with a known energy. His laboratory turned to bubble chambers at accelerators, and two of its members, Bernard Gregory and André Lagarrigue, went on to lead CERN (Gregory as director-general, 1966–1970) and the Gargamelle collaboration.
+  </p>
+
+  <h3 class="hp-h3" id="sec-space">Space astrophysics</h3>
+  <div class="hp-tldr"><span>In this section</span>Rockets, a space agency and the laboratories that build instruments for satellites.</div>
+  <p class="hp-p">
+    The <a class="hp-go" data-id="aero">Service d’aéronomie</a> of the CNRS (1958) studied the upper atmosphere with sounding rockets and became one of the first French space laboratories. The <a class="hp-go" data-id="cnes">CNES</a> followed in 1961, and the CEA started astrophysics at <a class="hp-go" data-id="cea-astro">Saclay</a> in partnership with it from the early 1960s. The <a class="hp-go" data-id="nancay">Nançay</a> radio station of the Observatoire (1953), in the Sologne, gave Paris radio astronomy. On the Orsay campus the <a class="hp-go" data-id="ias">Institut d’astrophysique spatiale</a> (1990) built the HFI instrument of the Planck satellite, which mapped the cosmic microwave background, while at Meudon <a class="hp-go" data-id="lesia">LESIA</a> was one of the builders of the CoRoT satellite (2006), a pioneer in finding exoplanets by their transits. The <a class="hp-go" data-id="iap">IAP</a> became a center of cosmology, and is one of the French hubs of the Euclid mission (2023).
+  </p>
+
+  <h3 class="hp-h3" id="sec-astropart">The return of cosmic rays</h3>
+  <div class="hp-tldr"><span>In this section</span>The astroparticle laboratories, and a table of the observatories in which Paris groups take part.</div>
+  <p class="hp-p">
+    From the 1990s, cosmic rays came back as <strong>astroparticle physics</strong>: the study of the highest-energy particles of the universe, gamma rays, neutrinos and gravitational waves, with the detectors and methods of particle physics. The Paris laboratories built for accelerators, <a class="hp-go" data-id="llr">LLR</a>, <a class="hp-go" data-id="lpnhe">LPNHE</a>, <a class="hp-go" data-id="lal">LAL</a> and <a class="hp-go" data-id="ipn">IPN</a>, took leading roles in the new observatories, and in 2005 a laboratory was created for the purpose: <a class="hp-go" data-id="apc">AstroParticule et Cosmologie</a> (APC), which brought together the Collège de France group that descended from Joliot’s and Leprince-Ringuet’s laboratories with teams from the CEA, the Observatoire, the IAP and Orsay.
+  </p>
+  <div class="hp-table-wrap">
+    <table class="hp-table hp-table--click">
+      <thead><tr><th>Observatory</th><th>Where, when</th><th>What it measures</th><th>Some Paris labs involved</th></tr></thead>
+      <tbody>
+        <tr data-id="lpnhe"><td>Pierre Auger Observatory</td><td>Argentina, 3,000 km²; data from 2004</td><td>Air showers of the highest-energy cosmic rays, above $10^{18}$ eV</td><td>LPNHE, IJCLab (ex-IPN, LAL), APC</td></tr>
+        <tr data-id="llr"><td>H.E.S.S.</td><td>Namibia; full array from 2004</td><td>TeV gamma rays, through the Cherenkov light of their showers</td><td>LLR, LPNHE, APC, Irfu, Observatoire</td></tr>
+        <tr data-id="llr"><td>Fermi (LAT)</td><td>Space, from 2008</td><td>GeV gamma rays</td><td>LLR, Irfu</td></tr>
+        <tr data-id="ias"><td>Planck</td><td>Space, 2009–2013</td><td>The cosmic microwave background</td><td>IAS (HFI), IAP, APC, LAL, Irfu</td></tr>
+        <tr data-id="apc"><td>Virgo, and LIGO-Virgo</td><td>Italy; first joint detections 2017</td><td>Gravitational waves</td><td>LAL (now IJCLab), APC</td></tr>
+        <tr data-id="apc"><td>ANTARES, then KM3NeT</td><td>Mediterranean seafloor, from 2008</td><td>High-energy neutrinos</td><td>APC, Irfu</td></tr>
+        <tr data-id="iap"><td>Euclid</td><td>Space, from 2023</td><td>Dark energy and dark matter through weak lensing and galaxy clustering</td><td>IAP, Irfu (AIM), IAS, APC, IJCLab</td></tr>
+        <tr data-id="apc"><td>LISA</td><td>Space, adopted by ESA in 2024</td><td>Gravitational waves at millihertz frequencies</td><td>APC, among others</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="hp-pit"><b>The punchline.</b> Cosmic rays left Paris for accelerators in the 1950s and came back in the 2000s as astroparticle physics, built by the same laboratories, now with detectors that cover thousands of square kilometers or fly in space.</div>
+
+  <!-- ========================= 6. universities ========================= -->
+  <h2 class="hp-h2" id="ch-unis">Break-up and reassembly (1968–2026)</h2>
+  <div class="hp-tldr"><span>In this chapter</span>Why the University of Paris was split in 1970, why laboratory names do not match university names, and how the pieces have been regrouped since 2018.</div>
+
+  <h3 class="hp-h3" id="sec-split">Thirteen universities and joint laboratories</h3>
+  <div class="hp-tldr"><span>In this section</span>The 1968 reform, the physics universities it produced, and the joint-laboratory system.</div>
+  <p class="hp-p">
+    After May 1968 the Faure law replaced the faculties with autonomous, multidisciplinary universities. The University of Paris was dissolved and thirteen universities numbered Paris I to Paris XIII were created in 1970–71. Physics went mainly to <a class="hp-go" data-id="p6">Paris VI</a> (later Pierre-et-Marie-Curie) and <a class="hp-go" data-id="p7">Paris VII</a> (later Paris Diderot), which shared the new Jussieu campus; to <a class="hp-go" data-id="p11">Paris XI</a> (Paris-Sud) at Orsay; and to <a class="hp-go" data-id="p13">Paris XIII</a> at Villetaneuse.
+  </p>
+  <p class="hp-p">
+    The laboratories, meanwhile, became <strong>joint units</strong> belonging to a university and to the CNRS, and often also to the CEA, the Observatoire or a grande école. The <a class="hp-go" data-id="in2p3">IN2P3</a> (1971) gathered the CNRS nuclear and particle physics laboratories, wherever they were, into one national institute. This is why a laboratory such as LPNHE was at once a Paris VI and a CNRS laboratory, and why a map of laboratories never matched a map of universities.
+  </p>
+
+  <h3 class="hp-h3" id="sec-merge">Reassembly</h3>
+  <div class="hp-tldr"><span>In this section</span>The mergers of 2018–2020, and where the physics of the old university sits today.</div>
+  <p class="hp-p">
+    In the 2000s the state encouraged regroupings, partly to give French universities the size that international rankings reward. <a class="hp-go" data-id="su">Sorbonne Université</a> (2018) merged Paris VI with the humanities of Paris IV. Paris VII, Paris V and the IPGP formed the <a class="hp-go" data-id="upc">Université de Paris</a> (2020), renamed Université Paris Cité in 2022. Paris XI became the core of the <a class="hp-go" data-id="ups">Université Paris-Saclay</a> (2020), with several grandes écoles and the CEA and CNRS laboratories of the plateau, and its five Orsay physics laboratories merged into <a class="hp-go" data-id="ijclab">IJCLab</a>. The École normale, the Observatoire, ESPCI and others formed <a class="hp-go" data-id="psl">PSL</a>, and Polytechnique leads the <a class="hp-go" data-id="ipp">Institut Polytechnique de Paris</a> (2019).
+  </p>
+  <div class="hp-table-wrap">
+    <table class="hp-table hp-table--click">
+      <thead><tr><th>Old institution</th><th>Today</th><th>Some physics laboratories</th></tr></thead>
+      <tbody>
+        <tr data-id="su"><td>Paris VI (Jussieu)</td><td>Sorbonne Université</td><td>LPNHE, LPTHE, IAP (with the CNRS), part of LKB</td></tr>
+        <tr data-id="upc"><td>Paris VII (Jussieu, then Paris Rive Gauche)</td><td>Université Paris Cité</td><td>APC, and the astrophysics unit AIM shared with the CEA</td></tr>
+        <tr data-id="ups"><td>Paris XI (Orsay)</td><td>Université Paris-Saclay</td><td>IJCLab, LPS, IAS, and with the CEA: Irfu, IPhT</td></tr>
+        <tr data-id="psl"><td>École normale supérieure, Observatoire de Paris, ESPCI</td><td>Université PSL</td><td>LPENS, LKB, LESIA and the Observatoire laboratories</td></tr>
+        <tr data-id="ipp"><td>École polytechnique</td><td>Institut Polytechnique de Paris</td><td>LLR</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="hp-pit"><b>The punchline.</b> The old University of Paris has been split into thirteen and partly put back together, but its physics now sits in three large poles: the Latin Quarter and Jussieu, Paris Rive Gauche, and the Saclay plateau.</div>
+
+  <!-- ========================= 7. Nobel ========================= -->
+  <h2 class="hp-h2" id="ch-nobel">Nobel prizes with Parisian roots</h2>
+  <div class="hp-tldr"><span>In this chapter</span>The Nobel prizes in physics, and the two in chemistry for radioactivity, whose prize-winning work was done in the Paris region or whose winners held posts there. Click a row to find the institution in the atlas.</div>
+  <div class="hp-table-wrap">
+    <table class="hp-table hp-table--click">
+      <thead><tr><th>Year</th><th>Laureates</th><th>For</th><th>Parisian institution</th></tr></thead>
+      <tbody>
+        <tr data-id="jardin" data-y="1903"><td>1903</td><td>Henri Becquerel; Pierre Curie, Marie Curie</td><td>Radioactivity</td><td>Muséum, Polytechnique; ESPCI</td></tr>
+        <tr data-id="fac-sci" data-y="1908"><td>1908</td><td>Gabriel Lippmann</td><td>Color photography by interference</td><td>Faculté des sciences</td></tr>
+        <tr data-id="fac-sci" data-y="1911"><td>1911 (chem.)</td><td>Marie Curie</td><td>Polonium and radium</td><td>Faculté des sciences</td></tr>
+        <tr data-id="fac-sci" data-y="1926"><td>1926</td><td>Jean Perrin</td><td>The discontinuous structure of matter</td><td>Faculté des sciences</td></tr>
+        <tr data-id="fac-sci" data-y="1929"><td>1929</td><td>Louis de Broglie</td><td>The wave nature of electrons</td><td>Faculté des sciences, IHP</td></tr>
+        <tr data-id="radium" data-y="1935"><td>1935 (chem.)</td><td>Irène Joliot-Curie, Frédéric Joliot</td><td>Artificial radioactivity</td><td>Institut du Radium</td></tr>
+        <tr data-id="lkb" data-y="1966"><td>1966</td><td>Alfred Kastler</td><td>Optical pumping</td><td>École normale supérieure</td></tr>
+        <tr data-id="lps" data-y="1991"><td>1991</td><td>Pierre-Gilles de Gennes</td><td>Order in liquid crystals and polymers</td><td>Orsay (LPS), Collège de France, ESPCI</td></tr>
+        <tr data-id="espci" data-y="1992"><td>1992</td><td>Georges Charpak</td><td>The multiwire proportional chamber</td><td>Developed at CERN; ESPCI</td></tr>
+        <tr data-id="lkb" data-y="1997"><td>1997</td><td>Claude Cohen-Tannoudji (with S. Chu and W. Phillips)</td><td>Laser cooling and trapping of atoms</td><td>ENS, Collège de France</td></tr>
+        <tr data-id="lps" data-y="2007"><td>2007</td><td>Albert Fert (with P. Grünberg)</td><td>Giant magnetoresistance</td><td>Orsay (Paris-Sud and Thomson-CSF)</td></tr>
+        <tr data-id="lkb" data-y="2012"><td>2012</td><td>Serge Haroche (with D. Wineland)</td><td>Measuring and manipulating single quantum systems</td><td>ENS, Collège de France</td></tr>
+        <tr data-id="x" data-y="2018"><td>2018</td><td>Gérard Mourou (with D. Strickland and A. Ashkin)</td><td>Chirped pulse amplification</td><td>Developed at Rochester; École polytechnique</td></tr>
+        <tr data-id="iogs" data-y="2022"><td>2022</td><td>Alain Aspect (with J. Clauser and A. Zeilinger)</td><td>Experiments with entangled photons</td><td>Institut d’Optique, Orsay</td></tr>
+        <tr data-id="saclay" data-y="2023"><td>2023</td><td>Pierre Agostini, Anne L’Huillier (with F. Krausz)</td><td>Attosecond pulses of light</td><td>Key experiments at CEA Saclay</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="hp-pit"><b>The punchline.</b> Before 1940 the Parisian Nobel prizes were in radioactivity and the structure of matter, done in the Latin Quarter; since 1960 they are in atoms, light and condensed matter, and several were won on the Saclay plateau.</div>
+
+  <!-- ========================= references ========================= -->
+  <h2 class="hp-h2" id="sec-refs" data-map="ref">References</h2>
+  <ul class="hp-refs">
+    <li class="hp-ref-group">Institutional histories (checked)</li>
+    <li>IJCLab (2020), <em>History of the five laboratories</em> (CSNSM, IMNC, IPN, LAL, LPT): founding dates of IPN (1956), LAL (1955), CSNSM (1962), LURE (1973) and LPT, and the Orsay accelerators. <a href="https://www.ijclab.in2p3.fr/wp-content/uploads/sites/12/2020/05/Histoire_5_laboratoires_en.pdf">ijclab.in2p3.fr</a></li>
+    <li>APC, <em>Lab history</em>, and CERN Courier (2005), “Astroparticle physics and cosmology laboratory opens in Paris”: APC created on 1 January 2005, moved to Paris Rive Gauche in 2007. <a href="https://apc.u-paris.fr/en/lab-history">apc.u-paris.fr</a></li>
+    <li>École polytechnique, <em>225 stories: the first laboratory</em>: Leprince-Ringuet’s cosmic-ray laboratory (1936; one page says 1937), named after him in 2001. <a href="https://225.polytechnique.fr/en/225-stories/first-laboratory.html">polytechnique.fr</a></li>
+    <li>Wikipedia (fr), <em>Laboratoire de physique nucléaire et de hautes énergies</em>: LPNHE founded in 1970 by bubble-chamber physicists from the IPN, joining Paris VI.</li>
+    <li>CEA Irfu, <em>The Astrophysics Division (DAp)</em>: astrophysics at the CEA began with the CNES in the early 1960s. The exact founding year of the Saclay astrophysics service is not given, hence “c. 1965” here. DAPNIA was formed in 1991–92.</li>
+    <li class="hp-ref-group">Cosmic rays</li>
+    <li>Kampert, K.-H. and Watson, A. A. (2012), “Extensive air showers and ultra high-energy cosmic rays: a historical review”, <em>Eur. Phys. J. H</em> 37, 359. <a href="https://arxiv.org/abs/1207.4827">arXiv:1207.4827</a></li>
+    <li>Auger, P., Maze, R. and Grivet-Meyer, T. (1938), <em>C. R. Acad. Sci.</em> 206, 1721 (from memory). Auger, P. et al. (1939), <em>Rev. Mod. Phys.</em> 11, 288.</li>
+    <li>Leprince-Ringuet, L. and Lhéritier, M. (1944), <em>C. R. Acad. Sci.</em> 219, 618 (from memory).</li>
+    <li class="hp-ref-group">Radioactivity and nuclear physics</li>
+    <li>Becquerel, H. (1896), <em>C. R. Acad. Sci.</em> 122, 420 and 501. Curie, P., Curie, M. and Bémont, G. (1898), <em>C. R. Acad. Sci.</em> 127, 1215.</li>
+    <li>Joliot, F. and Curie, I. (1934), “Artificial production of a new kind of radio-element”, <em>Nature</em> 133, 201.</li>
+    <li>von Halban, H., Joliot, F. and Kowarski, L. (1939), “Number of neutrons liberated in the nuclear fission of uranium”, <em>Nature</em> 143, 680.</li>
+    <li>Weart, S. R. (1979), <em>Scientists in Power</em>, Harvard University Press: the Joliot group, the CEA and ZOÉ (from memory).</li>
+    <li class="hp-ref-group">Accelerators and particle physics</li>
+    <li>Bernardini, C. et al. (1963), “Lifetime and beam size in a storage ring”, <em>Phys. Rev. Lett.</em> 10, 407: the Touschek effect seen in AdA at Orsay (from memory).</li>
+    <li>Hasert, F. J. et al. (Gargamelle, 1973), <em>Phys. Lett. B</em> 46, 138.</li>
+    <li class="hp-ref-group">Atoms, light and matter</li>
+    <li>Aspect, A., Dalibard, J. and Roger, G. (1982), <em>Phys. Rev. Lett.</em> 49, 1804. Baibich, M. N. et al. (1988), <em>Phys. Rev. Lett.</em> 61, 2472. Ferray, M. et al. (1988), <em>J. Phys. B</em> 21, L31. Paul, P. M. et al. (2001), <em>Science</em> 292, 1689. Brune, M. et al. (1996), <em>Phys. Rev. Lett.</em> 77, 4887.</li>
+    <li>The Nobel Foundation, prize citations, <a href="https://www.nobelprize.org">nobelprize.org</a>.</li>
+    <li class="hp-ref-group">General histories (from memory)</li>
+    <li>Grant, E. (1996), <em>The Foundations of Modern Science in the Middle Ages</em>, Cambridge University Press: Buridan, Oresme and the condemnation of 1277.</li>
+    <li>Pestre, D. (1984), <em>Physique et physiciens en France, 1918–1940</em>, Éditions des archives contemporaines.</li>
+    <li>Lequeux, J. (2009), <em>Le Verrier: savant magnifique et détesté</em>, EDP Sciences; and Lequeux, J. (2013), <em>Hippolyte Fizeau, physicien de la lumière</em>, EDP Sciences.</li>
+    <li class="hp-ref-group">Caveats</li>
+    <li>The founding and closing years of the following were written from memory and are less certain: the Ivry laboratory (c. 1937 to c. 1972), the CEA theory service (c. 1963), ZOÉ’s shutdown (c. 1975), Supélec’s early addresses, the Institut d’Optique’s Paris address, the ENS’s early locations, and the ACO and AdA operating years. The map positions of the Orsay and Saclay laboratories are approximate.</li>
+  </ul>
+</div>
+
+<style>
+  .hp-wrap * { font-style: normal; }
+  .hp-wrap em, .hp-wrap i { font-style: italic; }
+  .hp-wrap { position: relative; width: 100%; max-width: 900px; margin: 0 auto; padding: 0 1rem 4rem; font-family: 'STIX Two Text', serif; color: #cbd5e1; font-size: 1rem; line-height: 1.6; }
+  .hp-kicker { text-align: center; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(var(--color-primary-300)); }
+  .hp-title { margin: 0.3rem 0 1rem; font-size: 2.2rem; font-weight: 700; color: #e2e8f0; text-align: center; line-height: 1.2; }
+  .hp-box { max-width: 760px; margin: 0 auto 2.5rem; padding: 1.1rem 1.4rem 0.5rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.75rem; background: rgba(148,163,184,0.1); }
+  .hp-box p { margin: 0 0 0.7rem; }
+  .hp-h2 { margin: 3rem 0 0.8rem; font-size: 1.7rem; font-weight: 700; color: #e2e8f0; padding-bottom: 0.4rem; border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, #fb923c, #a78bfa, transparent) 1; line-height: 1.25; }
+  .hp-h3 { margin: 2rem 0 0.6rem; font-size: 1.25rem; font-weight: 700; color: #e2e8f0; line-height: 1.3; }
+  .hp-p, .hp-lead { margin: 0 0 0.8rem; max-width: 760px; }
+  .hp-tldr { max-width: 760px; margin: 0.2rem 0 1rem; padding: 0.55rem 1rem; border: 1px solid rgba(167,139,250,0.35); border-radius: 0.6rem; background: rgba(167,139,250,0.08); font-size: 0.93rem; line-height: 1.5; color: #cbd5e1; }
+  .hp-tldr span { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #c4b5fd; margin-bottom: 0.15rem; }
+  .hp-pit { max-width: 760px; margin: 0.6rem 0 1.2rem; padding: 0.55rem 1rem; border-left: 3px solid #fbbf24; border-radius: 0 0.5rem 0.5rem 0; background: rgba(251,191,36,0.08); font-size: 0.95rem; line-height: 1.5; }
+  .hp-pit b { color: #fbbf24; }
+  .hp-eq { margin: 0.3rem 0 0.9rem; text-align: center; font-size: 1.12rem; color: #e2e8f0; overflow-x: auto; }
+  .hp-labbox { position: relative; padding: 1rem 1.2rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.8rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); margin: 0.6rem 0 1rem; }
+  .hp-wrap .hp-figtitle { margin: 0 0 0.6rem; font-size: 0.95rem; font-style: italic; color: #94a3b8; }
+  .hp-badge { display: inline-block; padding: 0.05rem 0.55rem; border-radius: 999px; border: 1px solid rgba(251,191,36,0.55); color: #fbbf24; font-size: 0.78rem; letter-spacing: 0.03em; vertical-align: 0.1em; font-style: normal; }
+  .hp-note2 { margin: 0.8rem 0 0; font-size: 0.88rem; line-height: 1.5; color: #94a3b8; }
+  .hp-note2 strong { color: #cbd5e1; }
+  .hp-svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .hp-muted { color: #64748b; }
+  .hp-wrap a { color: rgb(var(--color-primary-300)); }
+  a.hp-go { color: #fde68a; text-decoration: none; border-bottom: 1px dotted rgba(253,230,138,0.6); cursor: pointer; }
+  a.hp-go:hover { color: #fbbf24; border-bottom-style: solid; }
+  .hp-btn { margin: 0 0.5rem 0.3rem 0; padding: 0.2rem 0.85rem; border: 1px solid rgba(251,191,36,0.55); border-radius: 999px; background: rgba(251,191,36,0.08); color: #fbbf24; font-family: inherit; font-size: 0.88rem; cursor: pointer; }
+  .hp-btn:hover { background: rgba(251,191,36,0.18); }
+
+  /* ---- atlas controls */
+  .hp-ctl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.8rem; margin: 0 0 0.6rem; }
+  .hp-ctl-lab { flex: none; width: 3.6rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+  .hp-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; flex: 1; min-width: 0; }
+  .hp-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.7rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #cbd5e1; font-family: inherit; font-size: 0.83rem; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+  .hp-chip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .hp-chip:hover { border-color: #fbbf24; }
+  .hp-chip.hp-on { border-color: #fbbf24; background: rgba(251,191,36,0.16); color: #fde68a; font-weight: 700; }
+  .hp-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid rgba(148,163,184,0.4); border-radius: 999px; overflow: hidden; }
+  .hp-seg button { padding: 0.2rem 0.85rem; border: 0; background: transparent; color: #cbd5e1; font-family: inherit; font-size: 0.85rem; cursor: pointer; }
+  .hp-seg button + button { border-left: 1px solid rgba(148,163,184,0.25); }
+  .hp-seg button.hp-seg-on { background: rgba(251,191,36,0.2); color: #fbbf24; font-weight: 700; }
+  .hp-seg--sm button { font-size: 0.8rem; padding: 0.18rem 0.7rem; }
+  .hp-check { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.83rem; color: #94a3b8; cursor: pointer; }
+  .hp-check input { accent-color: #fbbf24; }
+  .hp-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin: 0.2rem 0 0.5rem; font-size: 0.8rem; color: #94a3b8; }
+  .hp-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .hp-legend i { display: inline-block; width: 18px; height: 7px; border-radius: 4px; }
+  .hp-legend b { display: inline-block; width: 8px; height: 8px; transform: rotate(45deg); background: #fde68a; border: 1px solid #0f172a; }
+
+  /* ---- timeline */
+  .hp-tl-scroll { overflow-x: auto; overflow-y: hidden; margin: 0 -0.4rem; padding: 0 0.4rem; -webkit-overflow-scrolling: touch; }
+  .hp-tl-scroll .hp-svg { min-width: 760px; }
+  .hp-tl-lab { font-size: 12.5px; fill: #cbd5e1; cursor: pointer; }
+  .hp-tl-fam { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; fill: #94a3b8; text-transform: uppercase; }
+  .hp-tl-tick { font-size: 12px; fill: #94a3b8; text-anchor: middle; }
+  .hp-row { cursor: pointer; }
+  .hp-row .hp-row-bg { fill: transparent; }
+  .hp-row:hover .hp-row-bg { fill: rgba(148,163,184,0.08); }
+  .hp-row.hp-sel .hp-row-bg { fill: rgba(251,191,36,0.13); }
+  .hp-row.hp-sel .hp-tl-lab { fill: #fde68a; font-weight: 700; }
+  .hp-row.hp-dead .hp-tl-lab { fill: #94a3b8; }
+  .hp-ev { cursor: pointer; }
+  .hp-ev:hover path { fill: #fbbf24; }
+  .hp-axis-hit { cursor: ew-resize; }
+  .hp-tip { position: absolute; display: none; pointer-events: none; z-index: 1000; max-width: 300px; padding: 0.45rem 0.7rem; border: 1px solid rgba(148,163,184,0.4); border-radius: 0.45rem; background: rgba(15,23,42,0.97); font-size: 0.83rem; line-height: 1.4; color: #e2e8f0; }
+  .hp-tip b { color: #fde68a; }
+  .hp-tip--on { display: block; }
+
+  /* ---- year bar and map */
+  .hp-yearbar { display: flex; align-items: center; gap: 0.8rem; margin: 0.9rem 0 0.6rem; }
+  .hp-play { flex: none; width: 2.3rem; height: 2.3rem; border: 1px solid rgba(251,191,36,0.6); border-radius: 50%; background: rgba(251,191,36,0.12); color: #fbbf24; font-size: 0.95rem; cursor: pointer; }
+  .hp-play:hover { background: rgba(251,191,36,0.25); }
+  .hp-year-big { flex: none; width: 3.2em; font-size: 1.6rem; font-weight: 700; color: #fde68a; font-variant-numeric: tabular-nums; }
+  .hp-yearbar input[type=range] { flex: 1; min-width: 0; accent-color: #fbbf24; }
+  .hp-out { margin: 0 0 0.7rem; font-size: 0.9rem; color: #94a3b8; }
+  .hp-out b { color: #e2e8f0; }
+  .hp-atlas-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+  .hp-mapwrap { position: relative; }
+  .hp-leaf { height: 480px; border: 1px solid rgba(148,163,184,0.3); border-radius: 0.7rem; background: #0b1220; overflow: hidden; z-index: 0; }
+  .hp-leaf-msg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 0.9rem; color: #94a3b8; pointer-events: none; }
+  .hp-panel { max-height: 480px; overflow-y: auto; padding: 0.85rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.7rem; background: rgba(15,23,42,0.55); font-size: 0.92rem; line-height: 1.5; }
+  .hp-panel h4 { margin: 0 0 0.1rem; font-size: 1.12rem; font-weight: 700; color: #f1f5f9; line-height: 1.3; }
+  .hp-panel-fr { margin: 0 0 0.4rem; font-size: 0.85rem; color: #94a3b8; font-style: italic; }
+  .hp-panel-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.5rem; margin: 0 0 0.6rem; font-size: 0.82rem; color: #94a3b8; }
+  .hp-panel-meta .hp-yrs { color: #fde68a; font-weight: 700; font-size: 0.9rem; }
+  .hp-tag { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0 0.5rem; border: 1px solid rgba(148,163,184,0.3); border-radius: 999px; font-size: 0.75rem; color: #cbd5e1; }
+  .hp-tag i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .hp-panel p { margin: 0 0 0.6rem; }
+  .hp-panel-sub { margin: 0.7rem 0 0.25rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; }
+  .hp-panel ul { margin: 0; padding-left: 1.1rem; }
+  .hp-panel li { margin: 0.15rem 0; }
+  .hp-panel .hp-evline { cursor: pointer; }
+  .hp-panel .hp-evline:hover { color: #fde68a; }
+  .hp-panel .hp-evon { color: #fde68a; }
+  .hp-evbox { margin: 0 0 0.7rem; padding: 0.5rem 0.75rem; border-left: 3px solid #fde68a; border-radius: 0 0.4rem 0.4rem 0; background: rgba(253,230,138,0.08); }
+  .hp-evbox b { color: #fde68a; }
+  .hp-link { color: #fde68a; cursor: pointer; border-bottom: 1px dotted rgba(253,230,138,0.6); }
+  .hp-link:hover { color: #fbbf24; }
+  .hp-wrap .hp-tiles { filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(0.92) saturate(0.45); }
+  .hp-wrap .leaflet-container { font-family: 'STIX Two Text', serif; background: #0b1220; }
+  .hp-wrap .leaflet-control-attribution { background: rgba(15,23,42,0.8); color: #64748b; font-size: 10px; }
+  .hp-wrap .leaflet-control-attribution a { color: #94a3b8; }
+  .hp-wrap .leaflet-bar a { background: #0f172a; color: #e2e8f0; border-bottom-color: #334155; }
+  .hp-wrap .leaflet-bar a:hover { background: #1e293b; }
+  .hp-wrap .leaflet-bar { border: 1px solid #334155; }
+  .leaflet-tooltip.hp-ltip { background: rgba(15,23,42,0.96); border: 1px solid rgba(148,163,184,0.45); color: #e2e8f0; font-family: 'STIX Two Text', serif; font-size: 13px; box-shadow: none; }
+  .leaflet-tooltip.hp-ltip::before { border-top-color: rgba(148,163,184,0.45); }
+  .hp-cog-lab { color: #fde68a; font-family: 'STIX Two Text', serif; font-size: 12px; font-weight: 700; text-shadow: 0 0 4px #000, 0 0 2px #000; white-space: nowrap; }
+
+  /* ---- coincidence figure */
+  .hp-grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1.1rem; align-items: center; }
+  .hp-sl { margin: 0 0 0.7rem; }
+  .hp-sl label { display: block; font-size: 0.9rem; }
+  .hp-sl output { color: #fbbf24; font-weight: 700; }
+  .hp-sl input { width: 100%; accent-color: #fbbf24; }
+  .hp-out--col { display: grid; grid-template-columns: auto auto; gap: 0.15rem 0.8rem; font-size: 0.88rem; }
+  .hp-out--col b { text-align: right; }
+  .hp-fig-t { font-size: 19px; fill: #cbd5e1; }
+  .hp-fig-s { font-size: 17px; fill: #94a3b8; }
+
+  /* ---- tables and references */
+  .hp-table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .hp-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .hp-table th { text-align: left; padding: 0.4rem 0.55rem; color: #94a3b8; border-bottom: 1px solid rgba(148,163,184,0.35); font-weight: 700; }
+  .hp-table td { padding: 0.45rem 0.55rem; border-bottom: 1px solid rgba(148,163,184,0.14); vertical-align: top; }
+  .hp-table td:first-child { font-weight: 700; color: #e2e8f0; white-space: nowrap; }
+  .hp-table--click tbody tr { cursor: pointer; transition: background 0.15s ease; }
+  .hp-table--click tbody tr:hover { background: rgba(251,191,36,0.08); }
+  .hp-refs { max-width: 760px; margin: 0.5rem 0 0; padding-left: 0; list-style: none; font-size: 0.9rem; line-height: 1.5; color: #94a3b8; }
+  .hp-refs li { margin: 0.25rem 0; padding-left: 1.2rem; text-indent: -1.2rem; }
+  .hp-refs li.hp-ref-group { padding-left: 0; text-indent: 0; margin: 1rem 0 0.2rem; font-weight: 700; color: #cbd5e1; font-size: 0.95rem; }
+
+  /* ---- collapsible sections, page map, floating button */
+  .hp-sec-body { display: grid; grid-template-rows: 1fr; grid-template-columns: minmax(0, 1fr); transition: grid-template-rows 0.42s ease; }
+  .hp-sec-inner { min-height: 0; min-width: 0; }
+  .hp-sec--closed > .hp-sec-body { grid-template-rows: 0fr; }
+  .hp-sec--closed > .hp-sec-body > .hp-sec-inner, .hp-sec--anim > .hp-sec-body > .hp-sec-inner { overflow: hidden; }
+  .hp-sec--closed > .hp-sec-body > .hp-sec-inner { visibility: hidden; transition: visibility 0s 0.42s; }
+  .hp-h2[role=button], .hp-h3[role=button] { cursor: pointer; user-select: none; scroll-margin-top: 90px; display: flex; align-items: center; transition: color 0.2s ease; }
+  .hp-h2[role=button]:hover, .hp-h3[role=button]:hover { color: #fbbf24; }
+  .hp-h2[role=button]::before, .hp-h3[role=button]::before { content: ''; flex: none; width: 0.42em; height: 0.42em; margin: 0 0.75rem 0.1em 0.2rem; border-right: 3px solid currentColor; border-bottom: 3px solid currentColor; transform: rotate(45deg); transition: transform 0.3s ease; opacity: 0.7; }
+  .hp-h2[role=button][aria-expanded=false]::before, .hp-h3[role=button][aria-expanded=false]::before { transform: rotate(-45deg); }
+  .hp-h3[role=button]::before { width: 0.36em; height: 0.36em; border-width: 2.5px; }
+  .hp-h2[role=button][aria-expanded=false] { opacity: 0.8; }
+  @keyframes hp-flash { 0% { background: rgba(251,191,36,0.28); } 100% { background: rgba(251,191,36,0); } }
+  .hp-flash { animation: hp-flash 1.6s ease-out; border-radius: 0.4rem; }
+  .hp-map { position: relative; margin: 2.4rem auto 2.6rem; max-width: 880px; padding: 1.3rem 1.5rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 1rem; overflow: hidden;
+    background:
+      radial-gradient(1.3px 1.3px at 12% 22%, rgba(226,232,240,0.55), transparent), radial-gradient(1px 1px at 31% 71%, rgba(226,232,240,0.4), transparent),
+      radial-gradient(1.2px 1.2px at 58% 18%, rgba(226,232,240,0.5), transparent), radial-gradient(1px 1px at 77% 62%, rgba(226,232,240,0.4), transparent),
+      radial-gradient(420px 220px at 12% 0%, rgba(251,146,60,0.13), transparent), radial-gradient(420px 220px at 55% 0%, rgba(56,189,248,0.11), transparent), radial-gradient(420px 240px at 100% 10%, rgba(167,139,250,0.14), transparent),
+      linear-gradient(180deg, rgba(30,41,59,0.75), rgba(15,23,42,0.7)); }
+  .hp-map-title { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #e2e8f0; }
+  .hp-map-title > span:first-child { background: linear-gradient(90deg, #fb923c, #38bdf8 55%, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hp-map-btns button { margin-left: 0.4rem; padding: 0.2rem 0.75rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #cbd5e1; font-family: inherit; font-size: 0.78rem; letter-spacing: 0.02em; text-transform: none; font-weight: 400; cursor: pointer; }
+  .hp-map-btns button:hover { border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .hp-map-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 1.1rem; position: relative; }
+  .hp-map-col { position: relative; --c: #fb923c; }
+  .hp-map-col::before { content: ''; position: absolute; top: 46px; bottom: 6px; left: 20px; width: 3px; border-radius: 2px; background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 25%, transparent)); }
+  .hp-map-chap { display: flex; align-items: center; gap: 0.7rem; text-decoration: none !important; color: #e2e8f0 !important; font-weight: 700; font-size: 1.02rem; line-height: 1.2; position: relative; z-index: 1; }
+  .hp-map-badge { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--c); background: #0f172a; color: var(--c); font-size: 1.25rem; box-shadow: 0 0 0 4px rgba(15,23,42,0.9), 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); transition: transform 0.2s ease; }
+  .hp-map-chap:hover .hp-map-badge { transform: scale(1.08); }
+  .hp-map-stops { list-style: none; margin: 0.9rem 0 0; padding: 0 0 0 44px; position: relative; z-index: 1; }
+  .hp-map-stops li { position: relative; margin: 0.15rem 0; }
+  .hp-map-stops li::before { content: ''; position: absolute; left: -28px; top: 50%; width: 11px; height: 11px; margin-top: -5.5px; border-radius: 50%; background: #0f172a; border: 2.5px solid var(--c); transition: transform 0.2s ease, background 0.2s ease; }
+  .hp-map-stops li:hover::before { transform: scale(1.35); background: var(--c); }
+  .hp-map-stops a, .hp-map-ref { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.28rem 0.5rem; border-radius: 0.4rem; text-decoration: none !important; color: #cbd5e1 !important; font-size: 0.92rem; line-height: 1.25; transition: background 0.15s ease; }
+  .hp-map-stops a:hover, .hp-map-ref:hover { background: color-mix(in srgb, var(--c, #94a3b8) 16%, transparent); color: #f8fafc !important; }
+  .hp-map-live { font-style: normal; color: #fbbf24; font-size: 0.78rem; text-shadow: 0 0 8px rgba(251,191,36,0.7); }
+  .hp-map-stops a.hp-map-active, .hp-map-chap.hp-map-active .hp-map-chaptxt { color: #fbbf24 !important; }
+  .hp-map-stops li:has(.hp-map-active)::before { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251,191,36,0.8); }
+  .hp-map-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; padding-top: 0.7rem; border-top: 1px solid rgba(148,163,184,0.18); font-size: 0.82rem; color: #94a3b8; }
+  .hp-map-pills { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; }
+  .hp-map-foot .hp-map-ref { display: inline-flex; font-size: 0.85rem; padding: 0.2rem 0.8rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; }
+  .hp-map-foot .hp-map-ref.hp-map-active { color: #fbbf24 !important; border-color: #fbbf24; }
+  .hp-float { position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 1100; display: flex; align-items: center; gap: 0.5rem; max-width: min(88vw, 340px); padding: 0.5rem 1rem 0.5rem 0.8rem; border: 1px solid rgba(148,163,184,0.45); border-radius: 999px; background: rgba(15,23,42,0.92); backdrop-filter: blur(6px); color: #e2e8f0; font-family: 'STIX Two Text', serif; font-size: 0.92rem; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,0.45); opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease; }
+  .hp-float--on { opacity: 1; transform: none; pointer-events: auto; }
+  .hp-float:hover { border-color: #fbbf24; }
+  .hp-float-arrow { color: #fbbf24; font-weight: 700; }
+  .hp-float-sec { color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 1px solid rgba(148,163,184,0.4); padding-left: 0.55rem; }
+  .hp-float-sec:empty { display: none; }
+
+  @media (max-width: 820px) {
+    .hp-atlas-grid { grid-template-columns: 1fr; }
+    .hp-leaf { height: 380px; }
+    .hp-panel { max-height: none; }
+    .hp-grid2 { grid-template-columns: 1fr; }
+    .hp-map-cols { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .hp-title { font-size: 1.8rem; }
+    .hp-labbox { padding: 0.8rem 0.75rem; }
+    .hp-ctl-lab { width: 100%; }
+    .hp-map { padding: 1rem; }
+    .hp-h2 { font-size: 1.45rem; }
+  }
+</style>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var wrap = document.querySelector('.hp-wrap');
+  function $(s) { return wrap.querySelector(s); }
+  function $$(s) { return Array.prototype.slice.call(wrap.querySelectorAll(s)); }
+  function sv(tag, attrs, text) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  var NOW = 2026;
+
+  // ---------------------------------------------------------- inline maths: $...$ becomes italic symbols with sub/superscripts
+  function texLite(s) {
+    return s.replace(/\\rm\s*/g, '').replace(/\\tau/g, 'τ')
+      .replace(/_\{([^}]*)\}/g, '<sub>$1</sub>').replace(/_(\w)/g, '<sub>$1</sub>')
+      .replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>').replace(/\^(\w)/g, '<sup>$1</sup>')
+      .replace(/\\sqrt\{([^}]*)\}/g, '√$1');
+  }
+  function renderTextMath(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: function (n) {
+      if (!n.nodeValue || n.nodeValue.indexOf('$') < 0) return NodeFilter.FILTER_REJECT;
+      var p = n.parentNode; if (p.closest && p.closest('svg, script, style')) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT; } });
+    var nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (n) {
+      var parts = n.nodeValue.split(/\$([^$]+)\$/); if (parts.length < 3) return;
+      var frag = document.createDocumentFragment();
+      parts.forEach(function (s, i) {
+        if (i % 2 === 0) { if (s) frag.appendChild(document.createTextNode(s)); }
+        else { var sp = document.createElement('i'); sp.className = 'hp-m'; sp.innerHTML = texLite(s); frag.appendChild(sp); }
+      });
+      n.parentNode.replaceChild(frag, n);
+    });
+  }
+  renderTextMath(wrap);
+
+  // =========================================================== the data
+  var KIND = {
+    uni:    { c: '#fbbf24', t: 'University or faculty' },
+    school: { c: '#38bdf8', t: 'School, college or institute' },
+    agency: { c: '#fb923c', t: 'Academy, agency or research body' },
+    astro:  { c: '#a78bfa', t: 'Observatory or astrophysics laboratory' },
+    lab:    { c: '#34d399', t: 'Laboratory' },
+    fac:    { c: '#f472b6', t: 'Accelerator, reactor or light source' }
+  };
+  var FIELD = {
+    astro:     { c: '#a78bfa', t: 'Astrophysics and space' },
+    cosmic:    { c: '#f472b6', t: 'Cosmic rays and astroparticles' },
+    particle:  { c: '#38bdf8', t: 'Particle physics' },
+    nuclear:   { c: '#fb923c', t: 'Nuclear physics' },
+    atomic:    { c: '#fbbf24', t: 'Atoms, light and quantum' },
+    condensed: { c: '#34d399', t: 'Condensed matter' },
+    theory:    { c: '#e2e8f0', t: 'Theory' },
+    earth:     { c: '#2dd4bf', t: 'Earth and atmosphere' },
+    general:   { c: '#94a3b8', t: 'All of physics' }
+  };
+  var FAM = [
+    ['exp', 'Experiments in the city'],
+    ['u', 'The University of Paris and its heirs'],
+    ['r', 'Royal and state institutions'],
+    ['g', 'Grandes écoles and institutes'],
+    ['a', 'Astronomy and space'],
+    ['n', 'Radioactivity and nuclear physics'],
+    ['p', 'Particles, cosmic rays and astroparticles'],
+    ['m', 'Atoms, light and matter'],
+    ['f', 'Accelerators, reactors and light sources']
+  ];
+  // places: [latitude, longitude, description]
+  var PL = {
+    sorb: [48.8484, 2.3433, 'Sorbonne, Latin Quarter'],
+    navarre: [48.8459, 2.3484, 'Montagne Sainte-Geneviève (former Collège de Navarre)'],
+    cdf: [48.8493, 2.3451, 'Place Marcelin-Berthelot'],
+    pantheon: [48.8462, 2.3464, 'Panthéon'],
+    ulm: [48.8419, 2.3441, '45 rue d’Ulm'],
+    lhomond: [48.8411, 2.3452, '24 rue Lhomond (ENS physics building)'],
+    espci: [48.8413, 2.3479, '10 rue Vauquelin'],
+    curie: [48.8443, 2.3443, 'Rue Pierre-et-Marie-Curie'],
+    ihp: [48.8450, 2.3432, '11 rue Pierre-et-Marie-Curie'],
+    plessis: [48.8483, 2.3443, 'Rue Saint-Jacques (approximate)'],
+    museum: [48.8437, 2.3592, 'Jardin des Plantes'],
+    jussieu: [48.8465, 2.3556, 'Jussieu campus (former Halle aux vins)'],
+    ipgp: [48.8447, 2.3570, '1 rue Jussieu (present site)'],
+    prg: [48.8293, 2.3810, 'Paris Rive Gauche (Grands Moulins)'],
+    condorcet: [48.8287, 2.3832, 'Condorcet building, Paris Rive Gauche'],
+    obs: [48.8363, 2.3366, 'Avenue de l’Observatoire'],
+    iap: [48.8373, 2.3392, '98 bis boulevard Arago'],
+    institut: [48.8574, 2.3373, 'Institut de France, quai de Conti'],
+    louvre: [48.8606, 2.3376, 'Louvre'],
+    vivienne: [48.8676, 2.3389, 'Bibliothèque du roi, rue Vivienne'],
+    cnam: [48.8667, 2.3554, 'Saint-Martin-des-Champs'],
+    bourbon: [48.8619, 2.3186, 'Palais Bourbon'],
+    mazarine: [48.8546, 2.3381, 'Rue Mazarine'],
+    iogsParis: [48.8430, 2.3125, 'Boulevard Pasteur, Paris 15e (approximate)'],
+    juigne: [48.8597, 2.3624, 'Hôtel de Juigné, Marais'],
+    montgolfier: [48.8663, 2.3577, 'Rue Montgolfier, Paris 3e'],
+    stael: [48.8430, 2.3030, 'Paris 15e (approximate)'],
+    malakoff: [48.8170, 2.3010, 'Malakoff (approximate)'],
+    thiers: [48.8640, 2.2740, 'Paris 16e (approximate)'],
+    villetaneuse: [48.9570, 2.3420, 'Villetaneuse'],
+    cnrs: [48.8473, 2.2648, 'Rue Michel-Ange (present head office)'],
+    in2p3: [48.8478, 2.2660, 'Rue Michel-Ange'],
+    cnes: [48.8630, 2.3450, 'Les Halles (head office)'],
+    ivry: [48.8150, 2.3870, 'Ivry-sur-Seine (approximate)'],
+    bellevue: [48.8215, 2.2266, 'Meudon-Bellevue'],
+    meudon: [48.8053, 2.2317, 'Meudon'],
+    lesia: [48.8040, 2.2300, 'Meudon'],
+    sevres: [48.8292, 2.2203, 'Pavillon de Breteuil, Sèvres'],
+    verrieres: [48.7465, 2.2480, 'Verrières-le-Buisson (approximate)'],
+    guyancourt: [48.7700, 2.0870, 'Guyancourt (approximate)'],
+    fontenay: [48.7889, 2.2880, 'Fort de Châtillon, Fontenay-aux-Roses'],
+    saclay: [48.7275, 2.1470, 'CEA Saclay'],
+    irfu: [48.7262, 2.1440, 'CEA Saclay'],
+    saturne: [48.7290, 2.1500, 'CEA Saclay'],
+    merisiers: [48.7125, 2.1460, 'Orme des Merisiers, Saclay'],
+    soleil: [48.7092, 2.1495, 'Saint-Aubin'],
+    palaiseau: [48.7136, 2.2110, 'Palaiseau'],
+    iogsPal: [48.7146, 2.2015, 'Palaiseau'],
+    gif: [48.7095, 2.1645, 'Gif-sur-Yvette (Moulon)'],
+    ups: [48.7125, 2.1720, 'Plateau de Saclay'],
+    orsay: [48.7005, 2.1735, 'Orsay campus'],
+    ipn: [48.6982, 2.1832, 'Orsay campus'],
+    lal: [48.6996, 2.1868, 'Orsay campus'],
+    csnsm: [48.6967, 2.1800, 'Orsay campus'],
+    lpt: [48.6990, 2.1790, 'Orsay campus'],
+    lps: [48.7015, 2.1772, 'Orsay campus'],
+    ias: [48.6958, 2.1765, 'Orsay campus'],
+    iogsOrsay: [48.7035, 2.1750, 'Orsay campus'],
+    lure: [48.7003, 2.1895, 'Orsay campus'],
+    tandem: [48.6975, 2.1850, 'Orsay campus'],
+    ihes: [48.6995, 2.1665, 'Bures-sur-Yvette'],
+    chatenay: [48.7655, 2.2870, 'Châtenay-Malabry'],
+    nancay: [47.3800, 2.1950, 'Nançay (Cher), 190 km south of Paris'],
+    suresnes: [48.8710, 2.2290, 'Suresnes, aimed at Montmartre']
+  };
+
+  // institutions: s/e start and end years (e null = still active), sa/ea flag approximate years,
+  // L = [[from year, place], ...], to = what it became (merger, split, spin-off or heir)
+  var INST = [
+    // ---- the University
+    { id: 'univ-med', fam: 'u', kind: 'uni', n: 'University of Paris (medieval)', sh: 'University of Paris (medieval)', fr: 'Universitas magistrorum et scholarium Parisiensium', s: 1200, sa: 1, e: 1793, f: ['general'], L: [[1200, 'sorb']], to: ['fac-sci'],
+      d: 'A guild of masters and students that grew out of the schools of Notre-Dame and the Left Bank in the late twelfth century, with a royal privilege in 1200, statutes in 1215 and autonomy from 1231. Physics meant Aristotle’s natural philosophy, taught in the faculty of arts. Abolished by the Convention in 1793; the faculties of 1808 are its heirs, not its continuation.' },
+    { id: 'fac-sci', fam: 'u', kind: 'uni', n: 'Faculté des sciences de Paris', sh: 'Faculté des sciences de Paris', s: 1808, e: 1970, f: ['general', 'nuclear', 'atomic', 'particle', 'cosmic', 'astro'], L: [[1808, 'sorb'], [1965, 'jussieu']], to: ['orsay-fac', 'p6', 'p7'],
+      d: 'The science faculty of the Imperial University, housed at the Sorbonne, then from the 1960s on the new Jussieu campus. For most of the nineteenth century it taught and examined more than it researched. Lippmann, the Curies, Perrin, de Broglie and Auger held posts here.' },
+    { id: 'univ-1896', fam: 'u', kind: 'uni', n: 'University of Paris (1896–1970)', sh: 'University of Paris (1896–1970)', s: 1896, e: 1970, f: ['general'], L: [[1896, 'sorb']], to: ['p6', 'p7', 'p11', 'p13'],
+      d: 'The law of 1896 regrouped the Paris faculties into a university again. It was by far the largest in France when the Faure law of 1968 dissolved it into thirteen universities, created in 1970–71.' },
+    { id: 'orsay-fac', fam: 'u', kind: 'uni', n: 'Orsay center, then Faculté des sciences d’Orsay', sh: 'Faculty of sciences, Orsay', s: 1956, e: 1970, f: ['general', 'nuclear', 'particle', 'condensed'], L: [[1956, 'orsay']], to: ['p11'],
+      d: 'Started by Irène and Frédéric Joliot-Curie as an annex of the Paris faculty with room for accelerators. Undergraduate teaching began there in 1958, and it became a faculty in its own right in 1965.' },
+    { id: 'p6', fam: 'u', kind: 'uni', n: 'Paris VI, Université Pierre-et-Marie-Curie', sh: 'Paris VI (Pierre-et-Marie-Curie)', s: 1971, e: 2017, f: ['general', 'particle', 'astro', 'atomic', 'theory'], L: [[1971, 'jussieu']], to: ['su'],
+      d: 'The science and medicine university of Jussieu, home of LPNHE, LPTHE and many joint laboratories, including the IAP. Merged into Sorbonne Université in 2018.' },
+    { id: 'p7', fam: 'u', kind: 'uni', n: 'Paris VII, later Université Paris Diderot', sh: 'Paris VII (Diderot)', s: 1971, e: 2019, f: ['general', 'astro', 'cosmic'], L: [[1971, 'jussieu'], [2007, 'prg']], to: ['upc'],
+      d: 'A multidisciplinary university that shared the Jussieu campus with Paris VI before moving to the new Paris Rive Gauche district in the 2000s. It was one of the founders of APC and of the astrophysics unit AIM with the CEA.' },
+    { id: 'p11', fam: 'u', kind: 'uni', n: 'Paris XI, Université Paris-Sud', sh: 'Paris XI (Paris-Sud)', s: 1971, e: 2019, f: ['general', 'nuclear', 'particle', 'condensed', 'astro', 'theory'], L: [[1971, 'orsay']], to: ['ups'],
+      d: 'The Orsay university, with the largest concentration of nuclear and particle physics in France (IPN, LAL, CSNSM, LPT), solid-state physics (LPS) and space astrophysics (IAS). It became the core of the Université Paris-Saclay in 2020.' },
+    { id: 'p13', fam: 'u', kind: 'uni', n: 'Paris XIII, now Université Sorbonne Paris Nord', sh: 'Paris XIII (Paris Nord)', s: 1971, e: null, f: ['general', 'atomic'], L: [[1971, 'villetaneuse']],
+      d: 'The northern university of the 1970 split, at Villetaneuse, whose physics includes a laser physics laboratory.' },
+    { id: 'su', fam: 'u', kind: 'uni', n: 'Sorbonne Université', sh: 'Sorbonne Université', s: 2018, e: null, f: ['general', 'particle', 'astro', 'atomic', 'theory', 'cosmic'], L: [[2018, 'jussieu']],
+      d: 'The merger of Paris VI and Paris IV (humanities) on 1 January 2018. Its physics: LPNHE, LPTHE, the IAP (with the CNRS), part of LKB and many others.' },
+    { id: 'upc', fam: 'u', kind: 'uni', n: 'Université Paris Cité', sh: 'Université Paris Cité', fr: 'Université de Paris until 2022', s: 2020, e: null, f: ['general', 'astro', 'cosmic', 'earth'], L: [[2020, 'prg']],
+      d: 'Created by decree in 2019 from Paris V, Paris VII and the IPGP, in operation from 1 January 2020, renamed in 2022. Its physics includes APC and the IPGP.' },
+    { id: 'ups', fam: 'u', kind: 'uni', n: 'Université Paris-Saclay', sh: 'Université Paris-Saclay', s: 2020, e: null, f: ['general', 'nuclear', 'particle', 'cosmic', 'astro', 'condensed', 'atomic', 'theory'], L: [[2020, 'ups']],
+      d: 'Paris-Sud and several grandes écoles and research centers of the plateau, merged in 2020 after a federation formed in 2015. With the CEA and CNRS laboratories of Orsay and Saclay, it is the largest concentration of physics in France.' },
+    { id: 'psl', fam: 'u', kind: 'uni', n: 'Université PSL (Paris Sciences et Lettres)', sh: 'Université PSL', s: 2010, e: null, f: ['general', 'astro', 'atomic', 'condensed'], L: [[2010, 'mazarine']],
+      d: 'A federation of institutions created in 2010, a university since 2019. Its members include the École normale supérieure, the Observatoire de Paris, ESPCI and the Institut Curie, with the Collège de France as an associate.' },
+    { id: 'ipp', fam: 'u', kind: 'uni', n: 'Institut Polytechnique de Paris', sh: 'Institut Polytechnique de Paris', s: 2019, e: null, f: ['general', 'particle', 'cosmic', 'atomic'], L: [[2019, 'palaiseau']],
+      d: 'Polytechnique and four engineering schools of the plateau, grouped in 2019.' },
+
+    // ---- royal and state institutions
+    { id: 'sorbonne-col', fam: 'r', kind: 'school', n: 'Collège de Sorbonne', sh: 'Collège de Sorbonne', s: 1257, e: 1793, f: ['general'], L: [[1257, 'sorb']], to: ['fac-sci'],
+      d: 'Founded by Robert de Sorbon for poor theology students. Its name came to stand for the whole university, and the building, rebuilt in 1885–1901, housed the Faculté des sciences.' },
+    { id: 'navarre', fam: 'r', kind: 'school', n: 'Collège de Navarre', sh: 'Collège de Navarre', s: 1305, e: 1793, f: ['general'], L: [[1305, 'navarre']], to: ['x'],
+      d: 'Founded by Queen Joan of Navarre. Nicole Oresme was its grand master in the 1350s. In 1805 its buildings were given to the École polytechnique, which stayed there until 1976.' },
+    { id: 'cdf', fam: 'r', kind: 'agency', n: 'Collège de France (Collège royal)', sh: 'Collège de France', s: 1530, e: null, f: ['general', 'atomic', 'nuclear', 'particle', 'condensed'], L: [[1530, 'cdf']], to: ['cdf-nuc'],
+      d: 'The royal lecturers of François I: free public lectures, no exams, no degrees. Physics chairs were held by Biot, Ampère (1824), Langevin (1909), Joliot (1937), Leprince-Ringuet (1959), de Gennes (1971), Cohen-Tannoudji and Haroche, among others.' },
+    { id: 'jardin', fam: 'r', kind: 'agency', n: 'Jardin du roi, then Muséum national d’histoire naturelle', sh: 'Jardin du roi, Muséum', s: 1635, e: null, f: ['general', 'nuclear'], L: [[1635, 'museum']],
+      d: 'Founded as a garden of medicinal plants with public lectures, reorganized as the Muséum in 1793. Four generations of Becquerels held its physics chair, and Henri Becquerel discovered radioactivity in its laboratory in 1896.' },
+    { id: 'acad', fam: 'r', kind: 'agency', n: 'Académie royale des sciences, then Académie des sciences', sh: 'Académie des sciences', s: 1666, e: null, f: ['general', 'astro'], L: [[1666, 'vivienne'], [1699, 'louvre'], [1805, 'institut']],
+      d: 'Created by Colbert with paid members and a budget for experiments. It was where results were presented and prizes were set. Abolished in 1793, it returned in 1795 as a class of the Institut national, and sits at the Institut de France.' },
+    { id: 'bdl', fam: 'r', kind: 'agency', n: 'Bureau des longitudes', sh: 'Bureau des longitudes', s: 1795, e: null, f: ['astro'], L: [[1795, 'institut']],
+      d: 'Created by the Convention to improve navigation and astronomy; it published the national ephemerides. It sits at the Institut de France.' },
+    { id: 'cnam', fam: 'r', kind: 'school', n: 'Conservatoire national des arts et métiers', sh: 'Conservatoire des arts et métiers', s: 1794, e: null, f: ['general'], L: [[1794, 'cnam']],
+      d: 'A collection of machines and instruments with public teaching, installed in the priory of Saint-Martin-des-Champs. Its museum keeps Foucault’s original pendulum and the instruments of Lavoisier.' },
+    { id: 'bipm', fam: 'r', kind: 'agency', n: 'Bureau international des poids et mesures', sh: 'BIPM, Sèvres', s: 1875, e: null, f: ['general'], L: [[1875, 'sevres']],
+      d: 'Created by the Metre Convention of 1875, it kept the international prototype metre and kilogram and coordinates the SI units. It descends from the meridian survey of 1792–1798.' },
+
+    // ---- grandes écoles and institutes
+    { id: 'x', fam: 'g', kind: 'school', n: 'École polytechnique', sh: 'École polytechnique', s: 1794, e: null, f: ['general', 'particle', 'cosmic', 'atomic'], L: [[1794, 'bourbon'], [1805, 'navarre'], [1976, 'palaiseau']], to: ['ipp'],
+      d: 'Founded to train the state’s engineers. Monge, Lagrange, Fourier and Ampère taught there, and its graduates include Fresnel, Carnot, Cauchy, Coriolis, Poisson, Arago and Henri Becquerel. Its first laboratory was Leprince-Ringuet’s cosmic-ray lab (1936). It moved to Palaiseau in 1976.' },
+    { id: 'ens', fam: 'g', kind: 'school', n: 'École normale supérieure', sh: 'École normale supérieure', s: 1794, e: null, f: ['general', 'atomic', 'particle', 'theory', 'condensed'], L: [[1794, 'museum'], [1808, 'plessis'], [1847, 'ulm']], to: ['lal', 'lpt', 'lkb'],
+      d: 'Opened briefly in 1795, refounded in 1808 to train teachers, rue d’Ulm since 1847. Its physics laboratory, led by Yves Rocard after the war, launched the LAL and the theory group at Orsay, and Kastler and Brossel’s optical pumping group, the future LKB. Early locations are approximate.' },
+    { id: 'centrale', fam: 'g', kind: 'school', n: 'École centrale des arts et manufactures', sh: 'École centrale', s: 1829, e: 2014, f: ['general'], L: [[1829, 'juigne'], [1884, 'montgolfier'], [1969, 'chatenay']], to: ['cs'],
+      d: 'A private, later state, engineering school, in the Marais, then rue Montgolfier, then Châtenay-Malabry from 1969.' },
+    { id: 'espci', fam: 'g', kind: 'school', n: 'École supérieure de physique et de chimie industrielles (ESPCI)', sh: 'ESPCI', s: 1882, e: null, f: ['general', 'nuclear', 'condensed'], L: [[1882, 'espci']],
+      d: 'The city of Paris school of physics and chemistry. Pierre Curie taught there, and the Curies discovered polonium and radium in one of its sheds in 1898. Langevin directed it, and de Gennes and Charpak worked there.' },
+    { id: 'supelec', fam: 'g', kind: 'school', n: 'École supérieure d’électricité (Supélec)', sh: 'Supélec', s: 1894, e: 2014, f: ['general'], L: [[1894, 'stael'], [1927, 'malakoff'], [1975, 'gif']], to: ['cs'],
+      d: 'The school of electrical engineering, which moved to Gif-sur-Yvette in 1975. Its early addresses here are approximate.' },
+    { id: 'cs', fam: 'g', kind: 'school', n: 'CentraleSupélec', sh: 'CentraleSupélec', s: 2015, e: null, f: ['general'], L: [[2015, 'chatenay'], [2017, 'gif']],
+      d: 'The merger of Centrale and Supélec, regrouped on the Saclay plateau in 2017.' },
+    { id: 'iogs', fam: 'g', kind: 'school', n: 'Institut d’Optique Graduate School', sh: 'Institut d’Optique', s: 1917, e: null, f: ['atomic'], L: [[1917, 'iogsParis'], [1965, 'iogsOrsay'], [2006, 'iogsPal']],
+      d: 'Founded after the First World War to give France an optics industry; its school opened in 1920. It moved to Orsay in 1965, where Alain Aspect made his tests of Bell’s inequalities in 1980–82, and to Palaiseau in 2006. The Paris address is approximate.' },
+    { id: 'ihp', fam: 'g', kind: 'school', n: 'Institut Henri Poincaré', sh: 'Institut Henri Poincaré', s: 1928, e: null, f: ['theory', 'general'], L: [[1928, 'ihp']],
+      d: 'Founded by Émile Borel with Rockefeller and Rothschild money as a home for mathematics and theoretical physics, next to the Institut du Radium. Louis de Broglie taught there.' },
+    { id: 'ihes', fam: 'g', kind: 'school', n: 'Institut des hautes études scientifiques', sh: 'IHÉS', s: 1958, e: null, f: ['theory'], L: [[1958, 'thiers'], [1962, 'ihes']],
+      d: 'A private institute for mathematics and theoretical physics on the model of Princeton’s IAS, first housed in Paris and at Bures-sur-Yvette from 1962.' },
+
+    // ---- astronomy and space
+    { id: 'obs', fam: 'a', kind: 'astro', n: 'Observatoire de Paris', sh: 'Observatoire de Paris', s: 1667, e: null, f: ['astro', 'general'], L: [[1667, 'obs']], to: ['nancay', 'lesia'],
+      d: 'Founded by Colbert, run by four generations of Cassinis. Rømer found the finite speed of light here in 1676, Foucault measured it in 1862, and the Carte du Ciel was launched here in 1887. Meudon (1926) and Nançay are part of it.' },
+    { id: 'meudon', fam: 'a', kind: 'astro', n: 'Observatoire de Meudon', sh: 'Meudon observatory', s: 1876, e: null, f: ['astro'], L: [[1876, 'meudon']], to: ['lesia'],
+      d: 'Founded by Jules Janssen for physical astronomy (spectroscopy and photography of the Sun), part of the Paris Observatory since 1926. Lyot built the coronagraph here in 1930.' },
+    { id: 'ipgp', fam: 'a', kind: 'astro', n: 'Institut de physique du globe de Paris', sh: 'IPGP', s: 1921, e: null, f: ['earth'], L: [[1921, 'ipgp']], to: ['upc'],
+      d: 'Geophysics: seismology, geomagnetism, volcanology and planetary science. A member of Université Paris Cité since 2020. Only its present site is shown.' },
+    { id: 'iap', fam: 'a', kind: 'astro', n: 'Institut d’astrophysique de Paris', sh: 'Institut d’astrophysique (IAP)', s: 1936, e: null, f: ['astro', 'theory', 'cosmic'], L: [[1936, 'iap']],
+      d: 'Founded in 1936 under the Popular Front research policy, with Henri Mineur as director; its building on boulevard Arago was finished only in 1952. A center of theoretical astrophysics and cosmology, and a French hub for Planck and Euclid.' },
+    { id: 'nancay', fam: 'a', kind: 'astro', n: 'Station de radioastronomie de Nançay', sh: 'Nançay radio observatory', s: 1953, e: null, f: ['astro'], L: [[1953, 'nancay']],
+      d: 'The radio astronomy station of the Paris Observatory in the Sologne, 190 km south of Paris (use the France view of the map).' },
+    { id: 'aero', fam: 'a', kind: 'astro', n: 'Service d’aéronomie du CNRS', sh: 'Service d’aéronomie', s: 1958, e: 2008, f: ['astro', 'earth'], L: [[1958, 'verrieres']], to: ['latmos'],
+      d: 'The CNRS upper-atmosphere laboratory, which flew instruments on sounding rockets and became one of the first French space laboratories. Merged into LATMOS in 2009. Location approximate.' },
+    { id: 'cnes', fam: 'a', kind: 'agency', n: 'Centre national d’études spatiales', sh: 'CNES', s: 1961, e: null, f: ['astro'], L: [[1961, 'cnes']],
+      d: 'The French space agency, head office in Paris (its technical center is in Toulouse).' },
+    { id: 'cea-astro', fam: 'a', kind: 'astro', n: 'CEA astrophysics: Service d’astrophysique, now DAp and AIM', sh: 'CEA astrophysics (SAp, DAp)', s: 1965, sa: 1, e: null, f: ['astro', 'cosmic'], L: [[1965, 'merisiers']],
+      d: 'Astrophysics at the CEA began with the CNES in the early 1960s, building X-ray, gamma-ray and infrared instruments. It shares the joint unit AIM with the CNRS and Paris Cité, and has been the Département d’astrophysique of Irfu since 2017. The founding year is approximate.' },
+    { id: 'ias', fam: 'a', kind: 'astro', n: 'Institut d’astrophysique spatiale', sh: 'Institut d’astrophysique spatiale', s: 1990, e: null, f: ['astro', 'cosmic'], L: [[1990, 'ias']],
+      d: 'Space astrophysics on the Orsay campus. It led the HFI instrument of Planck and took part in CoRoT, Euclid and many others.' },
+    { id: 'lesia', fam: 'a', kind: 'astro', n: 'LESIA (space instrumentation, Paris Observatory)', sh: 'LESIA', s: 2002, e: null, f: ['astro'], L: [[2002, 'lesia']],
+      d: 'The space and instrumentation laboratory of the Paris Observatory at Meudon, formed in 2002. It was one of the builders of the CoRoT satellite and of instruments for planetary missions.' },
+    { id: 'latmos', fam: 'a', kind: 'astro', n: 'LATMOS', sh: 'LATMOS', s: 2009, e: null, f: ['astro', 'earth'], L: [[2009, 'guyancourt']],
+      d: 'Atmospheres and space observations, formed in 2009 from the Service d’aéronomie and another space physics laboratory. Location approximate.' },
+
+    // ---- radioactivity and nuclear physics
+    { id: 'radium', fam: 'n', kind: 'lab', n: 'Institut du Radium, now Institut Curie', sh: 'Institut du Radium (Curie)', s: 1909, e: null, f: ['nuclear', 'atomic'], L: [[1909, 'curie']], to: ['orsay-fac'],
+      d: 'Agreed in 1909 between the university and the Institut Pasteur, finished in 1914: a physics and chemistry laboratory directed by Marie Curie, and a biology laboratory directed by Claudius Regaud. Artificial radioactivity was found here in 1934. It became the Institut Curie in 1970; the Curie pavilion is a museum.' },
+    { id: 'onrsi', fam: 'n', kind: 'agency', n: 'Office national des recherches scientifiques (Bellevue)', sh: 'ONRSI, Bellevue', s: 1922, e: 1938, f: ['general', 'atomic'], L: [[1922, 'bellevue']], to: ['cnrs'],
+      d: 'A national office for applied research with laboratories at Meudon-Bellevue, including the large electromagnet built there in the late 1920s. It was absorbed into the CNRS, and Bellevue remained a CNRS campus.' },
+    { id: 'cdf-nuc', fam: 'n', kind: 'lab', n: 'Nuclear and corpuscular physics at the Collège de France', sh: 'Collège de France nuclear labs', s: 1937, e: 2004, f: ['nuclear', 'particle', 'cosmic'], L: [[1937, 'cdf']], to: ['ipn', 'apc'],
+      d: 'Joliot’s nuclear chemistry laboratory (1937), with one of the first cyclotrons in Europe; the 1939 neutron-multiplication experiment was done here. After the cyclotron moved to Orsay, Leprince-Ringuet’s chair (1959) continued with particle physics, and the group (PCC) joined APC in 2005.' },
+    { id: 'ivry', fam: 'n', kind: 'lab', n: 'Laboratoire de synthèse atomique, Ivry', sh: 'Ivry laboratory', s: 1937, sa: 1, e: 1972, ea: 1, f: ['nuclear', 'particle'], L: [[1937, 'ivry']], to: ['ipn'],
+      d: 'A CNRS laboratory opened by Joliot in the late 1930s, later part of the Joliot-Curie group with a betatron; Charpak tested his first wire chambers here. Its physicists joined Orsay around 1972. Both dates are approximate.' },
+    { id: 'cnrs', fam: 'n', kind: 'agency', n: 'Centre national de la recherche scientifique', sh: 'CNRS', s: 1939, e: null, f: ['general'], L: [[1939, 'cnrs']], to: ['in2p3'],
+      d: 'Created on 19 October 1939 from the funding bodies of the 1930s, with full-time research positions. Almost every laboratory on this page after 1960 is a joint unit with the CNRS.' },
+    { id: 'cea', fam: 'n', kind: 'agency', n: 'Commissariat à l’énergie atomique (Fort de Châtillon)', sh: 'CEA, Fontenay-aux-Roses', s: 1945, e: null, f: ['nuclear'], L: [[1945, 'fontenay']], to: ['saclay', 'zoe'],
+      d: 'Created in October 1945 with Frédéric Joliot as high commissioner. Its first laboratory was the Fort de Châtillon, where ZOÉ went critical in 1948.' },
+    { id: 'saclay', fam: 'n', kind: 'lab', n: 'CEA Saclay center', sh: 'CEA Saclay', s: 1952, e: null, f: ['nuclear', 'particle', 'astro', 'atomic', 'condensed'], L: [[1952, 'saclay']], to: ['saturne', 'ipht', 'cea-astro', 'irfu'],
+      d: 'The main CEA research center, on the plateau from 1952: research reactors, the Saturne synchrotron, Gargamelle, and the laser laboratory where Anne L’Huillier found high-harmonic generation (1987) and Pierre Agostini’s team measured attosecond pulse trains (2001).' },
+    { id: 'ipht', fam: 'n', kind: 'lab', n: 'CEA theory: SPhT, now Institut de physique théorique', sh: 'CEA theory (SPhT, IPhT)', s: 1963, sa: 1, e: null, f: ['theory', 'particle', 'nuclear'], L: [[1963, 'saclay']],
+      d: 'The theoretical physics service of the CEA at Saclay, from statistical physics to particle theory and cosmology. Founding year approximate.' },
+    { id: 'ipn', fam: 'n', kind: 'lab', n: 'Institut de physique nucléaire d’Orsay (Laboratoire Joliot-Curie)', sh: 'IPN Orsay', s: 1956, e: 2019, f: ['nuclear', 'particle', 'cosmic'], L: [[1956, 'ipn']], to: ['ijclab', 'csnsm', 'lpnhe'],
+      d: 'Founded by Irène Joliot-Curie in 1956 and completed by Frédéric Joliot: synchrocyclotron (1958), a variable-energy cyclotron, the Alice heavy-ion accelerator and the Tandem (1972). Later in ALICE, Auger and JLab. Merged into IJCLab in 2020.' },
+    { id: 'csnsm', fam: 'n', kind: 'lab', n: 'CSNSM (nuclear and mass spectrometry)', sh: 'CSNSM', s: 1962, e: 2019, f: ['nuclear', 'astro', 'condensed'], L: [[1962, 'csnsm']], to: ['ijclab'],
+      d: 'Formed in 1962 from Aimé Cotton’s former Bellevue magnet laboratory and René Bernas’s isotope separation team at the IPN. Nuclear structure, nuclear astrophysics and materials. Merged into IJCLab in 2020.' },
+    { id: 'in2p3', fam: 'n', kind: 'agency', n: 'Institut national de physique nucléaire et de physique des particules (CNRS)', sh: 'IN2P3', s: 1971, e: null, f: ['nuclear', 'particle', 'cosmic'], L: [[1971, 'in2p3']],
+      d: 'The CNRS institute that groups the nuclear, particle and astroparticle laboratories of all French universities.' },
+    { id: 'irfu', fam: 'n', kind: 'lab', n: 'DAPNIA, then Irfu (CEA)', sh: 'DAPNIA, Irfu (CEA)', s: 1992, sa: 1, e: null, f: ['particle', 'nuclear', 'astro', 'cosmic'], L: [[1992, 'irfu']],
+      d: 'The CEA department that merged particle physics, nuclear physics and astrophysics at Saclay in 1991–92, renamed Irfu (Institute of research into the fundamental laws of the universe) in 2008.' },
+    { id: 'ijclab', fam: 'n', kind: 'lab', n: 'IJCLab, Laboratoire de physique des deux infinis Irène Joliot-Curie', sh: 'IJCLab', s: 2020, e: null, f: ['nuclear', 'particle', 'cosmic', 'astro', 'theory'], L: [[2020, 'ipn']],
+      d: 'IPN, LAL, CSNSM, LPT and the imaging laboratory IMNC, merged on 1 January 2020: one of the largest physics laboratories in Europe.' },
+
+    // ---- particles, cosmic rays, astroparticles
+    { id: 'llr', fam: 'p', kind: 'lab', n: 'Polytechnique cosmic-ray laboratory, now Laboratoire Leprince-Ringuet', sh: 'Leprince-Ringuet lab (LLR)', s: 1936, e: null, f: ['cosmic', 'particle'], L: [[1936, 'navarre'], [1976, 'palaiseau']],
+      d: 'Founded by Louis Leprince-Ringuet in 1936 for cosmic rays (cloud chambers in magnets, at Largentière and the Pic du Midi), turned to accelerators in the 1950s and 1960s, named after him in 2001. Today CMS at the LHC, H.E.S.S., Fermi and CTA.' },
+    { id: 'lal', fam: 'p', kind: 'lab', n: 'Laboratoire de l’accélérateur linéaire', sh: 'LAL, Orsay', s: 1955, e: 2019, f: ['particle', 'cosmic', 'astro'], L: [[1955, 'lal']], to: ['ijclab', 'lure'],
+      d: 'Built from 1955 by Yves Rocard’s ENS physics laboratory around a linear accelerator (2.3 GeV by 1968). It hosted AdA, built ACO and DCI, and later worked on LEP, ATLAS, Planck, Auger and Virgo. Merged into IJCLab in 2020.' },
+    { id: 'lpt', fam: 'p', kind: 'lab', n: 'Laboratoire de physique théorique d’Orsay (LPTHE until 1999)', sh: 'LPT Orsay', s: 1959, e: 2019, f: ['theory', 'particle'], L: [[1959, 'lpt']], to: ['ijclab', 'lpthe', 'lpt-ens'],
+      d: 'The ENS theory group of Maurice Lévy, moved to Orsay in 1959–60. It spun off LPTHE at Jussieu (1966) and the ENS theory laboratory (1970). Merged into IJCLab in 2020.' },
+    { id: 'lpthe', fam: 'p', kind: 'lab', n: 'Laboratoire de physique théorique et hautes énergies (Jussieu)', sh: 'LPTHE, Jussieu', s: 1966, e: null, f: ['theory', 'particle'], L: [[1966, 'jussieu']],
+      d: 'A theory laboratory set up in central Paris by Maurice Lévy from the Orsay group, now part of Sorbonne Université.' },
+    { id: 'lpnhe', fam: 'p', kind: 'lab', n: 'Laboratoire de physique nucléaire et de hautes énergies', sh: 'LPNHE, Jussieu', s: 1970, e: null, f: ['particle', 'cosmic', 'astro'], L: [[1970, 'jussieu']],
+      d: 'Founded in 1970 by bubble-chamber physicists from the IPN who joined Paris VI. Today ATLAS, LHCb, neutrinos, H.E.S.S., the Pierre Auger Observatory and supernova cosmology.' },
+    { id: 'apc', fam: 'p', kind: 'lab', n: 'AstroParticule et Cosmologie', sh: 'APC', s: 2005, e: null, f: ['cosmic', 'astro', 'particle', 'theory'], L: [[2005, 'cdf'], [2007, 'condorcet']],
+      d: 'Created on 1 January 2005 from the Collège de France group (PCC) and teams of the CEA, the Observatoire, the IAP and Orsay; at Paris Rive Gauche since 2007. Gravitational waves (Virgo, LISA), the cosmic microwave background, high-energy astrophysics and neutrinos.' },
+
+    // ---- atoms, light and matter
+    { id: 'lkb', fam: 'm', kind: 'lab', n: 'Laboratoire Kastler Brossel', sh: 'Laboratoire Kastler Brossel', s: 1951, e: null, f: ['atomic'], L: [[1951, 'lhomond']],
+      d: 'Started as Alfred Kastler and Jean Brossel’s Hertzian spectroscopy group at the ENS (optical pumping), named after them in 1994. Laser cooling (Cohen-Tannoudji) and cavity quantum electrodynamics (Haroche) were developed here.' },
+    { id: 'lps', fam: 'm', kind: 'lab', n: 'Laboratoire de physique des solides', sh: 'LPS Orsay', s: 1959, e: null, f: ['condensed'], L: [[1959, 'lps']],
+      d: 'Founded in 1959 by Jacques Friedel, Raimond Castaing and André Guinier. De Gennes worked on superconductivity and liquid crystals here, and Albert Fert’s team found giant magnetoresistance in 1988 with Thomson-CSF.' },
+    { id: 'lpt-ens', fam: 'm', kind: 'lab', n: 'Laboratoire de physique théorique de l’ENS', sh: 'ENS theory laboratory', s: 1970, e: 2018, f: ['theory'], L: [[1970, 'lhomond']], to: ['lpens'],
+      d: 'Created in 1970 by Philippe Meyer with part of the Orsay theorists. Merged into LPENS in 2019.' },
+    { id: 'lpens', fam: 'm', kind: 'lab', n: 'Laboratoire de physique de l’ENS', sh: 'LPENS', s: 2019, e: null, f: ['condensed', 'theory', 'atomic'], L: [[2019, 'lhomond']],
+      d: 'The merger of the ENS physics laboratories (except LKB) in 2019.' },
+
+    // ---- facilities
+    { id: 'zoe', fam: 'f', kind: 'fac', n: 'ZOÉ (EL1), the first French reactor', sh: 'ZOÉ reactor', s: 1948, e: 1975, ea: 1, f: ['nuclear'], L: [[1948, 'fontenay']],
+      d: 'Heavy water and uranium oxide, at almost zero power, critical on 15 December 1948 at the Fort de Châtillon. Shutdown year approximate; the building is now a museum.' },
+    { id: 'saturne', fam: 'f', kind: 'fac', n: 'Saturne synchrotron', sh: 'Saturne', s: 1958, e: 1997, f: ['nuclear', 'particle'], L: [[1958, 'saturne']],
+      d: 'The CEA proton synchrotron at Saclay (Saturne II from 1978), later the Laboratoire national Saturne for nuclear physics, closed in 1997.' },
+    { id: 'synchro', fam: 'f', kind: 'fac', n: 'Orsay synchrocyclotron', sh: 'Orsay synchrocyclotron', s: 1958, e: 1991, f: ['nuclear'], L: [[1958, 'ipn']],
+      d: 'First internal beam in June 1958, two months before Frédéric Joliot died. Converted in 1991 into the proton-therapy center of the Institut Curie.' },
+    { id: 'ada', fam: 'f', kind: 'fac', n: 'AdA (Anello di Accumulazione) at Orsay', sh: 'AdA at Orsay', s: 1962, e: 1964, ea: 1, f: ['particle'], L: [[1962, 'lal']],
+      d: 'Bruno Touschek’s small electron-positron ring, built at Frascati and brought to Orsay in 1962 to use the LAL injector. First electron-positron collisions observed in 1963; discovery of the Touschek effect.' },
+    { id: 'aco', fam: 'f', kind: 'fac', n: 'ACO (Anneau de collisions d’Orsay)', sh: 'ACO collider', s: 1965, e: 1988, ea: 1, f: ['particle', 'atomic'], L: [[1965, 'lal']],
+      d: 'The LAL electron-positron collider, which studied the light vector mesons and then served as a synchrotron light source. Preserved as a museum.' },
+    { id: 'tandem', fam: 'f', kind: 'fac', n: 'Orsay Tandem', sh: 'Orsay Tandem', s: 1972, e: null, f: ['nuclear'], L: [[1972, 'tandem']],
+      d: 'A Van de Graaff tandem electrostatic accelerator (10 MV, later 15 MV) for nuclear physics, still in use at IJCLab.' },
+    { id: 'lure', fam: 'f', kind: 'fac', n: 'LURE (synchrotron radiation laboratory)', sh: 'LURE', s: 1973, e: 2003, f: ['condensed', 'atomic'], L: [[1973, 'lure']], to: ['soleil'],
+      d: 'Created in 1973 to use the synchrotron light of the LAL rings, separate from LAL from 1985, closed at the end of 2003 when SOLEIL took over.' },
+    { id: 'dci', fam: 'f', kind: 'fac', n: 'DCI collider', sh: 'DCI collider', s: 1976, e: 2003, ea: 1, f: ['particle', 'condensed'], L: [[1976, 'lure']],
+      d: 'The second LAL electron-positron collider (1976), later a light source for LURE.' },
+    { id: 'soleil', fam: 'f', kind: 'fac', n: 'Synchrotron SOLEIL', sh: 'SOLEIL synchrotron', s: 2001, e: null, f: ['condensed', 'atomic'], L: [[2001, 'soleil']],
+      d: 'The national synchrotron light source, founded in 2001, with first light in 2006 at Saint-Aubin on the plateau.' },
+
+    // ---- experiments outside institutions (pseudo-row for events)
+    { id: 'exp', fam: 'exp', kind: null, n: 'Experiments in the city', sh: 'Experiments in the city', s: 1849, e: 1851, f: ['general'], L: [[1849, 'suresnes']], pseudo: 1 }
+  ];
+
+  // events: y year, i institution, f field, t title, d text; p = own place for city experiments
+  var EV = [
+    { y: 1231, i: 'univ-med', f: 'general', t: 'Parens scientiarum', d: 'A papal bull confirms the university’s right to set its own statutes, independent of the bishop of Paris.' },
+    { y: 1277, i: 'univ-med', f: 'general', t: 'The condemnation of 1277', d: 'Bishop Étienne Tempier condemns 219 propositions, among them limits on God’s power that ruled out a vacuum or other worlds. Duhem saw in it the birth of modern science; most historians find that overstated.' },
+    { y: 1340, i: 'univ-med', f: 'general', t: 'Buridan’s impetus (c. 1340s)', d: 'Jean Buridan explains projectile motion by an impetus, proportional to quantity of matter and speed, given by the thrower and slowly worn down. Date approximate.' },
+    { y: 1377, i: 'navarre', f: 'astro', t: 'Oresme, Livre du ciel et du monde', d: 'Nicole Oresme argues that no observation can rule out the daily rotation of the Earth, before keeping the traditional view.' },
+    { y: 1676, i: 'obs', f: 'astro', t: 'Rømer: light has a finite speed', d: 'From the timing of the eclipses of Io, Ole Rømer predicts a delay of about ten minutes for the November 1676 eclipse: the light-travel time across part of the Earth’s orbit.' },
+    { y: 1792, i: 'obs', f: 'general', t: 'The meridian survey and the metre', d: 'Delambre and Méchain measure the meridian arc from Dunkirk to Barcelona (1792–1798), on which the metre is based.' },
+    { y: 1819, i: 'acad', f: 'atomic', t: 'Fresnel’s diffraction prize', d: 'Fresnel’s wave theory wins the Académie prize after Arago observes the bright spot that Poisson had thought absurd.' },
+    { y: 1820, i: 'acad', f: 'general', t: 'Ampère’s electrodynamics', d: 'Weeks after hearing of Ørsted’s experiment, Ampère presents the forces between currents to the Académie.' },
+    { y: 1824, i: 'x', f: 'general', t: 'Carnot, Réflexions sur la puissance motrice du feu', d: 'Sadi Carnot, a Polytechnique graduate, shows that the efficiency of a heat engine is bounded by its two temperatures.' },
+    { y: 1846, i: 'acad', f: 'astro', t: 'Le Verrier predicts Neptune', d: 'From the perturbations of Uranus, Le Verrier computes the position of an unseen planet; Galle finds Neptune near it in September 1846.' },
+    { y: 1849, i: 'exp', f: 'atomic', p: 'suresnes', t: 'Fizeau measures the speed of light', d: 'A toothed wheel at Suresnes and a mirror at Montmartre, 8.6 km apart: the first terrestrial measurement of the speed of light.' },
+    { y: 1851, i: 'exp', f: 'general', p: 'pantheon', t: 'Foucault’s pendulum', d: 'Shown first at the Observatoire, then under the dome of the Panthéon: the plane of the swing turns, revealing the rotation of the Earth.' },
+    { y: 1862, i: 'obs', f: 'atomic', t: 'Foucault’s rotating mirror', d: 'Foucault measures the speed of light at about 298,000 km/s.' },
+    { y: 1876, i: 'meudon', f: 'astro', t: 'Janssen founds Meudon', d: 'An observatory for physical astronomy, the spectroscopy and photography of the Sun.' },
+    { y: 1887, i: 'obs', f: 'astro', t: 'The Carte du Ciel', d: 'An international congress at the Observatoire launches a photographic map of the whole sky.' },
+    { y: 1891, i: 'fac-sci', f: 'atomic', t: 'Lippmann’s color photography', d: 'Colors recorded as standing waves in the emulsion (Nobel Prize 1908).' },
+    { y: 1896, i: 'jardin', f: 'nuclear', t: 'Becquerel discovers radioactivity', d: 'Uranium salts fog photographic plates without any light: a spontaneous radiation.' },
+    { y: 1898, i: 'espci', f: 'nuclear', t: 'Polonium and radium', d: 'Marie and Pierre Curie, with Gustave Bémont for radium, find two new radioactive elements in pitchblende.' },
+    { y: 1908, i: 'fac-sci', f: 'general', t: 'Perrin weighs the atom', d: 'From the sedimentation and Brownian motion of grains in suspension, Jean Perrin measures Avogadro’s number (Nobel Prize 1926).' },
+    { y: 1914, i: 'radium', f: 'nuclear', t: 'The Institut du Radium opens', d: 'The Curie laboratory, directed by Marie Curie, is finished just before the war.' },
+    { y: 1924, i: 'fac-sci', f: 'theory', t: 'De Broglie’s matter waves', d: 'Louis de Broglie’s thesis attaches a wave of wavelength h/p to every particle (Nobel Prize 1929).' },
+    { y: 1930, i: 'meudon', f: 'astro', t: 'Lyot’s coronagraph', d: 'Bernard Lyot builds a telescope that blocks the solar disk to observe the corona without an eclipse.' },
+    { y: 1932, i: 'radium', f: 'nuclear', t: 'The neutron, nearly', d: 'Irène Curie and Frédéric Joliot see protons knocked out of paraffin by the “beryllium radiation” and take it for gamma rays; Chadwick identifies the neutron weeks later.' },
+    { y: 1934, i: 'radium', f: 'nuclear', t: 'Artificial radioactivity', d: 'Alpha particles on aluminum make radioactive phosphorus-30 (Nobel Prize in chemistry 1935).' },
+    { y: 1936, i: 'llr', f: 'cosmic', t: 'A cosmic-ray laboratory at Polytechnique', d: 'Leprince-Ringuet’s magnet and cloud chamber, the school’s first laboratory.' },
+    { y: 1938, i: 'fac-sci', f: 'cosmic', t: 'Auger: extensive air showers', d: 'Pierre Auger, Roland Maze and colleagues find coincidences between counters tens to hundreds of meters apart: showers from primaries of at least 10¹⁵ eV.' },
+    { y: 1939, i: 'cdf-nuc', f: 'nuclear', t: 'Neutron multiplication in fission', d: 'Halban, Joliot and Kowarski show that each fission of uranium releases more than one neutron: a chain reaction is possible.' },
+    { y: 1944, i: 'llr', f: 'cosmic', t: 'A particle of 1000 electron masses', d: 'Leprince-Ringuet and Lhéritier measure a cosmic-ray particle now read as an early charged K meson.' },
+    { y: 1948, i: 'zoe', f: 'nuclear', t: 'ZOÉ goes critical', d: 'The first French reactor, at the Fort de Châtillon, on 15 December 1948.' },
+    { y: 1950, i: 'ens', f: 'atomic', t: 'Optical pumping', d: 'Alfred Kastler proposes to use light to drive atoms into chosen magnetic sublevels (Nobel Prize 1966).' },
+    { y: 1953, i: 'llr', f: 'cosmic', t: 'The Bagnères-de-Bigorre conference', d: 'Leprince-Ringuet’s cosmic-ray conference, remembered as the moment particle discovery passed from cosmic rays to accelerators.' },
+    { y: 1958, i: 'synchro', f: 'nuclear', t: 'First beam of the synchrocyclotron', d: 'June 1958, at the new Orsay laboratory; Frédéric Joliot dies in August.' },
+    { y: 1963, i: 'ada', f: 'particle', t: 'First electron-positron collisions', d: 'AdA, filled from the LAL linac, records the first observed electron-positron collisions, and the Touschek effect.' },
+    { y: 1973, i: 'saclay', f: 'particle', t: 'Weak neutral currents in Gargamelle', d: 'The bubble chamber designed and built at Saclay, run at CERN, gives the first evidence of the neutral current predicted by electroweak theory.' },
+    { y: 1982, i: 'iogs', f: 'atomic', t: 'Aspect’s Bell tests', d: 'Entangled photons with polarizers switched during flight violate Bell’s inequalities (Nobel Prize 2022).' },
+    { y: 1987, i: 'saclay', f: 'atomic', t: 'High-harmonic generation', d: 'Anne L’Huillier’s group sees a plateau of high harmonics from atoms in an intense laser field, the basis of attosecond pulses (Nobel Prize 2023).' },
+    { y: 1988, i: 'lps', f: 'condensed', t: 'Giant magnetoresistance', d: 'Albert Fert’s team, with Thomson-CSF, finds a large change of resistance in magnetic multilayers (Nobel Prize 2007).' },
+    { y: 1996, i: 'lkb', f: 'atomic', t: 'Decoherence observed', d: 'Serge Haroche’s group watches a superposition of field states in a cavity lose its coherence (Nobel Prize 2012).' },
+    { y: 2001, i: 'saclay', f: 'atomic', t: 'Attosecond pulse trains measured', d: 'Pierre Agostini’s team at Saclay measures trains of pulses about 250 attoseconds long (Nobel Prize 2023).' },
+    { y: 2004, i: 'llr', f: 'cosmic', t: 'H.E.S.S. complete', d: 'The four-telescope Cherenkov array in Namibia opens TeV gamma-ray astronomy to the Galactic plane.' },
+    { y: 2006, i: 'lesia', f: 'astro', t: 'CoRoT launched', d: 'A space telescope for stellar oscillations and exoplanet transits.' },
+    { y: 2008, i: 'lpnhe', f: 'cosmic', t: 'Auger: the end of the spectrum', d: 'The Pierre Auger Observatory, named for Pierre Auger, reports the suppression of the cosmic-ray flux above about 4 × 10¹⁹ eV.' },
+    { y: 2009, i: 'ias', f: 'astro', t: 'Planck launched', d: 'Its HFI instrument, led from the IAS, maps the cosmic microwave background.' },
+    { y: 2012, i: 'llr', f: 'particle', t: 'The Higgs boson', d: 'Discovered by ATLAS and CMS at CERN, with Paris groups in both (LLR and Irfu in CMS; LAL, LPNHE and Irfu in ATLAS).' },
+    { y: 2017, i: 'apc', f: 'cosmic', t: 'A neutron-star merger in gravitational waves', d: 'LIGO and Virgo, with teams of APC and LAL in Virgo, detect GW170817, also seen in gamma rays and light.' },
+    { y: 2023, i: 'iap', f: 'astro', t: 'Euclid launched', d: 'The ESA mission maps the dark universe; the IAP and the CEA are among its French centers.' }
+  ];
+
+  var BY = {};
+  INST.forEach(function (i) { BY[i.id] = i; i.from = []; i.ev = []; });
+  INST.forEach(function (i) { (i.to || []).forEach(function (t) { if (BY[t]) BY[t].from.push(i.id); }); });
+  EV.forEach(function (e, k) { e.k = k; if (BY[e.i]) BY[e.i].ev.push(e); });
+
+  // marker offsets for institutions that share a place
+  var OFF = {};
+  (function () {
+    var users = {};
+    INST.forEach(function (i) { if (i.pseudo) return; i.L.forEach(function (l) { (users[l[1]] = users[l[1]] || []).push(i.id); }); });
+    Object.keys(users).forEach(function (p) {
+      var u = users[p], n = u.length;
+      u.forEach(function (id, k) {
+        if (n === 1) { OFF[id + '|' + p] = [0, 0]; return; }
+        var a = 2 * Math.PI * k / n, r = 0.00034 * Math.sqrt(n);
+        OFF[id + '|' + p] = [r * Math.sin(a), r * Math.cos(a) / Math.cos(PL[p][0] * Math.PI / 180)];
+      });
+    });
+  })();
+  function locAt(i, y) { var k = 0; for (var j = 0; j < i.L.length; j++) if (i.L[j][0] <= y) k = j; return i.L[k]; }
+  function latlngOf(i, l) { var p = PL[l[1]], o = OFF[i.id + '|' + l[1]] || [0, 0]; return [p[0] + o[0], p[1] + o[1]]; }
+  function alive(i, y) { return y >= i.s && (i.e == null || y <= i.e); }
+  function fmtYears(i) { return (i.sa ? 'c. ' : '') + i.s + ' – ' + (i.e == null ? 'today' : (i.ea ? 'c. ' : '') + i.e); }
+
+  // =========================================================== shared state
+  var ST = { year: 1938, field: 'all', keepGen: true, view: 'all', sel: null, ev: null };
+  function matches(i) {
+    if (ST.field === 'all') return true;
+    if (i.pseudo) return EV.some(function (e) { return e.i === 'exp' && e.f === ST.field; });
+    if (i.f.indexOf(ST.field) >= 0) return true;
+    return ST.keepGen && (i.kind === 'uni' || (i.kind === 'school' && i.f.indexOf('general') >= 0));
+  }
+  var hooks = [];
+  function onYear(fn) { hooks.push(fn); }
+  function setYear(y, src) { ST.year = clamp(Math.round(y), 1150, NOW); hooks.forEach(function (fn) { fn(src); }); }
+
+  // =========================================================== chips, legend
+  (function () {
+    var box = $('#hp-fields');
+    var list = [['all', 'All fields', null]].concat(Object.keys(FIELD).filter(function (k) { return k !== 'general'; }).map(function (k) { return [k, FIELD[k].t, FIELD[k].c]; }));
+    list.forEach(function (it) {
+      var b = el('button', 'hp-chip' + (it[0] === 'all' ? ' hp-on' : ''), (it[2] ? '<i style="background:' + it[2] + '"></i>' : '') + it[1]);
+      b.type = 'button'; b.dataset.f = it[0];
+      b.addEventListener('click', function () { setField(it[0]); });
+      box.appendChild(b);
+    });
+    var lg = $('#hp-legend');
+    Object.keys(KIND).forEach(function (k) { lg.appendChild(el('span', null, '<i style="background:' + KIND[k].c + '"></i>' + KIND[k].t)); });
+    lg.appendChild(el('span', null, '<b></b>discovery or milestone'));
+  })();
+  function setField(f) {
+    ST.field = f;
+    $$('#hp-fields .hp-chip').forEach(function (b) { b.classList.toggle('hp-on', b.dataset.f === f); });
+    TL.draw(); MAP.refresh();
+  }
+  $('#hp-keepgen').addEventListener('change', function () { ST.keepGen = this.checked; TL.draw(); MAP.refresh(); });
+
+  // =========================================================== tooltip
+  var tip = $('#hp-tip'), atlas = $('#hp-atlas');
+  function showTip(ev, html) {
+    tip.innerHTML = html; tip.classList.add('hp-tip--on');
+    var r = atlas.getBoundingClientRect(), x = ev.clientX - r.left + 14, y = ev.clientY - r.top + 14;
+    var w = tip.offsetWidth; if (x + w > r.width - 6) x = Math.max(6, ev.clientX - r.left - w - 14);
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+  function hideTip() { tip.classList.remove('hp-tip--on'); }
+
+  // =========================================================== the timeline
+  var VIEWS = {
+    all: [[1150, 0], [1780, 0.17], [1890, 0.43], [NOW, 1]],
+    modern: [[1780, 0], [1890, 0.3], [NOW, 1]],
+    c20: [[1890, 0], [NOW, 1]],
+    post: [[1940, 0], [NOW, 1]]
+  };
+  var TL = (function () {
+    var svg = $('#hp-tl'), VW = 1000, X0 = 262, X1 = 986, TA = 40, RH = 17, HH = 26;
+    var knots, rowsY = {}, cursor, cursorLab, H;
+    function fx(y) {
+      var k = knots; if (y <= k[0][0]) return X0; if (y >= k[k.length - 1][0]) return X1;
+      for (var j = 1; j < k.length; j++) if (y <= k[j][0]) { var t = (y - k[j - 1][0]) / (k[j][0] - k[j - 1][0]); return X0 + (X1 - X0) * (k[j - 1][1] + t * (k[j][1] - k[j - 1][1])); }
+    }
+    function fy(x) {
+      var k = knots, u = clamp((x - X0) / (X1 - X0), 0, 1);
+      for (var j = 1; j < k.length; j++) if (u <= k[j][1]) { var t = (u - k[j - 1][1]) / (k[j][1] - k[j - 1][1]); return k[j - 1][0] + t * (k[j][0] - k[j - 1][0]); }
+      return NOW;
+    }
+    function draw() {
+      knots = VIEWS[ST.view];
+      var y0 = knots[0][0];
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      rowsY = {};
+      // rows
+      var rows = [], y = TA + 8;
+      FAM.forEach(function (fm) {
+        var mem = INST.filter(function (i) { return i.fam === fm[0] && matches(i) && (i.e == null || i.e >= y0); }).sort(function (a, b) { return a.s - b.s || (a.e || NOW) - (b.e || NOW); });
+        if (!mem.length) return;
+        rows.push({ head: fm[1], y: y }); y += HH;
+        mem.forEach(function (i) { rows.push({ i: i, y: y }); rowsY[i.id] = y + RH / 2; y += RH; });
+        y += 4;
+      });
+      H = y + 30;
+      svg.setAttribute('viewBox', '0 0 ' + VW + ' ' + H);
+      // compressed-scale bands and grid
+      var gGrid = sv('g'); svg.appendChild(gGrid);
+      var maxPpy = 0; knots.forEach(function (k, j) { if (j) maxPpy = Math.max(maxPpy, (k[1] - knots[j - 1][1]) / (k[0] - knots[j - 1][0])); });
+      knots.forEach(function (k, j) {
+        if (!j) return;
+        var a = knots[j - 1], ppy = (k[1] - a[1]) / (k[0] - a[0]), xa = fx(a[0]), xb = fx(k[0]);
+        if (ppy < 0.6 * maxPpy) {
+          gGrid.appendChild(sv('rect', { x: xa, y: TA, width: xb - xa, height: H - TA - 26, fill: 'rgba(148,163,184,0.045)' }));
+          gGrid.appendChild(sv('text', { x: (xa + xb) / 2, y: H - 10, 'class': 'hp-tl-tick', 'font-style': 'italic', fill: '#64748b' }, 'compressed scale (×' + (ppy / maxPpy).toFixed(2) + ')'));
+        }
+        var pxy = (X1 - X0) * ppy, steps = [5, 10, 20, 25, 50, 100, 200], st = 200;
+        for (var q = 0; q < steps.length; q++) if (steps[q] * pxy >= 52) { st = steps[q]; break; }
+        for (var t = Math.ceil(a[0] / st) * st; t < k[0] + (j === knots.length - 1 ? 1 : 0); t += st) {
+          if (t === a[0] && j > 1) continue;
+          var x = fx(t);
+          gGrid.appendChild(sv('line', { x1: x, x2: x, y1: TA, y2: H - 26, stroke: '#1e293b', 'stroke-width': 1 }));
+          gGrid.appendChild(sv('text', { x: x, y: TA - 8, 'class': 'hp-tl-tick' }, t));
+        }
+        if (j < knots.length - 1) gGrid.appendChild(sv('path', { d: 'M' + (xb - 4) + ' ' + (TA - 3) + 'l4 6l4 -6', fill: 'none', stroke: '#64748b', 'stroke-width': 1.4 }));
+      });
+      gGrid.appendChild(sv('line', { x1: X0, x2: X1, y1: TA, y2: TA, stroke: '#475569' }));
+      // links between institutions
+      var gLink = sv('g', { fill: 'none' }); svg.appendChild(gLink);
+      INST.forEach(function (i) {
+        (i.to || []).forEach(function (t) {
+          var j = BY[t]; if (!j || rowsY[i.id] == null || rowsY[t] == null) return;
+          var xa = fx(Math.min(i.e == null ? NOW : i.e, j.s)), xb = fx(j.s), ya = rowsY[i.id], yb = rowsY[t];
+          var gap = i.e != null && j.s - i.e > 3;
+          gLink.appendChild(sv('path', { d: 'M' + xa + ' ' + ya + 'C' + (xa + 14) + ' ' + ya + ' ' + (xb - 14) + ' ' + yb + ' ' + xb + ' ' + yb, stroke: '#94a3b8', 'stroke-opacity': gap ? 0.35 : 0.5, 'stroke-width': 1.2, 'stroke-dasharray': gap ? '2 4' : '4 3' }));
+        });
+      });
+      // rows
+      var gRows = sv('g'); svg.appendChild(gRows);
+      rows.forEach(function (r) {
+        if (r.head) { gRows.appendChild(sv('text', { x: 10, y: r.y + 17, 'class': 'hp-tl-fam' }, r.head)); return; }
+        var i = r.i, g = sv('g', { 'class': 'hp-row' + (ST.sel === i.id ? ' hp-sel' : '') }); g.dataset.id = i.id;
+        g.appendChild(sv('rect', { 'class': 'hp-row-bg', x: 0, y: r.y, width: VW, height: RH }));
+        var lab = i.sh.length > 34 ? i.sh.slice(0, 33) + '…' : i.sh;
+        g.appendChild(sv('text', { x: 12, y: r.y + 12.5, 'class': 'hp-tl-lab' }, lab));
+        if (!i.pseudo) {
+          var xa = fx(Math.max(i.s, y0)), xb = fx(i.e == null ? NOW : i.e), c = KIND[i.kind].c;
+          if (xb - xa < 3) xb = xa + 3;
+          g.appendChild(sv('rect', { x: xa, y: r.y + 4, width: xb - xa, height: RH - 8, rx: 4.5, fill: c, 'fill-opacity': 0.78 }));
+          if (i.s < y0) g.appendChild(sv('path', { d: 'M' + (xa - 1) + ' ' + (r.y + 4) + 'l-6 ' + (RH - 8) / 2 + 'l6 ' + (RH - 8) / 2 + 'z', fill: c, 'fill-opacity': 0.5 }));
+          if (i.sa) g.appendChild(sv('rect', { x: xa - 14, y: r.y + 4, width: 14, height: RH - 8, rx: 4, fill: c, 'fill-opacity': 0.25 }));
+          if (i.e == null) g.appendChild(sv('path', { d: 'M' + (xb - 1) + ' ' + (r.y + 2.5) + 'l7 ' + (RH - 5) / 2 + 'l-7 ' + (RH - 5) / 2 + 'z', fill: c }));
+          i.L.forEach(function (l, j) { if (j && l[0] >= y0) { var xm = fx(l[0]); g.appendChild(sv('line', { x1: xm, x2: xm, y1: r.y + 2, y2: r.y + RH - 2, stroke: '#f8fafc', 'stroke-width': 2 })); } });
+        }
+        g.addEventListener('click', function () { select(i.id, null, 'tl'); });
+        g.addEventListener('mousemove', function (ev) { showTip(ev, '<b>' + i.n + '</b><br>' + (i.pseudo ? 'Experiments done outside any institution' : fmtYears(i) + ' · ' + KIND[i.kind].t)); });
+        g.addEventListener('mouseleave', hideTip);
+        gRows.appendChild(g);
+      });
+      // events
+      var gEv = sv('g'); svg.appendChild(gEv);
+      EV.forEach(function (e) {
+        if (rowsY[e.i] == null || e.y < y0) return;
+        var x = fx(e.y), yy = rowsY[e.i], g = sv('g', { 'class': 'hp-ev' });
+        g.appendChild(sv('path', { d: 'M' + x + ' ' + (yy - 6) + 'l5 6l-5 6l-5 -6z', fill: ST.ev === e.k ? '#fbbf24' : '#fde68a', stroke: '#0f172a', 'stroke-width': 1.2 }));
+        g.addEventListener('click', function (ev) { ev.stopPropagation(); selectEvent(e.k); });
+        g.addEventListener('mousemove', function (ev) { ev.stopPropagation(); showTip(ev, '<b>' + e.y + ' · ' + e.t + '</b><br>' + e.d); });
+        g.addEventListener('mouseleave', hideTip);
+        gEv.appendChild(g);
+      });
+      // year cursor and axis scrubbing
+      cursor = sv('line', { y1: TA - 2, y2: H - 26, stroke: '#fbbf24', 'stroke-width': 2, 'stroke-opacity': 0.85, 'pointer-events': 'none' });
+      cursorLab = sv('g', { 'pointer-events': 'none' });
+      cursorLab.appendChild(sv('rect', { x: -24, y: 2, width: 48, height: 20, rx: 10, fill: '#fbbf24' }));
+      cursorLab.appendChild(sv('text', { x: 0, y: 16.5, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: '#0f172a' }, ''));
+      svg.appendChild(cursor); svg.appendChild(cursorLab);
+      var hit = sv('rect', { x: X0 - 8, y: 0, width: X1 - X0 + 16, height: TA + 2, fill: 'transparent', 'class': 'hp-axis-hit' });
+      hit.addEventListener('mousemove', function (ev) { showTip(ev, 'Drag along the axis to set the year'); });
+      hit.addEventListener('mouseleave', hideTip);
+      svg.appendChild(hit);
+      var drag = false;
+      function toYear(ev) { var pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; var p = pt.matrixTransform(svg.getScreenCTM().inverse()); setYear(fy(p.x), 'tl'); }
+      hit.addEventListener('pointerdown', function (ev) { drag = true; hit.setPointerCapture(ev.pointerId); toYear(ev); hideTip(); });
+      hit.addEventListener('pointermove', function (ev) { if (drag) toYear(ev); });
+      hit.addEventListener('pointerup', function () { drag = false; });
+      moveCursor();
+    }
+    function moveCursor() {
+      if (!cursor) return;
+      var x = fx(ST.year), out = ST.year < knots[0][0];
+      cursor.setAttribute('x1', x); cursor.setAttribute('x2', x); cursor.style.display = out ? 'none' : '';
+      cursorLab.setAttribute('transform', 'translate(' + clamp(x, X0 + 10, X1 - 10) + ',0)'); cursorLab.style.display = out ? 'none' : '';
+      cursorLab.lastChild.textContent = ST.year;
+      $$('#hp-tl .hp-row').forEach(function (g) { var i = BY[g.dataset.id]; g.classList.toggle('hp-dead', !i.pseudo && !alive(i, ST.year)); });
+    }
+    function markSel() {
+      $$('#hp-tl .hp-row').forEach(function (g) { g.classList.toggle('hp-sel', g.dataset.id === ST.sel); });
+    }
+    onYear(moveCursor);
+    $$('#hp-views button').forEach(function (b) {
+      b.addEventListener('click', function () { ST.view = b.dataset.v; $$('#hp-views button').forEach(function (c) { c.classList.toggle('hp-seg-on', c === b); }); draw(); });
+    });
+    return { draw: draw, markSel: markSel };
+  })();
+
+  // =========================================================== the year slider and play button
+  var SL = [[1150, 0], [1790, 0.22], [1900, 0.46], [NOW, 1]];
+  function sToY(u) { for (var j = 1; j < SL.length; j++) if (u <= SL[j][1]) return SL[j - 1][0] + (u - SL[j - 1][1]) / (SL[j][1] - SL[j - 1][1]) * (SL[j][0] - SL[j - 1][0]); return NOW; }
+  function yToS(y) { for (var j = 1; j < SL.length; j++) if (y <= SL[j][0]) return SL[j - 1][1] + (y - SL[j - 1][0]) / (SL[j][0] - SL[j - 1][0]) * (SL[j][1] - SL[j - 1][1]); return 1; }
+  var slider = $('#hp-year'), big = $('#hp-year-big'), playBtn = $('#hp-play'), playing = false, lastT = 0, playY = 0;
+  slider.addEventListener('input', function () { stop(); setYear(sToY(+slider.value / 1000), 'sl'); });
+  onYear(function (src) { if (src !== 'sl') slider.value = Math.round(yToS(ST.year) * 1000); big.textContent = ST.year; });
+  function rate(y) { return y < 1600 ? 70 : y < 1790 ? 35 : y < 1900 ? 13 : 6; }
+  function frame() {
+    if (!playing) return;
+    var t = performance.now(), dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0; lastT = t;
+    playY += rate(playY) * dt;
+    if (playY >= NOW) { setYear(NOW, 'play'); stop(); return; }
+    if (Math.round(playY) !== ST.year) setYear(playY, 'play');
+    setTimeout(frame, 33);
+  }
+  function stop() { playing = false; playBtn.textContent = '▶'; playBtn.setAttribute('aria-label', 'Play the map forward in time'); }
+  playBtn.addEventListener('click', function () {
+    if (playing) { stop(); return; }
+    playing = true; lastT = 0; playY = ST.year >= NOW - 1 ? 1900 : ST.year;
+    playBtn.textContent = '❚❚'; playBtn.setAttribute('aria-label', 'Pause');
+    frame();
+  });
+
+  // =========================================================== the map
+  var MVIEW = { latin: [[48.8445, 2.3460], 15], paris: [[48.8520, 2.3380], 12.5], idf: [[48.7850, 2.2650], 10.5], saclay: [[48.7120, 2.1720], 13], france: [[47.95, 2.30], 7] };
+  var MAP = (function () {
+    var map = null, layer, trailLayer, cogLayer, M = {}, T = {}, SORB = PL.sorb;
+    var ghost = $('#hp-ghost'), trails = $('#hp-trails'), cogBox = $('#hp-cog'), out = $('#hp-out');
+    function init(attempt) {
+      if (!window.L) {
+        if ((attempt || 0) < 80) setTimeout(function () { init((attempt || 0) + 1); }, 100);
+        else $('#hp-leaf-msg').textContent = 'The map library could not be loaded.';
+        return;
+      }
+      $('#hp-leaf-msg').style.display = 'none';
+      map = L.map('hp-leaf', { zoomSnap: 0.5, scrollWheelZoom: false, worldCopyJump: false }).setView(MVIEW.idf[0], MVIEW.idf[1]);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, className: 'hp-tiles', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+      map.on('click', function () { map.scrollWheelZoom.enable(); });
+      map.on('mouseout', function () { map.scrollWheelZoom.disable(); });
+      cogLayer = L.layerGroup().addTo(map); trailLayer = L.layerGroup().addTo(map); layer = L.layerGroup().addTo(map);
+      INST.forEach(function (i) {
+        if (i.pseudo) return;
+        var m = L.circleMarker(latlngOf(i, i.L[0]), { radius: 7, weight: 1.5 });
+        m.bindTooltip(i.n, { direction: 'top', offset: [0, -6], className: 'hp-ltip' });
+        m.on('click', function () { select(i.id, null, 'map'); });
+        M[i.id] = m;
+        if (i.L.length > 1) T[i.id] = i;
+      });
+      EV.forEach(function (e) {
+        if (!e.p) return;
+        var m = L.circleMarker(PL[e.p], { radius: 6, weight: 2, color: '#fde68a', fillColor: '#0f172a', fillOpacity: 1, dashArray: '2 2' });
+        m.bindTooltip(e.y + ': ' + e.t, { direction: 'top', offset: [0, -6], className: 'hp-ltip' });
+        m.on('click', function () { selectEvent(e.k); });
+        e.m = m;
+      });
+      refresh();
+    }
+    function style(i, active) {
+      var c = KIND[i.kind].c, sel = ST.sel === i.id;
+      if (active) return { radius: sel ? 10 : 7, color: sel ? '#fbbf24' : '#0f172a', weight: sel ? 3 : 1.5, fillColor: c, fillOpacity: 0.92, opacity: 1, dashArray: null };
+      return { radius: sel ? 9 : 5.5, color: sel ? '#fbbf24' : '#64748b', weight: sel ? 2.5 : 1.5, fillColor: '#0f172a', fillOpacity: 0.6, opacity: 0.9, dashArray: null };
+    }
+    function cogAt(y) {
+      var la = 0, lo = 0, n = 0;
+      INST.forEach(function (i) { if (i.pseudo || !matches(i) || !alive(i, y)) return; var p = PL[locAt(i, y)[1]]; if (p[0] < 48.4) return; la += p[0]; lo += p[1]; n++; });
+      return n ? [la / n, lo / n, n] : null;
+    }
+    function dist(a, b) { var R = 6371, r = Math.PI / 180, dla = (b[0] - a[0]) * r, dlo = (b[1] - a[1]) * r; var h = Math.sin(dla / 2) * Math.sin(dla / 2) + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dlo / 2) * Math.sin(dlo / 2); return 2 * R * Math.asin(Math.sqrt(h)); }
+    function bearing(a, b) { var dy = b[0] - a[0], dx = (b[1] - a[1]) * Math.cos(a[0] * Math.PI / 180); var ang = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360; return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(ang / 45) % 8]; }
+    function refresh() {
+      var Y = ST.year, nAct = 0;
+      if (map) {
+        INST.forEach(function (i) {
+          if (i.pseudo) return;
+          var m = M[i.id], show = matches(i), act = alive(i, Y), past = i.e != null && Y > i.e;
+          if (!show || (!act && !(past && ghost.checked) && ST.sel !== i.id) || (Y < i.s && ST.sel !== i.id)) { if (layer.hasLayer(m)) layer.removeLayer(m); return; }
+          m.setLatLng(latlngOf(i, locAt(i, Y))); m.setStyle(style(i, act));
+          if (!layer.hasLayer(m)) layer.addLayer(m);
+          if (ST.sel === i.id || act) m.bringToFront();
+        });
+        EV.forEach(function (e) { if (!e.m) return; var on = Math.abs(Y - e.y) <= 15 && (ST.field === 'all' || e.f === ST.field || ST.field === 'general'); if (on && !layer.hasLayer(e.m)) layer.addLayer(e.m); if (!on && layer.hasLayer(e.m)) layer.removeLayer(e.m); });
+        // moves
+        trailLayer.clearLayers();
+        Object.keys(T).forEach(function (id) {
+          var i = T[id]; if (!(trails.checked || ST.sel === id) || !matches(i) || Y < i.L[1][0]) return;
+          var pts = i.L.filter(function (l) { return l[0] <= Y; }).map(function (l) { return latlngOf(i, l); });
+          L.polyline(pts, { color: KIND[i.kind].c, weight: ST.sel === id ? 3 : 2, opacity: 0.8, dashArray: '6 6' }).addTo(trailLayer);
+          pts.slice(0, -1).forEach(function (p) { L.circleMarker(p, { radius: 3, color: KIND[i.kind].c, weight: 1, fillOpacity: 0.4, opacity: 0.7 }).addTo(trailLayer); });
+        });
+        // center of gravity
+        cogLayer.clearLayers();
+        if (cogBox.checked && Y >= 1700) {
+          var pts = [], y;
+          for (y = 1700; y <= Y; y += 2) { var c = cogAt(y); if (c) pts.push([c[0], c[1]]); }
+          var cNow = cogAt(Y); if (cNow) pts.push([cNow[0], cNow[1]]);
+          if (pts.length > 1) L.polyline(pts, { color: '#fbbf24', weight: 2.5, opacity: 0.75 }).addTo(cogLayer);
+          [1800, 1900, 1950, 2000].forEach(function (yy) {
+            if (yy > Y - 8) return; var c = cogAt(yy); if (!c) return;
+            L.circleMarker([c[0], c[1]], { radius: 3.5, color: '#fbbf24', weight: 1.5, fillColor: '#0f172a', fillOpacity: 1 }).addTo(cogLayer);
+            L.marker([c[0], c[1]], { interactive: false, icon: L.divIcon({ className: 'hp-cog-lab', html: yy, iconSize: [40, 14], iconAnchor: [-6, 7] }) }).addTo(cogLayer);
+          });
+          if (cNow) L.circleMarker([cNow[0], cNow[1]], { radius: 7, color: '#0f172a', weight: 2, fillColor: '#fbbf24', fillOpacity: 1, interactive: false }).addTo(cogLayer);
+        }
+      }
+      INST.forEach(function (i) { if (!i.pseudo && matches(i) && alive(i, Y)) nAct++; });
+      var cg = cogAt(Y), txt = '<b>' + Y + '</b>: ' + nAct + ' institution' + (nAct === 1 ? '' : 's') + ' active' + (ST.field === 'all' ? '' : ' (' + FIELD[ST.field].t.toLowerCase() + (ST.keepGen ? ', with universities and schools' : '') + ')');
+      if (cg) { var d = dist(SORB, cg); txt += ' · center of gravity ' + (d < 0.5 ? 'at the Sorbonne' : d.toFixed(1) + ' km ' + bearing(SORB, cg) + ' of the Sorbonne'); }
+      out.innerHTML = txt;
+    }
+    function focus(i) {
+      if (!map || !i || i.pseudo) return;
+      var p = latlngOf(i, locAt(i, ST.year));
+      if (p[0] < 48.4) { map.flyTo(p, 9, { duration: 0.8 }); return; }
+      if (!map.getBounds().pad(-0.15).contains(p) || map.getZoom() < 12) map.flyTo(p, Math.max(map.getZoom(), 13), { duration: 0.8 });
+    }
+    function focusLL(p) { if (map) map.flyTo(p, Math.max(map.getZoom(), 12.5), { duration: 0.8 }); }
+    function view(k) { if (map) map.flyTo(MVIEW[k][0], MVIEW[k][1], { duration: 0.8 }); $$('#hp-mviews button').forEach(function (b) { b.classList.toggle('hp-seg-on', b.dataset.m === k); }); }
+    function resize() { if (map) map.invalidateSize(); }
+    [ghost, trails, cogBox].forEach(function (c) { c.addEventListener('change', refresh); });
+    $$('#hp-mviews button').forEach(function (b) { b.addEventListener('click', function () { view(b.dataset.m); }); });
+    onYear(refresh);
+    init(0);
+    return { refresh: refresh, focus: focus, focusLL: focusLL, view: view, resize: resize };
+  })();
+
+  // =========================================================== selection and the panel
+  var panel = $('#hp-panel');
+  function tagHtml(f) { return '<span class="hp-tag"><i style="background:' + FIELD[f].c + '"></i>' + FIELD[f].t + '</span>'; }
+  function instLink(id) { var j = BY[id]; return j ? '<span class="hp-link" data-id="' + id + '">' + j.sh + '</span>' : ''; }
+  function renderPanel() {
+    var i = BY[ST.sel];
+    if (!i) { panel.innerHTML = '<p class="hp-muted">Click a bar, a diamond or a marker to read about an institution here.</p>'; return; }
+    var h = '', e = ST.ev != null ? EV[ST.ev] : null;
+    if (e) h += '<div class="hp-evbox"><b>' + e.y + ' · ' + e.t + '</b><br>' + e.d + '</div>';
+    h += '<h4>' + i.n + '</h4>';
+    if (i.fr) h += '<div class="hp-panel-fr">' + i.fr + '</div>';
+    if (i.pseudo) {
+      h += '<p>Two classic experiments of the 1850s were done not in an institution but across the city: Fizeau’s toothed wheel between Suresnes and Montmartre, and Foucault’s pendulum in the Panthéon.</p>';
+    } else {
+      h += '<div class="hp-panel-meta"><span class="hp-yrs">' + fmtYears(i) + '</span><span class="hp-tag"><i style="background:' + KIND[i.kind].c + '"></i>' + KIND[i.kind].t + '</span>' + i.f.map(tagHtml).join('') + '</div>';
+      h += '<p>' + i.d + '</p>';
+      h += '<div class="hp-panel-sub">Where</div><ul>' + i.L.map(function (l, j) { var to = j + 1 < i.L.length ? i.L[j + 1][0] : (i.e == null ? 'today' : i.e); return '<li>' + PL[l[1]][2] + ' <span class="hp-muted">(' + l[0] + '–' + to + ')</span></li>'; }).join('') + '</ul>';
+      if (i.from.length || (i.to && i.to.length)) {
+        h += '<div class="hp-panel-sub">Lineage</div>';
+        if (i.from.length) h += '<div>From: ' + i.from.map(instLink).join(', ') + '</div>';
+        if (i.to && i.to.length) h += '<div>Became or gave rise to: ' + i.to.map(instLink).join(', ') + '</div>';
+      }
+    }
+    if (i.ev.length) h += '<div class="hp-panel-sub">Milestones</div><ul>' + i.ev.map(function (x) { return '<li class="hp-evline' + (ST.ev === x.k ? ' hp-evon' : '') + '" data-k="' + x.k + '">' + x.y + ': ' + x.t + '</li>'; }).join('') + '</ul>';
+    panel.innerHTML = h;
+    panel.scrollTop = 0;
+  }
+  panel.addEventListener('click', function (ev) {
+    var a = ev.target.closest('.hp-link'); if (a) { select(a.dataset.id, null, 'panel'); return; }
+    var l = ev.target.closest('.hp-evline'); if (l) selectEvent(+l.dataset.k);
+  });
+  function select(id, evk, src) {
+    var i = BY[id]; if (!i) return;
+    ST.sel = id; ST.ev = evk == null ? null : evk;
+    if (evk == null && !i.pseudo && !alive(i, ST.year)) setYear(clamp(ST.year, i.s, i.e == null ? NOW : i.e), 'sel');
+    if (!matches(i)) { setField('all'); }
+    TL.markSel(); renderPanel(); MAP.refresh();
+    var e = evk != null ? EV[evk] : null;
+    if (src === 'init') return;
+    if (e && e.p) MAP.focusLL(PL[e.p]); else if (src !== 'map') MAP.focus(i);
+  }
+  function selectEvent(k) {
+    var e = EV[k]; setYear(e.y, 'ev');
+    select(e.i, k, 'ev');
+    TL.draw();
+  }
+
+  // links from the text and the tables
+  function goAtlas() { if (AX.goTo) AX.goTo('sec-atlas'); else atlas.scrollIntoView({ behavior: 'smooth' }); setTimeout(MAP.resize, 520); }
+  var AX = {};
+  wrap.addEventListener('click', function (ev) {
+    var a = ev.target.closest ? ev.target.closest('a.hp-go, .hp-table--click tbody tr, .hp-btn') : null;
+    if (!a) return;
+    ev.preventDefault();
+    if (a.dataset.y) setYear(+a.dataset.y, 'link');
+    if (a.dataset.m) MAP.view(a.dataset.m);
+    if (a.dataset.id) select(a.dataset.id, null, 'link');
+    goAtlas();
+  });
+
+  // =========================================================== the coincidence figure
+  (function () {
+    var svg = $('#hp-co'), sT = $('#hp-s-tau'), sR = $('#hp-s-r'), sS = $('#hp-s-s'), out = $('#hp-co-out');
+    function fmtT(t) { return t >= 1e-3 ? (t * 1e3).toPrecision(2) + ' ms' : t >= 1e-6 ? (t * 1e6).toPrecision(2) + ' µs' : (t * 1e9).toPrecision(2) + ' ns'; }
+    function fmtN(v) { return v >= 100 ? Math.round(v).toLocaleString('en-US') : v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toPrecision(2); }
+    function draw() {
+      var tau = Math.pow(10, +sT.value), R = Math.pow(10, +sR.value), Rs = Math.pow(10, +sS.value);
+      var Racc = 2 * tau * R * R * 3600, Nacc = Racc, Ns = Rs, sig = Ns / Math.sqrt(Math.max(Nacc, 1e-9));
+      $('#hp-o-tau').textContent = fmtT(tau); $('#hp-o-r').textContent = fmtN(R) + ' per second'; $('#hp-o-s').textContent = fmtN(Rs) + ' per hour';
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      // sky, shower and counters
+      svg.appendChild(sv('text', { x: 6, y: 22, 'class': 'hp-fig-t' }, 'One shower, two counters'));
+      var cx1 = 50, cx2 = 230, gy = 190;
+      svg.appendChild(sv('line', { x1: 140, y1: 40, x2: 140, y2: 84, stroke: '#f472b6', 'stroke-width': 3 }));
+      svg.appendChild(sv('text', { x: 150, y: 62, 'class': 'hp-fig-s' }, 'primary'));
+      for (var k = -5; k <= 5; k++) svg.appendChild(sv('line', { x1: 140, y1: 84, x2: 140 + k * 24, y2: gy - 16, stroke: '#f9a8d4', 'stroke-width': 1.2, 'stroke-opacity': 0.55 }));
+      svg.appendChild(sv('line', { x1: 0, y1: gy, x2: 290, y2: gy, stroke: '#475569' }));
+      [cx1, cx2].forEach(function (x, j) {
+        svg.appendChild(sv('rect', { x: x - 26, y: gy - 16, width: 52, height: 14, rx: 3, fill: '#38bdf8', 'fill-opacity': 0.85 }));
+        svg.appendChild(sv('text', { x: x, y: gy + 22, 'text-anchor': 'middle', 'class': 'hp-fig-s' }, 'counter ' + (j + 1)));
+        svg.appendChild(sv('line', { x1: x, y1: gy + 30, x2: x, y2: gy + 56, stroke: '#94a3b8' }));
+      });
+      svg.appendChild(sv('path', { d: 'M' + cx1 + ' ' + (gy + 56) + 'H' + cx2, stroke: '#94a3b8', fill: 'none' }));
+      svg.appendChild(sv('rect', { x: 60, y: gy + 42, width: 160, height: 30, rx: 6, fill: '#0f172a', stroke: '#fbbf24' }));
+      svg.appendChild(sv('text', { x: 140, y: gy + 63, 'text-anchor': 'middle', 'class': 'hp-fig-s', fill: '#fbbf24' }, 'τ = ' + fmtT(tau)));
+      // bars: counts per hour
+      var bx = 310, by0 = 272, bh = 222, lo = -2, hi = 6;
+      function sy(v) { return by0 - (clamp(Math.log10(Math.max(v, 1e-3)), lo, hi) - lo) / (hi - lo) * bh; }
+      svg.appendChild(sv('text', { x: bx, y: 22, 'class': 'hp-fig-t' }, 'Counts per hour'));
+      [-2, 0, 2, 4, 6].forEach(function (p) {
+        var y = sy(Math.pow(10, p));
+        svg.appendChild(sv('line', { x1: bx + 44, x2: 516, y1: y, y2: y, stroke: '#1e293b' }));
+        svg.appendChild(sv('text', { x: bx + 38, y: y + 5, 'text-anchor': 'end', 'class': 'hp-fig-s' }, p === 0 ? '1' : '10' + (p < 0 ? '⁻' : '') + ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶'][Math.abs(p)]));
+      });
+      [[Nacc, '#94a3b8', 'chance'], [Ns, '#f472b6', 'showers']].forEach(function (b, j) {
+        var x = bx + 56 + j * 76, y = sy(b[0]);
+        svg.appendChild(sv('rect', { x: x, y: y, width: 54, height: by0 - y, rx: 4, fill: b[1], 'fill-opacity': 0.85 }));
+        svg.appendChild(sv('text', { x: x + 27, y: by0 + 22, 'text-anchor': 'middle', 'class': 'hp-fig-s' }, b[2]));
+        svg.appendChild(sv('text', { x: x + 27, y: y - 7, 'text-anchor': 'middle', 'class': 'hp-fig-s', fill: '#e2e8f0' }, fmtN(b[0])));
+      });
+      out.innerHTML = '<span>Accidental rate $R_{acc}$</span><b>' + fmtN(Racc) + ' per hour</b><span>Shower rate</span><b>' + fmtN(Rs) + ' per hour</b><span>Showers over √(accidentals)</span><b style="color:' + (sig > 5 ? '#34d399' : sig > 2 ? '#fbbf24' : '#f87171') + '">' + (sig >= 100 ? '> 100' : sig.toFixed(1)) + '</b>';
+      renderTextMath(out);
+    }
+    [sT, sR, sS].forEach(function (s) { s.addEventListener('input', draw); });
+    draw();
+  })();
+
+  // =========================================================== collapsible sections and the page map
+  (function () {
+    function slug(t) { return 'hp-' + t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40); }
+    function build(container, level) {
+      var cls = level === 2 ? 'hp-h2' : 'hp-h3', kids = Array.prototype.slice.call(container.children), idx = [];
+      kids.forEach(function (k, j) { if (k.classList.contains(cls)) idx.push(j); });
+      idx.forEach(function (j, n) {
+        var head = kids[j], end = n + 1 < idx.length ? idx[n + 1] : kids.length, body = [];
+        for (var k = j + 1; k < end; k++) { if (kids[k].classList.contains('hp-map')) break; body.push(kids[k]); }
+        var sec = el('section', 'hp-sec hp-sec-' + level), bodyEl = el('div', 'hp-sec-body'), inner = el('div', 'hp-sec-inner');
+        head.id = head.id || slug(head.textContent); head.setAttribute('role', 'button'); head.setAttribute('tabindex', '0'); head.setAttribute('aria-expanded', 'true');
+        container.insertBefore(sec, head); sec.appendChild(head); sec.appendChild(bodyEl); bodyEl.appendChild(inner);
+        body.forEach(function (b) { inner.appendChild(b); });
+        head.addEventListener('click', function () { toggle(sec); });
+        head.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(sec); } });
+      });
+    }
+    build(wrap, 2);
+    $$('.hp-sec-2 > .hp-sec-body > .hp-sec-inner').forEach(function (inner) { build(inner, 3); });
+
+    function headOf(sec) { return sec.firstElementChild; }
+    function setOpen(sec, open) {
+      var closed = sec.classList.contains('hp-sec--closed');
+      if (open === !closed) return false;
+      sec.classList.add('hp-sec--anim'); clearTimeout(sec._t); sec._t = setTimeout(function () { sec.classList.remove('hp-sec--anim'); MAP.resize(); }, 460);
+      sec.classList.toggle('hp-sec--closed', !open); headOf(sec).setAttribute('aria-expanded', open ? 'true' : 'false');
+      return true;
+    }
+    function toggle(sec) { setOpen(sec, sec.classList.contains('hp-sec--closed')); }
+    function openAncestors(node) { var changed = false, s = node.closest ? node.closest('.hp-sec') : null; while (s) { if (setOpen(s, true)) changed = true; s = s.parentElement ? s.parentElement.closest('.hp-sec') : null; } return changed; }
+    var allSecs = $$('.hp-sec');
+    function go(head) {
+      var changed = openAncestors(head);
+      setTimeout(function () {
+        head.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        head.classList.remove('hp-flash'); void head.offsetWidth; head.classList.add('hp-flash');
+        if (history.replaceState) history.replaceState(null, '', '#' + head.id);
+      }, changed ? 480 : 0);
+    }
+    AX.goTo = function (id) { var h = document.getElementById(id); if (h && wrap.contains(h)) go(h); };
+
+    var SHORT = [['The atlas', 'The atlas'], ['A medieval', 'Middle Ages'], ['Natural philosophy', 'Natural philosophy'], ['The royal', 'Royal institutions'], ['Schools, a faculty', 'The 19th century'], ['The grandes', 'Grandes écoles'], ['A century of', 'Optics, heat, electricity'], ['Astronomy splits', 'Meudon, 1896'], ['Radioactivity in', 'Radioactivity'], ['Within a', 'The Curies'], ['Atoms, waves', 'Atoms and the CNRS'], ['From artificial', 'Nuclear physics'], ['Cosmic rays from', 'Cosmic rays'], ['Big science', 'Moving south'], ['The CEA', 'CEA, Saclay'], ['The Orsay', 'Orsay campus'], ['Electron-positron', 'AdA and ACO'], ['From cosmic rays', 'Astroparticles'], ['Leaving the', 'Leaving the mountains'], ['Space astro', 'Space astrophysics'], ['The return', 'Return of cosmic rays'], ['Break-up', 'Break-up, reassembly'], ['Thirteen', 'Thirteen universities'], ['Reassembly', 'Reassembly'], ['Nobel', 'Nobel prizes']];
+    function short(t) { for (var i = 0; i < SHORT.length; i++) if (t.indexOf(SHORT[i][0]) === 0) return SHORT[i][1]; return t; }
+    var COLS = ['#fb923c', '#38bdf8', '#a78bfa', '#34d399', '#f472b6', '#fbbf24'];
+    var nav = $('#hp-map'), cols = el('div', 'hp-map-cols'), headings = [];
+    nav.appendChild(el('div', 'hp-map-title', '<span>Map of this page</span><span class="hp-map-btns"><button type="button" id="hp-map-collapse">Collapse all</button><button type="button" id="hp-map-expand">Expand all</button></span>'));
+    var chapters = Array.prototype.slice.call(wrap.querySelectorAll(':scope > .hp-sec-2')), refSec = null, spotSec = null, ci = 0;
+    chapters.forEach(function (ch) {
+      var h = headOf(ch);
+      if (h.dataset.map === 'ref') { refSec = ch; return; }
+      if (h.dataset.map === 'spot') { spotSec = ch; headings.push({ head: h, a: el('span') }); return; }
+      var col = el('div', 'hp-map-col'); col.style.setProperty('--c', COLS[ci % COLS.length]);
+      var chap = el('a', 'hp-map-chap', '<span class="hp-map-badge">' + (ci + 1) + '</span><span class="hp-map-chaptxt">' + short(h.textContent) + '</span>'); chap.href = '#' + h.id;
+      chap.addEventListener('click', function (ev) { ev.preventDefault(); go(h); });
+      col.appendChild(chap); headings.push({ head: h, a: chap });
+      var ul = el('ul', 'hp-map-stops');
+      Array.prototype.slice.call(ch.querySelectorAll(':scope > .hp-sec-body > .hp-sec-inner > .hp-sec-3')).forEach(function (s3) {
+        var h3 = headOf(s3), live = s3.querySelector('input[type=range], .hp-btn, .hp-table--click');
+        var li = el('li'), a = el('a', null, '<span>' + short(h3.textContent) + '</span>' + (live ? '<i class="hp-map-live" title="Interactive">✦</i>' : '')); a.href = '#' + h3.id;
+        a.addEventListener('click', function (ev) { ev.preventDefault(); go(h3); });
+        li.appendChild(a); ul.appendChild(li); headings.push({ head: h3, a: a });
+      });
+      if (ul.children.length) col.appendChild(ul);
+      cols.appendChild(col); ci++;
+    });
+    nav.appendChild(cols);
+    var foot = el('div', 'hp-map-foot', '<span><i class="hp-map-live">✦</i> interactive</span>'), pills = el('span', 'hp-map-pills');
+    var atlasLink = el('a', 'hp-map-ref', '✦ The atlas'), refLink = el('a', 'hp-map-ref', 'References'); atlasLink.href = '#sec-atlas'; refLink.href = '#';
+    atlasLink.addEventListener('click', function (ev) { ev.preventDefault(); AX.goTo('sec-atlas'); });
+    if (refSec) { refLink.href = '#' + headOf(refSec).id; refLink.addEventListener('click', function (ev) { ev.preventDefault(); go(headOf(refSec)); }); headings.push({ head: headOf(refSec), a: refLink }); }
+    pills.appendChild(atlasLink); pills.appendChild(refLink); foot.appendChild(pills); nav.appendChild(foot);
+    if (refSec) setOpen(refSec, false);
+    $('#hp-map-collapse').addEventListener('click', function () { allSecs.forEach(function (s) { setOpen(s, false); }); });
+    $('#hp-map-expand').addEventListener('click', function () { allSecs.forEach(function (s) { setOpen(s, true); }); });
+
+    var fl = el('button', 'hp-float', '<span class="hp-float-arrow">↑</span><span>Map</span><span class="hp-float-sec"></span>'); fl.type = 'button'; fl.setAttribute('aria-label', 'Back to the map of this page');
+    document.body.appendChild(fl);
+    fl.addEventListener('click', function () { nav.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    var secLabel = fl.querySelector('.hp-float-sec'), ticking = false;
+    function update() {
+      ticking = false;
+      var mr = nav.getBoundingClientRect(), pastMap = mr.bottom < 60, curr = null;
+      fl.classList.toggle('hp-float--on', pastMap);
+      headings.forEach(function (h) {
+        h.a.classList.remove('hp-map-active');
+        var p = h.head.parentElement.parentElement ? h.head.parentElement.parentElement.closest('.hp-sec') : null, hidden = false;
+        while (p) { if (p.classList.contains('hp-sec--closed')) { hidden = true; break; } p = p.parentElement ? p.parentElement.closest('.hp-sec') : null; }
+        if (hidden) return;
+        var r = h.head.getBoundingClientRect(); if (r.height && r.top < 160) curr = h;
+      });
+      if (curr) { curr.a.classList.add('hp-map-active'); secLabel.textContent = short(curr.head.textContent); } else secLabel.textContent = '';
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+    if (location.hash) { var t = document.getElementById(location.hash.slice(1)); if (t && wrap.contains(t) && (t.classList.contains('hp-h2') || t.classList.contains('hp-h3'))) go(t); }
+  })();
+
+  // =========================================================== start
+  TL.draw();
+  setYear(1938, 'init');
+  select('fac-sci', EV.findIndex(function (e) { return e.y === 1938; }), 'init');
+  TL.draw();
+})();
+</script>

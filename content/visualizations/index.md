@@ -28,6 +28,10 @@ sections:
       image: Jetweb.jpg
       alt: Temperature slice of a bipolar AGN jet propagating through the intracluster medium
       text: A temperature slice from a hydrodynamical simulation of a bipolar jet piercing through the intracluster medium. The orange jet material is roughly at $10^9$ K, while the surrounding blue gas is around $10^7$ K. Unlike the XMAGNET runs above, this simulation has no magnetic fields, which would otherwise help stabilize the interface between the jet and the ambient gas. As a result, the edges of the jets develop many more hydrodynamical instabilities, visible here as turbulent, mixing eddies.
+    - title: A collection of AGN cavities
+      image: Cavitiesweb.jpg
+      alt: Grid of 24 AGN-inflated cavities from the XMAGNET simulation
+      text: A collection of cavities inflated by AGN jets, taken from the XMAGNET run. Each panel zooms on a different cavity, showing the variety of shapes they take as they rise and are stretched, sheared and mixed by the surrounding intracluster medium.
     - title: A circumnuclear disk, highly resolved
       image: CNDweb.png
       alt: Circumnuclear disk with multiple misaligned rings

@@ -24,6 +24,10 @@ sections:
       image: radvelweb.png
       alt: Radial velocity slice of AGN-driven outflows
       text: A radial velocity slice showing the innermost 200 kpc of the fiducial run of the XMAGNET MHD simulation suite. Red and blue trace gas moving away from and toward the observer, respectively, revealing the bipolar outflows driven by AGN feedback as they churn through the multiphase intracluster medium.
+    - title: A jet piercing through the intracluster medium
+      image: Jetweb.jpg
+      alt: Temperature slice of a bipolar AGN jet propagating through the intracluster medium
+      text: A temperature slice from a hydrodynamical simulation of a bipolar jet piercing through the intracluster medium. The orange jet material is roughly at $10^9$ K, while the surrounding blue gas is around $10^7$ K. Unlike the XMAGNET runs above, this simulation has no magnetic fields, which would otherwise help stabilize the interface between the jet and the ambient gas. As a result, the edges of the jets develop many more hydrodynamical instabilities, visible here as turbulent, mixing eddies.
     - title: A circumnuclear disk, highly resolved
       image: CNDweb.png
       alt: Circumnuclear disk with multiple misaligned rings

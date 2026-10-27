@@ -24,6 +24,10 @@ sections:
       image: radvelweb.png
       alt: Coupe de vitesse radiale d'écoulements générés par un AGN
       text: Une coupe de vitesse radiale montrant les 200 kpc les plus internes de la simulation fiducielle de la suite MHD XMAGNET. Le rouge et le bleu tracent le gaz qui s'éloigne de l'observateur et qui s'en rapproche, respectivement, et révèlent les écoulements bipolaires engendrés par la rétroaction de l'AGN lorsqu'ils brassent le milieu intra-amas multiphasé.
+    - title: Un jet perçant le milieu intra-amas
+      image: Jetweb.jpg
+      alt: Coupe de température d'un jet bipolaire d'AGN se propageant dans le milieu intra-amas
+      text: Une coupe de température issue d'une simulation hydrodynamique d'un jet bipolaire perçant le milieu intra-amas. La matière orange du jet est à environ $10^9$ K, tandis que le gaz bleu environnant est autour de $10^7$ K. Contrairement aux simulations XMAGNET ci-dessus, cette simulation n'inclut pas de champs magnétiques, qui aideraient autrement à stabiliser l'interface entre le jet et le gaz ambiant. En conséquence, les bords des jets développent beaucoup plus d'instabilités hydrodynamiques, visibles ici sous forme de tourbillons turbulents qui mélangent le gaz.
     - title: Un disque circumnucléaire à haute résolution
       image: CNDweb.png
       alt: Disque circumnucléaire avec plusieurs anneaux désalignés

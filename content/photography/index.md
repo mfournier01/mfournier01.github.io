@@ -80,4 +80,17 @@ sections:
         - place: Beaufortain
           images:
             - Beaufortain2022.jpg
+
+  - block: photo-grid
+    content:
+      year: '2019'
+      groups:
+        - place: Grenoble and its surroundings
+          images:
+            - Grenoble2019.jpg
+            - Grenoble2019b.jpg
+        # Second row of the same place (no label), so the four photos form a 2x2 grid.
+        - images:
+            - Grenoble2019c.jpg
+            - Grenoble2019d.jpg
 ---

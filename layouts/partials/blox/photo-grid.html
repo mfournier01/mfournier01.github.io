@@ -16,7 +16,8 @@
 
   {{ range $groups }}
     {{ $place := .place }}
-    <div class="pg-group">
+    {{/* A group without a place continues the previous one as an extra row. */}}
+    <div class="pg-group{{ if not $place }} pg-group--cont{{ end }}">
       {{ with $place }}
       <h3 class="pg-place">
         {{ . }}

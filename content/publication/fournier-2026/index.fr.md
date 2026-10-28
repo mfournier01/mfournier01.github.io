@@ -1,5 +1,6 @@
 ---
 title: "XMAGNET: Stir before serving — a Lagrangian perspective on mixing-driven condensation in the intracluster medium"
+card_title: "Bien mélanger avant de servir : comment naît le gaz froid"
 authors:
 - M. Fournier
 - P. Grete

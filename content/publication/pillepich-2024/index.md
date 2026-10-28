@@ -1,5 +1,6 @@
 ---
 title: Milky Way and Andromeda analogues from the TNG50 simulation
+card_title: "Twins of the Milky Way and Andromeda"
 authors:
 - A. Pillepich
 - D. Sotillo-Ramos

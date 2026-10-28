@@ -67,6 +67,7 @@ sections:
       spacing:
         padding: ["0", "0", "2rem", "0"]
   - block: markdown
+    id: publications
     content:
       label: '03'
       title: Publications

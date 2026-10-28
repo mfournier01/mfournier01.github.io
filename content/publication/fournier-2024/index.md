@@ -1,6 +1,6 @@
 ---
 title: Past activity of Sgr A⋆ is unlikely to affect the local cosmic-ray spectrum up to the TeV regime
-  up to the TeV regime
+card_title: "Did our black hole shape the cosmic rays we see?"
 authors:
 - M. Fournier
 - J. Fensch

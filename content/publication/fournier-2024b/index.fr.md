@@ -1,5 +1,6 @@
 ---
 title: The properties of magnetised cold filaments in a cool-core galaxy cluster
+card_title: "Des filaments de gaz froid tissés par les champs magnétiques"
 authors:
 - M. Fournier
 - P. Grete

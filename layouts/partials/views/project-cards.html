@@ -10,7 +10,7 @@
   {{ end }}
   <div class="pc-body">
     {{ range first 1 ($item.GetTerms "tags") }}<div class="pc-tag">{{ .LinkTitle }}</div>{{ end }}
-    <h3 class="pc-title">{{ $item.Title | $item.RenderString }}</h3>
+    <h3 class="pc-title">{{ $item.Params.card_title | default $item.Title | $item.RenderString }}</h3>
     <p class="pc-sum">{{ ($item.Params.summary | default $item.Summary) | plainify | htmlUnescape | chomp }}</p>
     <div class="pc-foot">
       <time datetime="{{ time.Format "2006-01-02" $item.Date }}">{{ $item.Date | time.Format (site.Params.locale.date_format | default ":date_long") }}</time>

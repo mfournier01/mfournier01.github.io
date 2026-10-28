@@ -7,12 +7,15 @@ main:
   - name: Projets
     url: /#papers
     weight: 11
+  - name: Publications
+    url: /#publications
+    weight: 12
   - name: Actualités
     url: /#talks
-    weight: 12
+    weight: 13
   - name: Parcours
     url: experience/
-    weight: 13
+    weight: 14
   - name: Visualisations
     url: visualizations/
     weight: 15

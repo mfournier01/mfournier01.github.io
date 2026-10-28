@@ -1,6 +1,6 @@
 ---
 title: Past activity of Sgr A⋆ is unlikely to affect the local cosmic-ray spectrum up to the TeV regime
-  up to the TeV regime
+card_title: "Notre trou noir a-t-il façonné les rayons cosmiques ?"
 authors:
 - M. Fournier
 - J. Fensch

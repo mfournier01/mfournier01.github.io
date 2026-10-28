@@ -1,5 +1,6 @@
 ---
 title: "XMAGNET: Velocity structure functions of AGN-driven turbulence in the multiphase intracluster medium"
+card_title: "Mesurer la turbulence soulevée par un trou noir"
 authors:
 - M. Fournier
 - P. Grete

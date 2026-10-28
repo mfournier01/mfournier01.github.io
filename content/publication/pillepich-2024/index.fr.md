@@ -1,5 +1,6 @@
 ---
 title: Milky Way and Andromeda analogues from the TNG50 simulation
+card_title: "Des jumelles de la Voie lactée et d'Andromède"
 authors:
 - A. Pillepich
 - D. Sotillo-Ramos

@@ -1,6 +1,7 @@
 {{/* Project-only block for the Visualizations page: a minimal gallery. Each
-     item is a video (YouTube id) or an image (page resource) shown wide, with
-     a numbered title and its description underneath. */}}
+     item is a video (YouTube id or looping mp4 page resource) or an image
+     (page resource) shown wide, with a numbered title and its description
+     underneath. `frame: true` puts a white mat around the media. */}}
 {{ $page := .wcPage }}
 {{ $c := .wcBlock.content }}
 <div class="vz-wrap">
@@ -10,7 +11,12 @@
   </header>
   {{ range $i, $it := $c.items }}
   <figure class="vz-item">
-    <div class="vz-media">
+    <div class="vz-media{{ if $it.frame }} vz-framed{{ end }}">
+      {{ with $it.video }}
+        {{ with $page.Resources.GetMatch . }}
+          <video src="{{ .RelPermalink }}" autoplay loop muted playsinline preload="metadata" aria-label="{{ $it.alt | default ($it.title | plainify) }}"></video>
+        {{ end }}
+      {{ end }}
       {{ with $it.youtube }}
         <div class="vz-video"><iframe src="https://www.youtube-nocookie.com/embed/{{ . }}" title="{{ $it.title | plainify }}" loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
       {{ end }}

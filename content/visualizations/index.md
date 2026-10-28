@@ -28,6 +28,11 @@ sections:
       image: Jetweb.jpg
       alt: Temperature slice of a bipolar AGN jet propagating through the intracluster medium
       text: A temperature slice from a hydrodynamical simulation of a bipolar jet piercing through the intracluster medium. The orange jet material is roughly at $10^9$ K, while the surrounding blue gas is around $10^7$ K. Unlike the XMAGNET runs above, this simulation has no magnetic fields, which would otherwise help stabilize the interface between the jet and the ambient gas. As a result, the edges of the jets develop many more hydrodynamical instabilities, visible here as turbulent, mixing eddies.
+    - title: Hydro versus MHD
+      video: HydroVsMHD_720p.mp4
+      frame: true
+      alt: Side-by-side animation of a hydrodynamical and an MHD simulation of gas around a central AGN
+      text: Two simulations of the same cluster core evolving side by side, one purely hydrodynamical (left) and one including magnetic fields (right). Without magnetic fields, the gas settles into a compact disk around the central black hole. With them, it is organised into long, thin filaments stretched along the jet axis.
     - title: A collection of AGN cavities
       image: Cavitiesweb.jpg
       alt: Grid of 24 AGN-inflated cavities from the XMAGNET simulation

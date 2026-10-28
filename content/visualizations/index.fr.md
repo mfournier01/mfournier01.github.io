@@ -28,6 +28,11 @@ sections:
       image: Jetweb.jpg
       alt: Coupe de température d'un jet bipolaire d'AGN se propageant dans le milieu intra-amas
       text: Une coupe de température issue d'une simulation hydrodynamique d'un jet bipolaire perçant le milieu intra-amas. La matière orange du jet est à environ $10^9$ K, tandis que le gaz bleu environnant est autour de $10^7$ K. Contrairement aux simulations XMAGNET ci-dessus, cette simulation n'inclut pas de champs magnétiques, qui aideraient autrement à stabiliser l'interface entre le jet et le gaz ambiant. En conséquence, les bords des jets développent beaucoup plus d'instabilités hydrodynamiques, visibles ici sous forme de tourbillons turbulents qui mélangent le gaz.
+    - title: Hydro contre MHD
+      video: HydroVsMHD_720p.mp4
+      frame: true
+      alt: Animation côte à côte d'une simulation hydrodynamique et d'une simulation MHD du gaz autour d'un AGN central
+      text: Deux simulations du même cœur d'amas évoluant côte à côte, l'une purement hydrodynamique (à gauche) et l'autre incluant les champs magnétiques (à droite). Sans champs magnétiques, le gaz forme un disque compact autour du trou noir central. Avec eux, il s'organise en longs filaments fins étirés le long de l'axe du jet.
     - title: Une collection de cavités d'AGN
       image: Cavitiesweb.jpg
       alt: Grille de 24 cavités gonflées par un AGN dans la simulation XMAGNET

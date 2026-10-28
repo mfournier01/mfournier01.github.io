@@ -371,6 +371,8 @@ a.nav-link[href$="/explorers/"]:hover {
 .vz-item { margin: 0 0 5rem; }
 .vz-media { overflow: hidden; border-radius: 0.9rem; background: #000; box-shadow: 0 30px 60px -35px rgba(0,0,0,0.95), 0 0 0 1px rgba(148,163,184,0.12); }
 .vz-media img { display: block; width: 100%; height: auto; transition: transform .8s ease; }
+.vz-media video { display: block; width: 100%; height: auto; }
+.vz-framed { background: #fff; padding: clamp(0.6rem, 2.5vw, 1.75rem); }
 .vz-zoom { display: block; cursor: zoom-in; }
 .vz-zoom:hover img { transform: scale(1.015); }
 .vz-video { position: relative; aspect-ratio: 16 / 9; }

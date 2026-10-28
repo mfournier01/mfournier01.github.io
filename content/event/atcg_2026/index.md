@@ -33,6 +33,6 @@ image:
   preview_only: true
 ---
 
-Talk about a smooth start: I gave a talk at the ATCG 2026 meeting (Action Thématique Cosmologie et Galaxies), hosted at the Institut d'Astrophysique de Paris, on the very same day I started my new postdoctoral position at IAP. First day on the job, and already presenting to half of the French cosmology and galaxies community!
+Talk about a smooth start: I gave a talk at the ATCG 2026 meeting (Action Thématique Cosmologie et Galaxies), hosted at the Institut d'Astrophysique de Paris, on the very same day I started my new postdoctoral position at IAP.
 
 {{< figure src="featured.jpg" alt="Group photo of the ATCG 2026 participants on the steps of the Institut d'Astrophysique de Paris" caption="The ATCG 2026 participants on the steps of IAP." >}}

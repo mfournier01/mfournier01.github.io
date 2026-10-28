@@ -33,6 +33,6 @@ image:
   preview_only: true
 ---
 
-Difficile de rêver meilleure entrée en matière : j'ai donné un exposé aux journées de l'ATCG 2026 (Action Thématique Cosmologie et Galaxies), accueillies à l'Institut d'Astrophysique de Paris, le jour même où j'ai commencé mon nouveau postdoc à l'IAP. Premier jour en poste, et déjà devant une bonne partie de la communauté française cosmologie et galaxies !
+Difficile de rêver meilleure entrée en matière : j'ai donné un exposé aux journées de l'ATCG 2026 (Action Thématique Cosmologie et Galaxies), accueillies à l'Institut d'Astrophysique de Paris, le jour même où j'ai commencé mon nouveau postdoc à l'IAP.
 
 {{< figure src="featured.jpg" alt="Photo de groupe des participants de l'ATCG 2026 sur les marches de l'Institut d'Astrophysique de Paris" caption="Les participants de l'ATCG 2026 sur les marches de l'IAP." >}}

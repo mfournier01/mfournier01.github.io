@@ -28,7 +28,7 @@ publication: '*Astronomy &amp; Astrophysics*'
 
 # Citation count (Semantic Scholar, Aug 2026 — update periodically).
 # Rendered only when > 0.
-citations: 11
+citations: 15
 
 abstract: Significant theoretical and observational efforts are underway to investigate the properties of turbulence in the hot plasma that pervades galaxy clusters. Spectroscopy has been used to study the projected line of sight velocities in both the hot intracluster medium and the cold gas phase using optical and X-ray telescopes. We characterize the velocity structure functions (VSFs) of the multiphase intracluster medium in a simulated galaxy cluster core.
 

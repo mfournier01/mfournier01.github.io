@@ -1,5 +1,5 @@
 {{/* Project override of Hugo Blox's `citation` view: one line per paper, as a table row.
-     Year | title (ellipsis, full title on hover) | authors ("X et al.", full list on hover) | journal | status | citations | links.
+     Year | title (ellipsis, full title on hover) | authors ("X et al.", full list on hover) | journal | status | citations | DOI or arXiv link.
      Status comes from `status:` (published, accepted, submitted) in the front matter if set,
      else "Accept(ed/é)" in `publication` → accepted, a DOI → published, otherwise submitted.
      Styles: `.pr-*` in assets/css/custom.css; columns are set in citation.start.html. */}}
@@ -30,9 +30,9 @@
   <span class="pr-journal"><em>{{ $journal }}</em></span>
   <span class="pr-status"><span class="pr-pill pr-pill--{{ $status }}">{{ index $labels $status | default $status }}</span></span>
   <span class="pr-cites">{{ with $item.Params.citations }}{{ if gt . 0 }}{{ . }}{{ end }}{{ end }}</span>
-  <span class="pr-links">
-    {{- with $item.Resources.GetMatch "cite.bib" }}<a class="hb-attachment-link" href="{{ .RelPermalink }}" target="_blank" data-filename="{{ .RelPermalink }}">{{ i18n "btn_cite" | default "Cite" }}</a>{{ end -}}
-    {{- with $item.Params.doi }}<a href="https://doi.org/{{ . }}" target="_blank" rel="noopener">DOI</a>{{ end -}}
-    {{- with $item.Params.url_preprint }}<a href="{{ . }}" target="_blank" rel="noopener">arXiv</a>{{ end -}}
+  {{/* A single link: the DOI, or the arXiv preprint when there is no DOI yet. */}}
+  <span class="pr-link">
+    {{- with $item.Params.doi }}<a href="https://doi.org/{{ . }}" target="_blank" rel="noopener">DOI</a>
+    {{- else }}{{ with $item.Params.url_preprint }}<a href="{{ . }}" target="_blank" rel="noopener">arXiv</a>{{ end }}{{ end -}}
   </span>
 </div>

@@ -88,7 +88,7 @@ html {
 .pr-list--fa { grid-template-columns: auto minmax(0, 1fr) repeat(4, auto); }
 .pr-list--fa .pr-author { display: none; }
 .pr-list > .pr-row { grid-template-columns: subgrid; grid-column: 1 / -1; }
-.pr-row { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 7rem 4rem 6rem 4.5rem 8rem; align-items: baseline; column-gap: 1.05rem; width: 100%; padding: 0.62rem 0.9rem; border-bottom: 1px solid rgba(148,163,184,0.12); border-radius: 0.5rem; transition: background .2s ease; }
+.pr-row { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 7rem 4rem 6rem 4.5rem 3.5rem; align-items: baseline; column-gap: 1.05rem; width: 100%; padding: 0.62rem 0.9rem; border-bottom: 1px solid rgba(148,163,184,0.12); border-radius: 0.5rem; transition: background .2s ease; }
 .pr-row:last-child { border-bottom: none; }
 .pr-row:hover { background: rgba(148,163,184,0.06); }
 .pr-year { color: rgb(var(--color-primary-300)); font-size: 0.88rem; font-weight: 700; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
@@ -105,14 +105,14 @@ html {
 .pr-head > span { font-size: inherit; color: inherit; }
 .pr-head-r { text-align: right; }
 .pr-c, .pr-journal, .pr-status, .pr-cites { text-align: center; }
-.pr-links { display: flex; justify-content: flex-end; gap: 0.75rem; white-space: nowrap; }
-.pr-links a { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--color-primary-300)); text-decoration: none; opacity: 0.7; transition: opacity .2s ease; }
-.pr-links a:hover { opacity: 1; }
+.pr-link { text-align: center; white-space: nowrap; }
+.pr-link a { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--color-primary-300)); text-decoration: none; opacity: 0.7; transition: opacity .2s ease; }
+.pr-link a:hover { opacity: 1; }
 @media (max-width: 760px) {
   /* Phones: year + title only (up to two lines); the paper page has the links. */
   .pr-list, .pr-list--fa, .pr-row { grid-template-columns: auto minmax(0, 1fr); column-gap: 0.8rem; }
   .pr-row { padding: 0.6rem 0.2rem; }
-  .pr-author, .pr-journal, .pr-status, .pr-cites, .pr-links, .pr-head { display: none; }
+  .pr-author, .pr-journal, .pr-status, .pr-cites, .pr-link, .pr-head { display: none; }
   .pr-title { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.4; }
 }
 

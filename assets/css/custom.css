@@ -81,6 +81,41 @@ html {
   color: #d97757; /* Claude's brand orange */
 }
 
+/* --- Publications list, one line per paper (layouts/partials/views/citation*.html) ---
+   Each list is one grid and the rows are subgrids, so every column is as wide as its
+   widest entry and the title gets the rest. A row outside .pr-list falls back to fixed widths. */
+.pr-list { display: grid; grid-template-columns: auto minmax(0, 1fr) repeat(5, auto); column-gap: 1.05rem; width: 100%; max-width: 1180px; margin-top: 1.25rem; }
+.pr-list--fa { grid-template-columns: auto minmax(0, 1fr) repeat(4, auto); }
+.pr-list--fa .pr-author { display: none; }
+.pr-list > .pr-row { grid-template-columns: subgrid; grid-column: 1 / -1; }
+.pr-row { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 7rem 4rem 6rem 4.5rem 8rem; align-items: baseline; column-gap: 1.05rem; width: 100%; padding: 0.62rem 0.9rem; border-bottom: 1px solid rgba(148,163,184,0.12); border-radius: 0.5rem; transition: background .2s ease; }
+.pr-row:last-child { border-bottom: none; }
+.pr-row:hover { background: rgba(148,163,184,0.06); }
+.pr-year { color: rgb(var(--color-primary-300)); font-size: 0.88rem; font-weight: 700; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
+.pr-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #e2e8f0; text-decoration: none; transition: color .2s ease; }
+.pr-title:hover { color: rgb(var(--color-primary-200)); }
+.pr-author, .pr-journal { white-space: nowrap; color: #94a3b8; font-size: 0.88rem; }
+.pr-pill { display: inline-block; padding: 0.08rem 0.55rem; border: 1px solid; border-radius: 999px; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+.pr-pill--published { color: #6ee7b7; border-color: rgba(52,211,153,0.35); background: rgba(52,211,153,0.08); }
+.pr-pill--accepted { color: #fcd34d; border-color: rgba(251,191,36,0.35); background: rgba(251,191,36,0.08); }
+.pr-pill--submitted { color: #7dd3fc; border-color: rgba(56,189,248,0.35); background: rgba(56,189,248,0.08); }
+.pr-cites { color: #d97757; font-size: 0.86rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pr-head { padding-top: 0; padding-bottom: 0.5rem; border-bottom-color: rgba(148,163,184,0.28); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #64748b; white-space: nowrap; }
+.pr-head:hover { background: none; }
+.pr-head > span { font-size: inherit; color: inherit; }
+.pr-head-r { text-align: right; }
+.pr-c, .pr-journal, .pr-status, .pr-cites { text-align: center; }
+.pr-links { display: flex; justify-content: flex-end; gap: 0.75rem; white-space: nowrap; }
+.pr-links a { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--color-primary-300)); text-decoration: none; opacity: 0.7; transition: opacity .2s ease; }
+.pr-links a:hover { opacity: 1; }
+@media (max-width: 760px) {
+  /* Phones: year + title only (up to two lines); the paper page has the links. */
+  .pr-list, .pr-list--fa, .pr-row { grid-template-columns: auto minmax(0, 1fr); column-gap: 0.8rem; }
+  .pr-row { padding: 0.6rem 0.2rem; }
+  .pr-author, .pr-journal, .pr-status, .pr-cites, .pr-links, .pr-head { display: none; }
+  .pr-title { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.4; }
+}
+
 /* --- Magnifying lens on full-bleed images (see image-full-bleed.html) ---
    Only engaged on devices with a real mouse; lens-zoom.js toggles its
    `display` on mousemove/mouseleave and never attaches listeners at all

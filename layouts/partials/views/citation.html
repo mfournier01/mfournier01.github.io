@@ -1,58 +1,38 @@
-{{/* Project override of Hugo Blox's `citation` view (used by the "Recent
-     Publications" block). The stock view always prints the full author
-     list, which gets unwieldy for papers with many collaborators — this
-     truncates to the first 3 authors + "et al.", while making sure the
-     site owner's own name stays visible even if truncation would
-     otherwise cut them out. */}}
-
+{{/* Project override of Hugo Blox's `citation` view: one line per paper, as a table row.
+     Year | title (ellipsis, full title on hover) | authors ("X et al.", full list on hover) | journal | status | citations | links.
+     Status comes from `status:` (published, accepted, submitted) in the front matter if set,
+     else "Accept(ed/é)" in `publication` → accepted, a DOI → published, otherwise submitted.
+     Styles: `.pr-*` in assets/css/custom.css; columns are set in citation.start.html. */}}
 {{ $item := .item }}
-{{ $has_attachments := partial "functions/has_attachments" $item }}
-{{ $max_authors := 3 }}
+{{ $fr := eq site.Language.Lang "fr" }}
+{{ $authors := $item.Params.authors | default slice }}
 
-<div class="pub-list-item view-citation" style="margin-bottom: 1rem">
-  <i class="far fa-file-alt pub-icon" aria-hidden="true"></i>
+{{ $journal := $item.Params.publication_short | default $item.Params.publication | default "" | plainify | htmlUnescape }}
+{{ $status := "submitted" }}
+{{ if in $journal "Accept" }}{{ $status = "accepted" }}{{ else if $item.Params.doi }}{{ $status = "published" }}{{ end }}
+{{ with $item.Params.status }}{{ $status = lower . }}{{ end }}
+{{ $labels := dict "published" (cond $fr "Publié" "Published") "accepted" (cond $fr "Accepté" "Accepted") "submitted" (cond $fr "Soumis" "Submitted") }}
+{{ $abbr := dict "Astronomy & Astrophysics" "A&A" "Monthly Notices of the Royal Astronomical Society" "MNRAS" "The Astrophysical Journal" "ApJ" }}
+{{ range $long, $short := $abbr }}{{ if in $journal $long }}{{ $journal = $short }}{{ end }}{{ end }}
 
-  {{/* APA Style */}}
-  {{ if eq (site.Params.publications.citation_style | default "apa") "apa" }}
+{{ $lead := "" }}
+{{ with $authors }}
+  {{ $lead = index (last 1 (split (index . 0) " ")) 0 }}
+  {{ if eq (len .) 2 }}{{ $lead = printf "%s & %s" $lead (index (last 1 (split (index . 1) " ")) 0) }}
+  {{ else if gt (len .) 2 }}{{ $lead = printf "%s et al." $lead }}{{ end }}
+{{ end }}
 
-  <span class="article-metadata li-cite-author">
-    {{ partial "functions/citation_authors" (dict "item" $item "max" $max_authors) }}
+{{ $title := replace $item.Title " -- " " — " }}
+<div class="pr-row view-citation">
+  <span class="pr-year">{{ $item.Date.Format "2006" }}</span>
+  <a class="pr-title" href="{{ $item.RelPermalink }}" title="{{ $title | plainify }}">{{ $title }}</a>
+  <span class="pr-author" title="{{ delimit $authors ", " }}">{{ $lead }}</span>
+  <span class="pr-journal"><em>{{ $journal }}</em></span>
+  <span class="pr-status"><span class="pr-pill pr-pill--{{ $status }}">{{ index $labels $status | default $status }}</span></span>
+  <span class="pr-cites">{{ with $item.Params.citations }}{{ if gt . 0 }}{{ . }}{{ end }}{{ end }}</span>
+  <span class="pr-links">
+    {{- with $item.Resources.GetMatch "cite.bib" }}<a class="hb-attachment-link" href="{{ .RelPermalink }}" target="_blank" data-filename="{{ .RelPermalink }}">{{ i18n "btn_cite" | default "Cite" }}</a>{{ end -}}
+    {{- with $item.Params.doi }}<a href="https://doi.org/{{ . }}" target="_blank" rel="noopener">DOI</a>{{ end -}}
+    {{- with $item.Params.url_preprint }}<a href="{{ . }}" target="_blank" rel="noopener">arXiv</a>{{ end -}}
   </span>
-  ({{- $item.Date.Format "2006" -}}).
-  <a href="{{ $item.RelPermalink }}" class="underline">{{ $item.Title }}</a>.
-  {{ if $item.Params.publication_short }}
-    {{- $item.Params.publication_short | markdownify -}}.
-  {{ else if $item.Params.publication }}
-    {{- $item.Params.publication | markdownify -}}.
-  {{ end }}
-  {{ with $item.Params.citations }}{{ if gt . 0 }} <span class="pub-citation-count">Citations: {{ . }}</span>{{ end }}{{ end }}
-
-  {{ if $has_attachments }}
-  <div class="flex flex-wrap space-x-3">
-    {{ partial "page_links" (dict "page" $item "is_list" 1) }}
-  </div>
-  {{ end }}
-
-  {{/* MLA Style */}}
-  {{ else }}
-
-  <span class="article-metadata li-cite-author">
-    {{ partial "functions/citation_authors" (dict "item" $item "max" $max_authors) }}.
-  </span>
-  <a href="{{ $item.RelPermalink }}">{{ $item.Title }}</a>.
-  {{ if $item.Params.publication_short }}
-    {{- $item.Params.publication_short | markdownify -}},
-  {{ else if $item.Params.publication }}
-    {{- $item.Params.publication | markdownify -}},
-  {{ end }}
-  {{- $item.Date.Format "2006" -}}.
-  {{ with $item.Params.citations }}{{ if gt . 0 }} <span class="pub-citation-count">Citations: {{ . }}</span>{{ end }}{{ end }}
-
-  {{ if $has_attachments }}
-  <div class="flex flex-wrap space-x-3">
-    {{ partial "page_links" (dict "page" $item "is_list" 1) }}
-  </div>
-  {{ end }}
-
-  {{ end }}
 </div>

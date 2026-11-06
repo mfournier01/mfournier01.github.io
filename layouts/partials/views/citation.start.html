@@ -1,0 +1,15 @@
+{{/* One shared grid per list, so the rows' columns line up (see .pr-list in custom.css),
+     with a header row naming the columns. First-author lists hide the author column. */}}
+{{ $first_author := false }}
+{{ if reflect.IsMap .page }}{{ with .page.content }}{{ with .filters }}{{ $first_author = .first_author | default false }}{{ end }}{{ end }}{{ end }}
+{{ $fr := eq site.Language.Lang "fr" }}
+<div class="pr-list{{ if $first_author }} pr-list--fa{{ end }}">
+  <div class="pr-row pr-head" aria-hidden="true">
+    <span>{{ cond $fr "Année" "Year" }}</span>
+    <span>{{ cond $fr "Titre" "Title" }}</span>
+    <span class="pr-author">{{ cond $fr "Auteurs" "Authors" }}</span>
+    <span class="pr-c">{{ cond $fr "Revue" "Journal" }}</span>
+    <span class="pr-c">{{ cond $fr "Statut" "Status" }}</span>
+    <span class="pr-c">Citations</span>
+    <span class="pr-head-r">{{ cond $fr "Liens" "Links" }}</span>
+  </div>

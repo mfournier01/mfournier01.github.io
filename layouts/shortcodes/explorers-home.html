@@ -1,14 +1,22 @@
+{{- /* hide="key1,key2" hides categories (telescopes, processes, simulations, history)
+     or single cards (the page slug without -explorer, e.g. stars, agn). Hidden pages
+     stay online at their URL; visible categories are renumbered 01, 02, ... */ -}}
+{{- $hide := slice -}}
+{{- range split (.Get "hide" | default "") "," }}{{ $hide = $hide | append (trim . " ") }}{{ end -}}
+{{- $n := 0 -}}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap">
 <div class="exh-wrap">
   <div class="exh-kicker">Interactive notes</div>
   <h1 class="exh-title">Explorers</h1>
   <p class="exh-lead">Small interactive pages I build, with AI assistance, to help myself understand and learn new things in astronomy, from how telescopes and instruments work to the physics of what they observe.</p>
 
-  <h2 class="exh-cat"><span class="exh-n">01</span>Telescopes and instruments</h2>
+  {{- if not (in $hide "telescopes") }}{{ $n = add $n 1 }}
+  <h2 class="exh-cat"><span class="exh-n">{{ printf "%02d" $n }}</span>Telescopes and instruments</h2>
   <p class="exh-cat-text">How the observatories work: instruments, wavelength coverage and what they can see.</p>
   <div class="exh-cards">
     {{ with .Page.Resources.GetMatch "jwst-icon.png" }}
     {{ $img := .Resize "320x webp q90" }}
+    {{- if not (in $hide "jwst") }}
     <a class="exh-card" href="/jwst-explorer/">
       <div class="exh-card-art"><img src="{{ $img.RelPermalink }}" alt="James Webb Space Telescope line illustration" class="exh-card-img"></div>
       <div class="exh-card-body">
@@ -17,9 +25,11 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
     {{ end }}
     {{ with .Page.Resources.GetMatch "submm-icon.png" }}
     {{ $img := .Resize "320x webp q90" }}
+    {{- if not (in $hide "interferometry") }}
     <a class="exh-card" href="/interferometry-explorer/">
       <div class="exh-card-art"><img src="{{ $img.RelPermalink }}" alt="Line illustration of a radio dish" class="exh-card-img"></div>
       <div class="exh-card-body">
@@ -28,6 +38,7 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
     {{ end }}
     <div class="exh-card exh-card--soon">
       <div class="exh-soon-mark" aria-hidden="true">+</div>
@@ -37,10 +48,13 @@
       </div>
     </div>
   </div>
+  {{- end }}
 
-  <h2 class="exh-cat"><span class="exh-n">02</span>Astrophysical processes</h2>
+  {{- if not (in $hide "processes") }}{{ $n = add $n 1 }}
+  <h2 class="exh-cat"><span class="exh-n">{{ printf "%02d" $n }}</span>Astrophysical processes</h2>
   <p class="exh-cat-text">The physics of the gas, dust and black holes that telescopes observe.</p>
   <div class="exh-cards">
+    {{- if not (in $hide "dust") }}
     <a class="exh-card" href="/dust-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-gd" cx="36%" cy="32%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></radialGradient></defs>
@@ -52,6 +66,8 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
+    {{- if not (in $hide "molecular") }}
     <a class="exh-card" href="/molecular-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs>
@@ -72,6 +88,8 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
+    {{- if not (in $hide "agn") }}
     <a class="exh-card" href="/agn-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs>
@@ -90,11 +108,15 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
   </div>
+  {{- end }}
 
-  <h2 class="exh-cat"><span class="exh-n">03</span>Simulations and codes</h2>
+  {{- if not (in $hide "simulations") }}{{ $n = add $n 1 }}
+  <h2 class="exh-cat"><span class="exh-n">{{ printf "%02d" $n }}</span>Simulations and codes</h2>
   <p class="exh-cat-text">How a numerical model of galaxy formation is built, and why.</p>
   <div class="exh-cards">
+    {{- if not (in $hide "stars") }}
     <a class="exh-card" href="/stars-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-gs" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fef3c7" stop-opacity="0.95"/><stop offset="1" stop-color="#f472b6" stop-opacity="0"/></radialGradient></defs>
@@ -109,6 +131,8 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
+    {{- if not (in $hide "townsend") }}
     <a class="exh-card" href="/townsend-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <g stroke="#94a3b8" stroke-opacity="0.45" fill="none"><path d="M16 12V100H110"/></g>
@@ -122,6 +146,8 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
+    {{- if not (in $hide "dust-fluid") }}
     <a class="exh-card" href="/dust-fluid-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-dfg" cx="36%" cy="32%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#f8fafc"/><stop offset="1" stop-color="#cbd5e1"/></radialGradient></defs>
@@ -137,6 +163,8 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
+    {{- if not (in $hide "ramses-metals") }}
     <a class="exh-card" href="/ramses-metals-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-rz" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fef3c7"/><stop offset="0.45" stop-color="#fbbf24" stop-opacity="0.85"/><stop offset="1" stop-color="#fbbf24" stop-opacity="0"/></radialGradient></defs>
@@ -151,11 +179,15 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
   </div>
+  {{- end }}
 
-  <h2 class="exh-cat"><span class="exh-n">04</span>History of science</h2>
+  {{- if not (in $hide "history") }}{{ $n = add $n 1 }}
+  <h2 class="exh-cat"><span class="exh-n">{{ printf "%02d" $n }}</span>History of science</h2>
   <p class="exh-cat-text">Where and how the physics was done: institutions, laboratories and the people in them.</p>
   <div class="exh-cards">
+    {{- if not (in $hide "paris-physics") }}
     <a class="exh-card" href="/paris-physics-explorer/">
       <div class="exh-card-art"><svg class="exh-card-img exh-card-icon" viewBox="0 0 120 120" aria-hidden="true">
         <defs><radialGradient id="exh-pp" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fbbf24" stop-opacity="0.45"/><stop offset="1" stop-color="#fbbf24" stop-opacity="0"/></radialGradient></defs>
@@ -172,7 +204,9 @@
         <div class="exh-card-link">Open &rarr;</div>
       </div>
     </a>
+    {{- end }}
   </div>
+  {{- end }}
 </div>
 
 <style>

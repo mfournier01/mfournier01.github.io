@@ -7,4 +7,4 @@ layout: blank
 # next to this page as a page resource.
 ---
 
-{{< explorers-home >}}
+{{< explorers-home hide="simulations" >}}

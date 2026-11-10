@@ -40,7 +40,7 @@ sections:
   - block: research-intro
     content:
       label: '01'
-      title: Trous noirs, gaz froid et champs magnétiques
+      title: Trous noirs, *gaz froid* et **champs magnétiques**
       lead: |-
         Mon principal sujet d'intérêt est la **nature multiphasée du milieu intra-amas** et l'interaction entre la **rétroaction des trous noirs supermassifs**, les **instabilités thermiques** et les **champs magnétiques**. Pour explorer ces questions, j'utilise des méthodes numériques avancées et je lance des **simulations accélérées par GPU** sur des supercalculateurs.
       past_label: Auparavant

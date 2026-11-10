@@ -40,7 +40,7 @@ sections:
   - block: research-intro
     content:
       label: '01'
-      title: Black holes, cold gas and magnetic fields
+      title: Black holes, *cold gas* and **magnetic fields**
       lead: |-
         My main topic of interest is the **multiphase nature of the intracluster medium** and the interplay between **feedback from supermassive black holes**, **thermal instabilities** and **magnetic fields**. To explore these questions, I use advanced numerical methods and run **GPU-accelerated simulations** on supercomputers.
       past_label: Previously

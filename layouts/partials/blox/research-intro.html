@@ -7,7 +7,7 @@
 
 <div class="ri-wrap">
   {{ with $c.label }}<div class="ri-label">{{ . }}</div>{{ end }}
-  <h2 class="ri-title">{{ $c.title | emojify }}</h2>
+  <h2 class="ri-title">{{ $c.title | emojify | $page.RenderString }}</h2>
   {{ with $c.lead }}<div class="ri-lead">{{ . | $page.RenderString (dict "display" "block") }}</div>{{ end }}
   {{ with $c.past }}
   <div class="ri-past">

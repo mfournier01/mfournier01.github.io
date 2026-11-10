@@ -1,24 +1,26 @@
-/* STIX Two Text, italic only — used solely for the scroll-reveal labels
-   (see below), not a sitewide font. Must stay the first rule: `@import`
+/* STIX Two Text, italic only — for the scroll-reveal labels (see below); the
+   body text uses a self-hosted copy. Must stay the first rule: `@import`
    is only valid before any other CSS rule in the file. */
 @import url('https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@1,400&display=swap');
 
-/* --- Compensate for the EB Garamond font swap ---
-   1. Garamond's x-height is noticeably smaller than Inter's at the same
-      font-size, so text reads smaller/harder to read — nudge the root
-      size up slightly.
-   2. Tailwind's `max-w-prose` utility is `65ch`, which is font-relative
-      (based on the width of the "0" glyph). Measured live: 65ch computed
-      to 655px under the old sans-serif fallback but only 499px under
-      Garamond — a ~24% narrower text column, which is what was forcing
-      short phrases like "Computational Astrophysics" to wrap. Pin it to
-      a fixed width close to the original so it's stable across fonts. */
+/* --- Sitewide text size and paragraph width ---
+   Root size is nudged up. Tailwind's `.prose` and `max-w-prose` widths are
+   font-relative (65ch), so both are pinned to stay the same across fonts.
+   `.prose` must stay above any rule giving a prose block its own width. */
 html {
   font-size: 107%;
 }
 
+.prose {
+  max-width: 31.2em;
+}
+
 .max-w-prose {
   max-width: 42rem;
+}
+
+.max-w-none {
+  max-width: none;
 }
 
 /* --- Larger, sharper homepage avatar (default theme caps it at 150x150) --- */
@@ -298,7 +300,9 @@ html {
   .exp-item--current .exp-node, .exp-badge-dot { animation: none; }
 }
 
-/* ===== "Explorers" menu entry: animated gradient to draw the eye ===== */
+/* ===== "Explorers" menu entry and the label on its page: animated gradient to draw the eye ===== */
+.exh-wrap .exh-kicker { width: fit-content; margin-inline: auto; }
+.exh-wrap .exh-kicker,
 a.nav-link[href="/explorers/"],
 a.nav-link[href$="/explorers/"] {
   font-weight: 700;
@@ -319,7 +323,7 @@ a.nav-link[href$="/explorers/"]:hover {
   to { background-position: 250% 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  a.nav-link[href$="/explorers/"] { animation: none; }
+  .exh-wrap .exh-kicker, a.nav-link[href$="/explorers/"] { animation: none; }
 }
 
 /* Outreach page (layouts/partials/blox/outreach.html) */
@@ -561,18 +565,36 @@ a.nav-link[href$="/explorers/"]:hover {
 #site-header #search_toggle:hover, #site-header .theme-toggle:hover { color: rgb(var(--color-primary-300)); }
 #site-header .lang-switch { margin-left: 0.4rem; padding: 0.2rem 0.65rem; border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 999px; font-size: 0.78rem; letter-spacing: 0.08em; }
 #site-header .lang-switch a:hover { color: rgb(var(--color-primary-300)); }
-/* Narrow desktops (1024–1220px): tighter links so the bar stays on one line. */
-@media (min-width: 1024px) and (max-width: 1220px) {
+/* Narrow desktops (1024–1259px): tighter links so the bar stays on one line. */
+@media (min-width: 1024px) and (max-width: 1259px) {
   #site-header .navbar-brand { font-size: 1.15rem; }
   #site-header #nav-menu { margin-left: 0.6rem; }
   #site-header #nav-menu > li + li { margin-left: 0 !important; }
   #site-header .nav-link { padding-left: 0.5rem !important; padding-right: 0.5rem !important; font-size: 0.9rem; }
   #site-header .nav-link:hover::after, #site-header .nav-link.active::after { left: 0.5rem; right: 0.5rem; }
 }
-@media (min-width: 1024px) and (max-width: 1100px) {
+@media (min-width: 1024px) and (max-width: 1149px) {
   #site-header .navbar-brand { font-size: 1.05rem; }
   #site-header .nav-link { padding-left: 0.36rem !important; padding-right: 0.36rem !important; font-size: 0.84rem; }
   #site-header #search_toggle, #site-header .theme-toggle { padding-left: 0.5rem; padding-right: 0.5rem; }
+}
+@media (min-width: 1024px) and (max-width: 1099px) {
+  #site-header .nav-link, html[lang^="fr"] #site-header .nav-link { padding-left: 0.25rem !important; padding-right: 0.25rem !important; letter-spacing: 0; }
+}
+/* The French menu is the longest: tighten its spacing first, shrink its text only on narrow windows. */
+@media (min-width: 1024px) and (max-width: 1365px) {
+  html[lang^="fr"] #site-header #nav-menu { margin-left: 0.6rem; }
+  html[lang^="fr"] #site-header #nav-menu > li + li { margin-left: 0 !important; }
+  html[lang^="fr"] #site-header .nav-link { padding-left: 0.5rem !important; padding-right: 0.5rem !important; letter-spacing: 0; }
+  html[lang^="fr"] #site-header .nav-link:hover::after, html[lang^="fr"] #site-header .nav-link.active::after { left: 0.5rem; right: 0.5rem; }
+}
+@media (min-width: 1024px) and (max-width: 1259px) { html[lang^="fr"] #site-header .nav-link { font-size: 0.9rem; } }
+@media (min-width: 1024px) and (max-width: 1200px) {
+  html[lang^="fr"] #site-header .navbar-brand { font-size: 1.05rem; }
+  html[lang^="fr"] #site-header .nav-link { padding-left: 0.36rem !important; padding-right: 0.36rem !important; font-size: 0.84rem; }
+}
+@media (min-width: 1024px) and (max-width: 1099px) {
+  html[lang^="fr"] #site-header .nav-link { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
 }
 /* Phones/tablets: keep brand, controls and menu button on one line. */
 @media (max-width: 1023px) {
@@ -624,3 +646,39 @@ a.nav-link[href$="/explorers/"]:hover {
   .nl-title { font-size: 2.1rem; }
   .nl-wrap { padding: 2rem 1rem 4rem; }
 }
+
+/* ---------- Titles (Fraunces, hooks/head-end/fraunces-font.html) ----------
+   Toolbar, hero and running text stay on the site's STIX Two Text. Light for page and
+   section titles, bold for item titles, italic for news and group headings;
+   titles can also mix in *italic* and **bold** from markdown. */
+:root { --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif; }
+.sec-title, .ri-title, .pg-title, .pb-title, .nl-title, .ot-title, .vz-title, .exp-heading, h1.text-4xl { font-family: var(--font-display); font-weight: 300; letter-spacing: -0.02em; }
+.vz-t, .ot-item-t, .exp-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+.pc-title { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+.nt-title, .ot-group-t, .pg-year { font-family: var(--font-display); font-weight: 400; font-style: italic; letter-spacing: -0.01em; }
+.ri-title { text-wrap: balance; }
+.ri-title strong { font-weight: 700; }
+.pc-title em { font-weight: 700; }
+
+/* ---------- Bright mode ----------
+   The rules above assume a dark page; these give the same elements readable colors
+   on white. The hero keeps its own dark section, and the Explorers keep a dark
+   page (hooks/head-end/explorer-page.html). */
+html:not(.dark) body { background-color: #fff; }
+html:not(.dark) #site-header.header { background: rgba(255, 255, 255, 0.82); border-bottom-color: rgba(15, 23, 42, 0.1); box-shadow: 0 10px 30px -22px rgba(15, 23, 42, 0.35); }
+html:not(.dark) #site-header .navbar-brand, html:not(.dark) #site-header .nav-link:hover { color: #0f172a; }
+html:not(.dark) #site-header .nav-link, html:not(.dark) #site-header #search_toggle, html:not(.dark) #site-header .theme-toggle { color: #334155; }
+html:not(.dark) #site-header .navbar-brand:hover, html:not(.dark) #site-header .nav-link.active, html:not(.dark) #site-header #search_toggle:hover, html:not(.dark) #site-header .theme-toggle:hover, html:not(.dark) #site-header .lang-switch a:hover { color: rgb(var(--color-primary-700)); }
+html:not(.dark) #site-header .nav-link::after { background: rgb(var(--color-primary-600)); }
+html:not(.dark) .sec-title, html:not(.dark) .ri-title, html:not(.dark) .pg-title, html:not(.dark) .pb-title, html:not(.dark) .nl-title, html:not(.dark) .ot-title, html:not(.dark) .vz-title, html:not(.dark) .pg-year, html:not(.dark) .ot-group-t, html:not(.dark) .ot-item-t, html:not(.dark) .vz-t, html:not(.dark) .pc-title, html:not(.dark) .nt-title, html:not(.dark) .pr-title, html:not(.dark) .pb-me { color: #0f172a; }
+html:not(.dark) .ri-lead, html:not(.dark) .ri-lead p, html:not(.dark) .ri-lead strong, html:not(.dark) .nt-sum, html:not(.dark) .pb-abstract, html:not(.dark) .ot-wrap p, html:not(.dark) .ot-tags span, html:not(.dark) .pg-insta, html:not(.dark) .pb-links .hb-attachment-link, html:not(.dark) .pb-wrap em { color: #334155; }
+html:not(.dark) .vz-intro, html:not(.dark) .vz-text, html:not(.dark) .nl-intro, html:not(.dark) .pg-intro, html:not(.dark) .ot-wrap .ot-intro, html:not(.dark) .ot-sub, html:not(.dark) .ot-stat-l, html:not(.dark) .ot-wrap em, html:not(.dark) .ot-wrap .ot-media figcaption, html:not(.dark) .pc-sum, html:not(.dark) .pc-foot, html:not(.dark) .nt-event, html:not(.dark) .nt-meta span:last-child:not(.nt-sep), html:not(.dark) .nt-sep, html:not(.dark) .pr-head, html:not(.dark) .pr-author, html:not(.dark) .pr-journal, html:not(.dark) .ri-past-k, html:not(.dark) .ri-past-v, html:not(.dark) .sec-sub, html:not(.dark) .pb-au, html:not(.dark) .pb-sep, html:not(.dark) .pb-cites, html:not(.dark) .pb-foot p, html:not(.dark) .pb-wrap .pb-figure figcaption { color: #56657a; }
+html:not(.dark) .pb-au.pb-me { color: #0f172a; }
+html:not(.dark) .sec-label, html:not(.dark) .ri-label, html:not(.dark) .pc-tag, html:not(.dark) .pc-more, html:not(.dark) .pr-year, html:not(.dark) .pr-link a, html:not(.dark) .nt-meta, html:not(.dark) .nt-more, html:not(.dark) .vz-n, html:not(.dark) .vz-text a, html:not(.dark) .pg-place, html:not(.dark) .ot-group-n, html:not(.dark) .ot-kicker, html:not(.dark) .ot-link, html:not(.dark) .pb-kicker, html:not(.dark) .pb-wrap .pb-label, html:not(.dark) .nl-badge, html:not(.dark) .pb-links .hb-attachment-link:hover { color: rgb(var(--color-primary-700)); }
+html:not(.dark) .pc-card, html:not(.dark) .nt-card, html:not(.dark) .ot-cards .ot-item, html:not(.dark) .ot-stat, html:not(.dark) .pb-card { background: #fff; border-color: rgba(15, 23, 42, 0.12); box-shadow: 0 18px 40px -30px rgba(15, 23, 42, 0.45); }
+html:not(.dark) .ot-stat-v { background: linear-gradient(90deg, rgb(var(--color-primary-600)), rgb(var(--color-primary-700))); -webkit-background-clip: text; background-clip: text; }
+html:not(.dark) .pr-pill--published { color: #047857; border-color: rgba(4, 120, 87, 0.35); }
+html:not(.dark) .pr-pill--accepted { color: #92400e; border-color: rgba(146, 64, 14, 0.35); }
+html:not(.dark) .pr-pill--submitted { color: #0369a1; border-color: rgba(3, 105, 161, 0.35); }
+html:not(.dark) .pr-cites { color: #b4532a; }
+html:not(.dark) .pg-insta:hover { color: #be185d; }

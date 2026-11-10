@@ -1,0 +1,13 @@
+{{/* Explorer pages only. Their titles use the site's title font, with the same
+     light/italic/bold mix as other pages; the rest stays in STIX. Their text
+     and figures are designed for a dark page, so they keep one in bright mode. */}}
+{{ if strings.Contains .RelPermalink "explorer" }}
+<style>
+  body.page-wrapper h1, body.page-wrapper h2, body.page-wrapper h3, body.page-wrapper [class$="-card-title"] { font-family: var(--font-display); letter-spacing: -0.01em; }
+  body.page-wrapper h1, body.page-wrapper h2 { font-weight: 300; letter-spacing: -0.02em; }
+  body.page-wrapper h3 { font-weight: 400; font-style: italic; }
+  body.page-wrapper [class$="-card-title"] { font-weight: 600; }
+  html:not(.dark) body.page-wrapper { background-color: rgb(23, 24, 28); color: #fff; }
+  html:not(.dark) body footer, html:not(.dark) body footer a { color: #94a3b8; }
+</style>
+{{ end }}

@@ -225,7 +225,7 @@
   </p>
   <div class="ax-labbox">
     <div class="ax-figtitle">A thin disk: temperature profile, spectrum and timescales</div>
-    <div class="ax-grid2" style="grid-template-columns: 1fr 1fr">
+    <div class="ax-grid2 ax-grid2--even">
       <svg class="ax-svg" id="ax-dtp" viewBox="0 0 460 330" role="img" aria-label="Thin disk temperature profile for an AGN and an X-ray binary"></svg>
       <svg class="ax-svg" id="ax-dsp" viewBox="0 0 460 330" role="img" aria-label="Multicolour disk spectrum"></svg>
     </div>
@@ -700,7 +700,7 @@
   .ax-p { margin: 0 0 0.8rem; max-width: 760px; }
   .ax-note { color: #94a3b8; margin-top: 1.5rem; }
   .ax-cap { margin: -0.4rem 0 0.9rem; font-size: 0.88rem; color: #94a3b8; max-width: 760px; }
-  .ax-eq-block { margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
+  .ax-eq-block { position: relative; margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
   .ax-eq-block--sm { margin: 0.5rem 0; font-size: 0.88rem; }
   .ax-val { display: inline-block; min-width: 5.5em; font-weight: 700; color: #fbbf24; }
   .ax-wrap .katex { color: inherit; }
@@ -740,7 +740,7 @@
   .ax-controls { display: flex; align-items: center; gap: 0.8rem; max-width: 600px; margin: 0.4rem 0; }
   .ax-controls input[type=range] { flex: 1; accent-color: #fbbf24; }
 
-  .ax-table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .ax-table-wrap { position: relative; overflow-x: auto; margin: 0.5rem 0 1rem; }
   .ax-table-wrap--sm { max-width: 560px; }
   .ax-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   .ax-table--sm { font-size: 0.9rem; }
@@ -820,6 +820,7 @@
 
   /* ---- generic figure widgets */
   .ax-grid2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); gap: 1.2rem; align-items: start; }
+  .ax-grid2--even { grid-template-columns: 1fr 1fr; }
   @media (max-width: 760px) { .ax-grid2 { grid-template-columns: 1fr; } }
   .ax-svg { display: block; width: 100%; height: auto; }
   .ax-svg text { font-family: 'STIX Two Text', serif; }
@@ -851,7 +852,7 @@
   .ax-table--plain td:first-child { font-weight: 400; color: #e2e8f0; } .ax-table--plain th { white-space: nowrap; }
   .ax-ext { color: #60a5fa; text-decoration: underline; text-underline-offset: 3px; }
   .ax-map-pills { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; }
-  .ax-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ax-scroll { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   @media (max-width: 720px) { .ax-scroll > svg, .ax-scroll > canvas { min-width: 640px; } .ax-scroll::after { content: 'scroll sideways for the full figure'; display: block; margin: 0.2rem 0 0.4rem; font-size: 0.78rem; color: #64748b; } }
   .ax-sec-body, .ax-sec-inner { min-width: 0; }
   @media (max-width: 600px) { .ax-eq { font-size: 0.86em; } }

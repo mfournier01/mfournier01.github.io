@@ -569,7 +569,7 @@
   .mg-p { margin: 0 0 0.8rem; max-width: 760px; }
   .mg-note { color: #94a3b8; margin-top: 1.5rem; }
   .mg-cap { margin: -0.4rem 0 0.9rem; font-size: 0.88rem; color: #94a3b8; max-width: 760px; }
-  .mg-eq-block { margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
+  .mg-eq-block { position: relative; margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
   .mg-eq-block--sm { margin: 0.5rem 0; font-size: 0.88rem; }
   .mg-val { display: inline-block; min-width: 5.5em; font-weight: 700; color: #fbbf24; }
   .mg-wrap .katex { color: inherit; }
@@ -609,7 +609,7 @@
   .mg-controls { display: flex; align-items: center; gap: 0.8rem; max-width: 600px; margin: 0.4rem 0; }
   .mg-controls input[type=range] { flex: 1; accent-color: #fbbf24; }
 
-  .mg-table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .mg-table-wrap { position: relative; overflow-x: auto; margin: 0.5rem 0 1rem; }
   .mg-table-wrap--sm { max-width: 560px; }
   .mg-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   .mg-table--sm { font-size: 0.9rem; }
@@ -720,7 +720,7 @@
   .mg-table--plain td:first-child { font-weight: 400; color: #e2e8f0; } .mg-table--plain th { white-space: nowrap; }
   .mg-ext { color: #60a5fa; text-decoration: underline; text-underline-offset: 3px; }
   .mg-map-pills { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; }
-  .mg-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mg-scroll { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   @media (max-width: 720px) { .mg-scroll > svg, .mg-scroll > canvas { min-width: 640px; } .mg-scroll::after { content: 'scroll sideways for the full figure'; display: block; margin: 0.2rem 0 0.4rem; font-size: 0.78rem; color: #64748b; } }
   .mg-sec-body, .mg-sec-inner { min-width: 0; }
   @media (max-width: 600px) { .mg-eq { font-size: 0.86em; } }

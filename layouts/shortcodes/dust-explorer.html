@@ -303,7 +303,7 @@
   <p class="dx-p">
     giving a peak efficiency of about 1% for PAHs. Because the atoms have to land on a surface, the total rate scales with the <em>total grain surface area</em>, not with the dust mass. For a given dust mass in grains of radius <span class="dx-m" data-tex="a">a</span> and density <span class="dx-m" data-tex="s">s</span>, the surface area is <span class="dx-m" data-tex="3M/(sa)">3M/(s a)</span>, so small grains are far more effective than large ones. Try it: the slider moves dust mass between small (10&nbsp;nm) and large (100&nbsp;nm) grains.
   </p>
-  <div class="dx-sput" style="grid-template-columns: minmax(260px, 1fr) minmax(240px, 1fr)">
+  <div class="dx-sput dx-sput--even">
     <div class="dx-sput-controls">
       <label>Dust mass in small grains <span class="dx-val" id="dx-stl-val"></span>
         <input type="range" id="dx-stl" min="0.02" max="0.6" step="0.01" value="0.2"></label>
@@ -452,7 +452,7 @@
   .dx-p { margin: 0 0 0.8rem; max-width: 760px; }
   .dx-note { color: #94a3b8; margin-top: 1.5rem; }
   .dx-cap { margin: -0.4rem 0 0.9rem; font-size: 0.88rem; color: #94a3b8; max-width: 760px; }
-  .dx-eq-block { margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
+  .dx-eq-block { position: relative; margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
   .dx-eq-block--sm { margin: 0.5rem 0; font-size: 0.88rem; }
   .dx-val { display: inline-block; min-width: 5.5em; font-weight: 700; color: #fbbf24; }
   .dx-val .katex, .dx-sput-read .katex { font-size: 1.05em; }
@@ -460,7 +460,7 @@
   .dx-wrap .dx-eq-block .katex-display { margin: 0.4em 0; }
 
   .dx-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.9rem; margin: 0.6rem 0 1rem; }
-  .dx-cards--wide { grid-template-columns: 1fr; }
+  .dx-cards--wide { grid-template-columns: minmax(0, 1fr); }
   .dx-card { padding: 0.85rem 1.1rem; border: 1px solid rgba(148,163,184,0.28); border-radius: 0.7rem; background: linear-gradient(180deg, rgba(30,41,59,0.55), rgba(15,23,42,0.35)); font-size: 0.93rem; line-height: 1.5; }
   .dx-card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
 
@@ -493,7 +493,7 @@
   .dx-controls { display: flex; align-items: center; gap: 0.8rem; max-width: 600px; margin: 0.4rem 0; }
   .dx-controls input[type=range] { flex: 1; accent-color: #fbbf24; }
 
-  .dx-table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .dx-table-wrap { position: relative; overflow-x: auto; margin: 0.5rem 0 1rem; }
   .dx-table-wrap--sm { max-width: 560px; }
   .dx-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   .dx-table--sm { font-size: 0.9rem; }
@@ -521,7 +521,9 @@
   .dx-contexts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 0; }
   .dx-ctx { padding: 0.3rem 0.8rem; border: 1px solid rgba(148,163,184,0.35); border-radius: 999px; background: rgba(30,41,59,0.6); color: #e2e8f0; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
   .dx-ctx:hover { border-color: #fbbf24; background: rgba(251,191,36,0.1); }
+  .dx-sput--even { grid-template-columns: minmax(260px, 1fr) minmax(240px, 1fr); }
   @media (max-width: 700px) { .dx-sput { grid-template-columns: 1fr; } }
+  .dx-sec-body, .dx-sec-inner { min-width: 0; }
 </style>
 
 <script>

@@ -320,7 +320,7 @@
   </ol>
   <div class="sx-labbox">
     <div class="sx-figtitle">A star near a block boundary: how the event is split <span class="sx-badge">click to move the star</span></div>
-    <div class="sx-grid2" style="grid-template-columns: minmax(0,1.5fr) minmax(220px,1fr)">
+    <div class="sx-grid2">
       <svg class="sx-svg" id="sx-gh" viewBox="0 0 528 528" role="img" aria-label="Kernel of a star split between four meshblocks with ghost particles"></svg>
       <div>
         <div class="sx-sl"><label>Injection radius: <output id="sx-o-gr"></output></label><input type="range" id="sx-s-gr" min="1" max="3" step="0.5" value="2"></div>
@@ -651,7 +651,7 @@
   .sx-p { margin: 0 0 0.8rem; max-width: 760px; }
   .sx-note { color: #94a3b8; margin-top: 1.5rem; }
   .sx-cap { margin: -0.4rem 0 0.9rem; font-size: 0.88rem; color: #94a3b8; max-width: 760px; }
-  .sx-eq-block { margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
+  .sx-eq-block { position: relative; margin: 0.2rem 0 0.9rem; overflow-x: auto; overflow-y: hidden; }
   .sx-eq-block--sm { margin: 0.5rem 0; font-size: 0.88rem; }
   .sx-val { display: inline-block; min-width: 5.5em; font-weight: 700; color: #fbbf24; }
   .sx-wrap .katex { color: inherit; }
@@ -691,7 +691,7 @@
   .sx-controls { display: flex; align-items: center; gap: 0.8rem; max-width: 600px; margin: 0.4rem 0; }
   .sx-controls input[type=range] { flex: 1; accent-color: #fbbf24; }
 
-  .sx-table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; }
+  .sx-table-wrap { position: relative; overflow-x: auto; margin: 0.5rem 0 1rem; }
   .sx-table-wrap--sm { max-width: 560px; }
   .sx-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   .sx-table--sm { font-size: 0.9rem; }
@@ -802,7 +802,7 @@
   .sx-table--plain td:first-child { font-weight: 400; color: #e2e8f0; } .sx-table--plain th { white-space: nowrap; }
   .sx-ext { color: #60a5fa; text-decoration: underline; text-underline-offset: 3px; }
   .sx-map-pills { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; }
-  .sx-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sx-scroll { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   @media (max-width: 720px) { .sx-scroll > svg, .sx-scroll > canvas { min-width: 640px; } .sx-scroll::after { content: 'scroll sideways for the full figure'; display: block; margin: 0.2rem 0 0.4rem; font-size: 0.78rem; color: #64748b; } }
   .sx-sec-body, .sx-sec-inner { min-width: 0; }
   @media (max-width: 600px) { .sx-eq { font-size: 0.86em; } }
@@ -816,6 +816,7 @@
   .sx-card code, .sx-panel code { font-size: 0.8em; }
   .sx-seg-wide button { padding: 0.3rem 0.8rem; }
   .sx-rng-row { display: grid; grid-template-columns: 7.5rem repeat(24, 1fr); gap: 2px; margin: 3px 0; font-size: 0.8rem; align-items: center; }
+  @media (max-width: 720px) { #sx-rng { overflow-x: auto; -webkit-overflow-scrolling: touch; } .sx-rng-row { min-width: 560px; } }
   .sx-rng-row b { font-weight: 400; color: #94a3b8; }
   .sx-rng-cell { text-align: center; padding: 0.15rem 0; border-radius: 3px; background: rgba(148,163,184,0.12); color: #e2e8f0; }
   .sx-rng-cell.sx-bad { background: rgba(248,113,113,0.45); color: #fff; }

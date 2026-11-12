@@ -141,21 +141,31 @@ languages:
 #   Only `title`, `awarder`, and `date` are required.
 #   Begin multi-line `summary` with YAML's `|` or `|2-` multi-line prefix and indent 2 spaces below.
 awards:
-  - title: Project contributor of “**Inertial range dynamics in the exascale era with the largest compressible magnetized turbulence simulation**” (2025), *100 Mcore-h on JUPITER*
+  - title: 'Project contributor: **exascale MHD turbulence**'
     url: https://www.gauss-centre.eu/
-    data: '2025-01'
+    date: '2025-01-01'
     awarder: Gauss Centre for Supercomputing
     icon: ''
-    summary: |
-       We study the magnetised turbulence using JUPITER, the first European exascale supercomputer, by running the largest MHD simulation to date.
+    summary: 100 Mcore-h on JUPITER, Europe’s first exascale supercomputer, for the largest MHD turbulence simulation to date.
+    role: Project contributor
+    subject: Exascale MHD turbulence
+    amount: '100'
+    unit: Mcore-h
+    machine: JUPITER
+    note: Europe’s first exascale supercomputer, for the largest MHD turbulence simulation to date.
 
-  - title: Co-PI of “**Magnetohydrodynamical simulations of jet-cloud interactions in the intracluster medium**” (2024), *1.00 Mcore-h on JUWELS GPU Booster* 
+  - title: 'Co-PI: **jet–cloud interactions in the intracluster medium**'
     url: https://www.gauss-centre.eu/
     date: '2024-05-01'
     awarder: Gauss Centre for Supercomputing
     icon: ''
-    summary: |
-      With this computing grant, we investigate the complex interplay between active galactic nuclei feedback, thermal instability, and the role that magnetic fields play in the formation of the multiphase intracluster medium. We use GPU-accelerated simulations of an idealized galaxy cluster using the AthenaPK code.
+    summary: 1 Mcore-h on JUWELS Booster for GPU simulations (AthenaPK) of AGN feedback and multiphase gas in a galaxy cluster.
+    role: Co-PI
+    subject: Jet–cloud interactions in the intracluster medium
+    amount: '1'
+    unit: Mcore-h
+    machine: JUWELS Booster
+    note: GPU simulations (AthenaPK) of AGN feedback and multiphase gas in a galaxy cluster.
 ---
 
 ## About Me

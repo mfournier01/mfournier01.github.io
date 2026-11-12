@@ -141,21 +141,31 @@ languages:
 #   Only `title`, `awarder`, and `date` are required.
 #   Begin multi-line `summary` with YAML's `|` or `|2-` multi-line prefix and indent 2 spaces below.
 awards:
-  - title: Contributeur du projet « **Inertial range dynamics in the exascale era with the largest compressible magnetized turbulence simulation** » (2025), *100 Mh-cœur sur JUPITER*
+  - title: 'Contributeur : **turbulence MHD exascale**'
     url: https://www.gauss-centre.eu/
-    data: '2025-01'
+    date: '2025-01-01'
     awarder: Gauss Centre for Supercomputing
     icon: ''
-    summary: |
-       Nous étudions la turbulence magnétisée avec JUPITER, le premier supercalculateur européen exascale, en lançant la plus grande simulation MHD à ce jour.
+    summary: 100 Mh-cœur sur JUPITER, premier supercalculateur exascale européen, pour la plus grande simulation de turbulence MHD à ce jour.
+    role: Contributeur
+    subject: Turbulence MHD exascale
+    amount: '100'
+    unit: Mh-cœur
+    machine: JUPITER
+    note: Premier supercalculateur exascale européen, pour la plus grande simulation de turbulence MHD à ce jour.
 
-  - title: Co-porteur du projet « **Magnetohydrodynamical simulations of jet-cloud interactions in the intracluster medium** » (2024), *1,00 Mh-cœur sur JUWELS GPU Booster* 
+  - title: 'Co-porteur : **interactions jet–nuage dans le milieu intra-amas**'
     url: https://www.gauss-centre.eu/
     date: '2024-05-01'
     awarder: Gauss Centre for Supercomputing
     icon: ''
-    summary: |
-      Grâce à cette allocation de calcul, nous étudions l'interaction complexe entre la rétroaction des noyaux actifs de galaxies, l'instabilité thermique et le rôle des champs magnétiques dans la formation du milieu intra-amas multiphasé. Nous utilisons des simulations accélérées par GPU d'un amas de galaxies idéalisé avec le code AthenaPK.
+    summary: 1 Mh-cœur sur JUWELS Booster pour des simulations GPU (AthenaPK) de la rétroaction des AGN et du gaz multiphasé d’un amas de galaxies.
+    role: Co-porteur
+    subject: Interactions jet–nuage dans le milieu intra-amas
+    amount: '1'
+    unit: Mh-cœur
+    machine: JUWELS Booster
+    note: Simulations GPU (AthenaPK) de la rétroaction des AGN et du gaz multiphasé d’un amas de galaxies.
 ---
 
 ## À propos de moi

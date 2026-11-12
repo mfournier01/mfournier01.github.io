@@ -1,0 +1,58 @@
+{{/* Project override of the theme's Awards block: compact cards, two side by side, with contrasting
+     type: a small caps role, the allocation as a large display figure, the project in italic display
+     type, a muted note and the awarder. Uses the optional fields role / subject / amount / unit /
+     machine / note of each award (author page); falls back to title / summary when they are missing. */}}
+{{ $block := .wcBlock }}
+{{ $author := $block.content.username | default "admin" }}
+{{ $person_page_path := printf "/authors/%s" $author }}
+{{ $person_page := site.GetPage $person_page_path }}
+{{ if not $person_page }}
+  {{ errorf "Could not find an author page at `%s` for the Awards block." $person_page_path }}
+{{ end }}
+{{ $awards := $person_page.Params.awards }}
+{{ $fr := eq site.Language.Lang "fr" }}
+
+<div class="flex flex-col items-center max-w-prose mx-auto gap-3 justify-center">
+
+  <div class="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+    {{ $block.content.title | markdownify | emojify }}
+  </div>
+
+  {{ with $block.content.text }}<p>{{ . | markdownify | emojify }}</p>{{ end }}
+
+  {{ with $awards }}
+  <ul class="aw-grid">
+    {{ range sort . ".date" "desc" }}
+    <li class="mf-card">
+      <div class="mf-top">
+        <span class="mf-kicker">{{ with .role }}{{ . }}{{ else }}{{ index (split (.title | plainify) ":") 0 }}{{ end }}</span>
+        {{ with .date }}<span class="mf-aside">{{ (time .).Year }}</span>{{ end }}
+      </div>
+      {{ if .amount }}
+      <div class="aw-fig-wrap">
+        <span class="aw-num">{{ .amount }}</span>
+        <span class="aw-unit">{{ .unit }}</span>
+        {{ with .machine }}<span class="aw-on">{{ if $fr }}sur{{ else }}on{{ end }}</span><span class="mf-tag">{{ . }}</span>{{ end }}
+      </div>
+      {{ end }}
+      <p class="mf-title">{{ with .subject }}{{ . }}{{ else }}{{ .title | markdownify }}{{ end }}</p>
+      <p class="mf-note">{{ with .note }}{{ . }}{{ else }}{{ .summary | markdownify }}{{ end }}</p>
+      <div class="mf-foot">{{ with .url }}<a href="{{ . }}" target="_blank" rel="noopener">{{ end }}{{ .awarder }}{{ with .url }}</a>{{ end }}</div>
+    </li>
+    {{ end }}
+  </ul>
+  {{ end }}
+</div>
+
+<style>
+  /* Card look is shared (.mf-* in assets/css/custom.css); only the grid and the big figure live here. */
+  .aw-grid { width: min(46rem, 92vw); display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+  .aw-fig-wrap { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.35rem; margin: 0.45rem 0 0.15rem; }
+  .aw-num { font-family: var(--font-display); font-weight: 300; font-variation-settings: "opsz" 144; font-size: 2.6rem; line-height: 1; letter-spacing: -0.03em; color: #ffb36b; font-variant-numeric: lining-nums; }
+  .aw-unit { font-size: 0.8rem; font-weight: 600; color: #fcd9b0; }
+  .aw-on { font-size: 0.8rem; font-style: italic; color: #64748b; }
+  .aw-fig-wrap .mf-tag { line-height: 1; }
+  .aw-grid .mf-note { margin: 0 0 0.7rem; }
+  html:not(.dark) .aw-num { color: #d9711f; }
+  html:not(.dark) .aw-unit { color: #b45309; }
+</style>

@@ -39,7 +39,7 @@ header:
 
 # Site footer
 footer:
-  text: "Some design elements were inspired by [James R. Beattie](https://astrojames.github.io)'s website."
+  text: ""
   copyright:
     notice: '© {year} Martin Fournier. This work is licensed under {license}'
     license:

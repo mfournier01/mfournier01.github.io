@@ -1,0 +1,346 @@
+{{/* Experience page: the 3D city renders side by side along a timeline, Mulhouse to Paris, each
+     name and its years underneath; cities and texts come from data/experience.yaml. Renders are
+     assets/media/experience/<key>.webp (full-size crops of blender/sites/output/hires); a missing one
+     shows Grenoble. Clicking a city zooms towards its glow and unfolds a card beside it
+     with what I did there (under it on phones). The strip scrolls sideways: trackpad, drag, arrows. */}}
+{{ $fr := eq .Page.Lang "fr" }}
+{{ $L := cond $fr "fr" "en" }}
+{{ $fallback := resources.Get "media/experience/grenoble.webp" }}
+<div class="xp-wrap xh-wrap">
+  <div class="xp-head">
+    <h1 class="xp-title">{{ if $fr }}Parcours{{ else }}Experience{{ end }}</h1>
+    <p class="xp-lead">{{ if $fr }}Un parcours à travers l’Europe, de Mulhouse à Paris. Cliquez sur une ville pour voir ce que j’y ai fait.{{ else }}A path across Europe, from Mulhouse to Paris. Click a city to see what I did there.{{ end }}</p>
+  </div>
+
+  <div class="xh-view">
+    <div class="xh-track">
+      {{ range $i, $c := site.Data.experience.cities }}
+        {{ $src := or (resources.Get (printf "media/experience/%s.webp" $c.key)) $fallback }}
+        {{ $sm := $src.Resize "640x webp q85" }}
+        {{ $lg := $src.Resize "1200x webp q85" }}
+        {{ $xl := $src.Resize "2000x webp q84" }}
+        {{/* sources are lossless (Hugo misreads the colour range of lossy WebP); serve encoded copies only */}}
+        {{ $full := $src.Resize (printf "%dx webp q84" $src.Width) }}
+        {{ $name := index $c.name $L }}
+        {{ $when := slice }}{{ $now := false }}
+        {{ range $c.stops }}{{ $when = append $when (slice (index .per $L)) }}{{ if .now }}{{ $now = true }}{{ end }}{{ end }}
+        <div class="xh-city{{ if $now }} is-now{{ end }}" style="--i: {{ $i }}" data-glow="{{ $c.glow | default 0.47 }}">
+          <button type="button" class="xh-fig" aria-expanded="false" aria-controls="xh-card-{{ $c.key }}">
+            <span class="xh-stage"><span class="xh-clip"><img src="{{ $sm.RelPermalink }}" srcset="{{ $sm.RelPermalink }} 640w, {{ $lg.RelPermalink }} 1200w, {{ $xl.RelPermalink }} 2000w, {{ $full.RelPermalink }} {{ $full.Width }}w" sizes="(max-width: 760px) 74vw, 930px"
+              width="{{ $sm.Width }}" height="{{ $sm.Height }}" alt="{{ if $fr }}Maquette 3D de {{ $name }}{{ else }}3D model of {{ $name }}{{ end }}" loading="lazy" decoding="async" draggable="false"></span></span>
+            <span class="xh-dot" aria-hidden="true"></span>
+            <span class="xh-name">{{ $name }}</span>
+            <span class="xh-when">{{ delimit $when " · " }}</span>
+          </button>
+          <div class="xh-drawer"><div class="xh-card" id="xh-card-{{ $c.key }}" role="region" aria-label="{{ $name }}">
+            <button type="button" class="xh-x" aria-label="{{ if $fr }}Fermer{{ else }}Close{{ end }}">&times;</button>
+            {{ range $c.stops }}
+              <div class="xh-entry">
+                <p class="xh-per">{{ if .now }}<span class="xh-live" aria-hidden="true"></span>{{ end }}{{ index .per $L }}</p>
+                <p class="xh-t">{{ index .title $L }}</p>
+                <p class="xh-org">{{ if .url }}<a href="{{ .url }}" target="_blank" rel="noopener">{{ index .org $L }}</a>{{ else }}{{ index .org $L }}{{ end }}</p>
+                <p class="xh-text">{{ index .text $L | markdownify }}</p>
+                <ul class="xh-tags">{{ range index .tags $L }}<li>{{ . }}</li>{{ end }}</ul>
+              </div>
+            {{ end }}
+          </div></div>
+        </div>
+      {{ end }}
+    </div>
+    <button type="button" class="xh-nav xh-prev" hidden aria-label="{{ if $fr }}Précédent{{ else }}Previous{{ end }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" class="xh-nav xh-next" aria-label="{{ if $fr }}Suivant{{ else }}Next{{ end }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+
+  {{/* Below the strip, after a short thread from its timeline: the sections of the classic page
+       (timeline, skills, awards, languages), rendered by the theme, in the current language. */}}
+  {{ with site.GetPage "/experience-classic" }}
+    {{ $classic := . }}
+    <div class="xh-bridge" aria-hidden="true"><span>{{ if $fr }}En détail{{ else }}In detail{{ end }}</span></div>
+    <div class="xh-classic">
+      {{ range .Params.sections }}
+        {{ if eq .block "resume-skills" }}{{ with resources.Get "media/experience/beaufortain.webp" }}
+          {{/* source is lossless (Hugo misreads the colour range of lossy WebP); serve encoded copies only */}}
+          {{ $m := .Resize "900x webp q85" }}{{ $l := .Resize "1800x webp q84" }}{{ $f := .Resize (printf "%dx webp q84" .Width) }}
+          <figure class="xh-hobby"><img src="{{ $m.RelPermalink }}" srcset="{{ $m.RelPermalink }} 900w, {{ $l.RelPermalink }} 1800w, {{ $f.RelPermalink }} {{ $f.Width }}w" sizes="(max-width: 960px) 92vw, 880px"
+            width="{{ $m.Width }}" height="{{ $m.Height }}" alt="{{ if $fr }}Maquette 3D du Beaufortain{{ else }}3D model of the Beaufortain{{ end }}" loading="lazy" decoding="async">
+            <figcaption>Beaufortain</figcaption></figure>
+        {{ end }}{{ end }}
+        {{ partial "functions/parse_block_v2" (dict "page" $classic "block" .) }}
+      {{ end }}
+    </div>
+  {{ end }}
+
+<style>
+  /* The strip spans the whole window (100vw); clipping the page sideways keeps a classic
+     scrollbar's width from adding a horizontal scroll. */
+  html { overflow-x: clip; }
+  .xh-wrap { max-width: 1240px; margin: 0 auto; padding: 0 1rem 2.5rem; }
+  .xp-head { text-align: center; margin-bottom: 0.6rem; }
+
+  /* w: render width at rest (crop ratio 1800:1101 = R); CW: card width. Open, the script sets the
+     strip's --sh (stage height, sets the timeline) and the city's frame width --iw, render height
+     --ih and offsets --ix, --ib (zoomed in, its slab's top-right corner pinned to the frame's
+     top-right corner, --my down), all registered so they animate; --o (0 to 1) widens the city to
+     push its neighbours aside. */
+  @property --w { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --iw { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --ih { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --ix { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --ib { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --sh { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --o { syntax: "<number>"; inherits: true; initial-value: 0; }
+  @property --fe { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @property --tf { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @property --fo { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @property --pad { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --gap { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  .xh-view { --w: clamp(390px, 45vw, 930px); --R: 0.6117; --CW: 24rem; --gap: 2.5rem; --top: 12px; --lg: 0.9rem;
+    --sh: calc(var(--w) * var(--R) + var(--top)); --fade: min(4rem, 5vw); --pad: max(1.5rem, 4vw); --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    position: relative; width: 100vw; margin-left: calc(50% - 50vw); transition: --sh 0.7s var(--ease); }
+  /* The timeline is the strip's own background: one line across its whole width, through the dots. */
+  .xh-track { position: relative; display: flex; align-items: flex-start; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+    padding: 0.8rem var(--pad) 1.2rem; scrollbar-width: none; cursor: grab; user-select: none; -webkit-user-select: none;
+    background: linear-gradient(rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.28)) 0 calc(0.8rem + var(--sh) + var(--lg)) / 100% 1px no-repeat local;
+    transition: background-size 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent); }
+  .xh-track::-webkit-scrollbar { display: none; }
+  .xh-track.is-drag { cursor: grabbing; }
+  .xh-track.is-drag .xh-fig { pointer-events: none; }
+
+  .xh-city { --iw: var(--w); --ih: calc(var(--w) * var(--R)); --ix: 0px; --ib: 0px; --o: 0; position: relative; flex: none;
+    width: calc(var(--iw) + var(--gap) + var(--o) * (var(--CW) + 0.5rem));
+    transition: --iw 0.75s var(--ease), --ih 0.75s var(--ease), --ix 0.75s var(--ease), --ib 0.75s var(--ease), --o 0.75s var(--ease); }
+  .xh-city.is-open { --o: 1; }
+
+  .xh-fig { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: var(--iw); padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; outline: none; }
+  .xh-stage { position: relative; display: block; width: 100%; height: var(--sh); }
+  /* The render's window: open, its left edge and anything above the strip fade out and its bottom
+     slides under the timeline; it is free to the right, where the slab runs on under the card. */
+  .xh-clip { --fe: 0px; --tf: 0px; --fo: 0px; position: absolute; left: calc(-1 * var(--gl)); right: -32rem; top: -100vh; bottom: calc(-1 * var(--lg)); overflow: hidden; pointer-events: none;
+    transition: --fe 0.75s var(--ease), --tf 0.75s var(--ease), --fo 0.75s var(--ease);
+    -webkit-mask-image: linear-gradient(90deg, transparent var(--fo), #000 calc(var(--fo) + var(--fe))), linear-gradient(transparent calc(100vh - 0.8rem), #000 calc(100vh - 0.8rem + var(--tf)));
+    mask-image: linear-gradient(90deg, transparent var(--fo), #000 calc(var(--fo) + var(--fe))), linear-gradient(transparent calc(100vh - 0.8rem), #000 calc(100vh - 0.8rem + var(--tf)));
+    -webkit-mask-composite: source-in; mask-composite: intersect; }
+  .xh-city.is-open .xh-clip { --fe: 4rem; --tf: 3rem; --fo: var(--gl); }   /* open: same left fade as before */
+  .xh-stage { --gl: 3rem; }   /* margin left of the clip so a hovered render's glow isn't cut */
+  .xh-stage img { position: absolute; left: calc(var(--ix) + var(--gl)); bottom: calc(var(--ib) + var(--lg)); display: block; width: auto; max-width: none; height: var(--ih); transform-origin: 50% 100%;
+    transition: transform 0.5s var(--ease), opacity 0.5s ease, filter 0.5s ease; }
+  .xh-dot { position: relative; width: 9px; height: 9px; margin-top: calc(0.9rem - 4px); border-radius: 50%; background: #64748b; box-shadow: 0 0 0 4px var(--xh-bg, rgb(23, 24, 28));
+    transition: background-color 0.35s ease, transform 0.35s var(--ease); }
+  .xh-name { margin-top: 0.7rem; font-family: var(--font-display); font-weight: 300; font-variation-settings: "opsz" 144; font-size: 1.35rem; letter-spacing: -0.02em; line-height: 1.1; color: #cbd5e1; white-space: nowrap;
+    transition: color 0.35s ease, opacity 0.45s ease, transform 0.6s var(--ease); }
+  .xh-when { margin-top: 0.35rem; font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #64748b; white-space: nowrap; transition: color 0.35s ease, opacity 0.45s ease; }
+
+  /* Hover lifts a render; while a city is open the others fade back. */
+  /* ...and lights the same sunset-orange glow as the Beaufortain map below (transparent at rest so it fades in). */
+  .xh-stage img { filter: drop-shadow(0 18px 34px rgba(255, 140, 50, 0)); }
+  .xh-fig:hover img, .xh-fig:focus-visible img { transform: translateY(-6px); filter: drop-shadow(0 18px 34px rgba(255, 140, 50, .22)); }
+  .xh-fig:hover .xh-name, .xh-fig:focus-visible .xh-name { color: #fff; }
+  .xh-fig:hover .xh-dot, .xh-fig:focus-visible .xh-dot { background: #cbd5e1; }
+  .xh-track.has-open .xh-city:not(.is-open) img { opacity: 0.32; filter: saturate(0.5); }
+  .xh-track.has-open .xh-city:not(.is-open) :is(.xh-name, .xh-when) { opacity: 0.45; }
+  .xh-track.has-open .xh-city:not(.is-open) .xh-fig:hover img { opacity: 0.85; filter: drop-shadow(0 18px 34px rgba(255, 140, 50, .22)); }
+  .xh-city.is-open .xh-fig img { transform: none; }
+  .xh-city.is-open .xh-name { color: #fff; }
+  .xh-city.is-open .xh-when { color: rgb(var(--color-primary-300)); }
+  .xh-city.is-open .xh-dot { background: rgb(var(--color-primary-400)); transform: scale(1.35); }
+  .xh-city.is-now .xh-dot { background: #34d399; animation: xh-pulse 2.4s ease-in-out infinite; }
+
+  /* The card unfolds from its top-left corner, at the frame's top-right, over the slab; it folds
+     back into it on close. The shadow sits on the drawer, unclipped. */
+  .xh-drawer { position: absolute; z-index: 2; top: var(--my, 0px); left: var(--iw); width: var(--CW); pointer-events: none; filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.45)); }
+  .xh-city.is-open .xh-drawer { pointer-events: auto; }
+  .xh-card { position: relative; box-sizing: border-box; width: 100%; max-height: var(--cmax, none); overflow-y: auto; scrollbar-width: thin; padding: 1rem 1.2rem 1.1rem;
+    background: linear-gradient(160deg, rgba(24, 30, 43, 0.97), rgba(13, 16, 24, 0.97)); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 16px;
+    clip-path: inset(0 100% 100% 0 round 16px); transform: scale(0.9); transform-origin: 0 0; opacity: 0;
+    transition: clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease 0.15s; }
+  .xh-city.is-open .xh-card { clip-path: inset(0 0 0 0 round 16px); transform: none; opacity: 1;
+    transition: clip-path 0.7s var(--ease) 0.35s, transform 0.7s var(--ease) 0.35s, opacity 0.15s ease 0.35s; }
+  .xh-entry { opacity: 0; transform: translateX(-0.75rem); transition: opacity 0.2s ease, transform 0.3s ease; }
+  .xh-city.is-open .xh-entry { opacity: 1; transform: none; transition: opacity 0.45s ease 0.65s, transform 0.6s var(--ease) 0.65s; }
+  .xh-entry + .xh-entry { margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid rgba(148, 163, 184, 0.14); }
+  .xh-x { position: absolute; top: 0.45rem; right: 0.55rem; width: 1.7rem; height: 1.7rem; border: 0; border-radius: 50%; background: none; color: #64748b; font-size: 1.25rem; line-height: 1; cursor: pointer; transition: color 0.2s, background-color 0.2s; }
+  .xh-x:hover { color: #f8fafc; background: rgba(148, 163, 184, 0.14); }
+  .xh-card p { margin: 0; }
+  .xh-per { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.4rem !important; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(var(--color-primary-300)); }
+  .xh-live { width: 7px; height: 7px; border-radius: 50%; background: #34d399; animation: xh-pulse 2.4s ease-in-out infinite; }
+  @keyframes xh-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2); } 50% { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); } }
+  .xh-t { padding-right: 1.4rem; font-family: var(--font-display); font-weight: 500; font-size: 1.12rem; line-height: 1.25; letter-spacing: -0.01em; color: #f8fafc; margin-bottom: 0.2rem !important; }
+  .xh-org { font-style: italic; font-size: 0.88rem; line-height: 1.4; color: #94a3b8; margin-bottom: 0.5rem !important; }
+  .xh-org a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(148, 163, 184, 0.35); transition: color 0.2s, border-color 0.2s; }
+  .xh-org a:hover { color: rgb(var(--color-primary-300)); border-color: currentColor; }
+  .xh-text { font-size: 0.9rem; line-height: 1.55; color: #cbd5e1; user-select: text; -webkit-user-select: text; }
+  .xh-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.65rem 0 0; padding: 0; list-style: none; }
+  .xh-tags li { margin: 0; padding: 0.14rem 0.55rem; border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 999px; font-size: 0.64rem; letter-spacing: 0.07em; text-transform: uppercase; color: #aab6c8; }
+
+  .xh-nav { position: absolute; top: calc(0.8rem + var(--sh) / 2); translate: 0 -50%; width: 2.6rem; height: 2.6rem; display: grid; place-items: center; padding: 0; border-radius: 50%; cursor: pointer;
+    border: 1px solid rgba(148, 163, 184, 0.25); background: rgba(15, 23, 42, 0.65); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #e2e8f0;
+    transition: opacity 0.3s ease, background-color 0.2s ease; }
+  .xh-nav:hover { background: rgba(30, 41, 59, 0.9); }
+  .xh-nav svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .xh-prev { left: 0.75rem; }
+  .xh-next { right: 0.75rem; }
+  .xh-nav[hidden] { display: grid; opacity: 0; pointer-events: none; }
+
+  /* Entrance: once the strip is in view the renders slide in from the left, one after the other,
+     while the timeline draws itself. Without the script they are simply there. */
+  .xh-wrap.js:not(.is-in) .xh-fig { opacity: 0; }
+  .xh-wrap.js:not(.is-in) .xh-track { background-size: 0 1px; }
+  .xh-wrap.is-in .xh-fig { animation: xh-in 0.9s var(--ease) both; animation-delay: calc(var(--i) * 85ms); }
+  @keyframes xh-in { from { opacity: 0; transform: translateX(-3rem); } }
+
+  html:not(.dark) .xh-wrap { --xh-bg: #fff; }
+  html:not(.dark) .xh-track { background-image: linear-gradient(rgba(51, 65, 85, 0.25), rgba(51, 65, 85, 0.25)); }
+  html:not(.dark) .xh-name { color: #334155; }
+  html:not(.dark) .xh-fig:hover .xh-name, html:not(.dark) .xh-city.is-open .xh-name { color: #0f172a; }
+  html:not(.dark) .xh-city.is-open .xh-when { color: rgb(var(--color-primary-700)); }
+  html:not(.dark) .xh-card { background: rgba(255, 255, 255, 0.97); border-color: rgba(15, 23, 42, 0.1); }
+  html:not(.dark) .xh-per { color: rgb(var(--color-primary-700)); }
+  html:not(.dark) .xh-t { color: #0f172a; }
+  html:not(.dark) .xh-org { color: #56657a; }
+  html:not(.dark) .xh-text { color: #334155; }
+  html:not(.dark) .xh-tags li { color: #475569; border-color: rgba(15, 23, 42, 0.15); }
+  html:not(.dark) .xh-entry + .xh-entry { border-top-color: rgba(15, 23, 42, 0.1); }
+  html:not(.dark) .xh-nav { background: rgba(255, 255, 255, 0.8); color: #0f172a; border-color: rgba(15, 23, 42, 0.12); }
+
+  /* Below the strip: a thread drops from its timeline into the classic sections, whose headings
+     take the strip's look (light display type, centred, a dot on a short line) and sit closer. */
+  .xh-bridge { display: flex; flex-direction: column; align-items: center; margin-top: 0.5rem; }
+  .xh-bridge::before { content: ""; width: 1px; height: 4.5rem; background: linear-gradient(rgba(148, 163, 184, 0), rgba(148, 163, 184, 0.5)); }
+  .xh-bridge span { margin-top: 0.75rem; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #64748b; }
+  .xh-classic .hbb-section { padding: 2.5rem 0 !important; }
+  .xh-classic .hbb-section:first-child { padding-top: 1.5rem !important; }
+  .xh-classic .exp-section { margin-bottom: 2.5rem; }
+  .xh-hobby { width: min(880px, 92vw); margin: 2rem auto -0.5rem; text-align: center; }
+  /* Sunset-orange glow around the map instead of a black drop shadow. */
+  .xh-hobby img { width: 100%; height: auto; filter: drop-shadow(0 18px 34px rgba(255, 140, 50, .22)); }
+  .xh-hobby figcaption { margin-top: .4rem; font-size: .66rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: #64748b; }
+  .xh-classic :is(.exp-heading, .hbb-section > .max-w-prose > .text-3xl:first-child) { position: relative; display: block; margin: 0 auto 2rem !important; padding: 1.5rem 0 0; border: 0; border-image: none; text-align: center;
+    font-family: var(--font-display); font-weight: 300; font-variation-settings: "opsz" 144; font-size: 2rem; letter-spacing: -0.02em; line-height: 1.1; color: #f8fafc; }
+  .xh-classic :is(.exp-heading, .hbb-section > .max-w-prose > .text-3xl:first-child)::before { content: ""; position: absolute; top: 4px; left: 50%; width: 7rem; height: 1px; translate: -50% 0;
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.45), transparent); }
+  .xh-classic :is(.exp-heading, .hbb-section > .max-w-prose > .text-3xl:first-child)::after { content: ""; position: absolute; top: 0; left: 50%; width: 9px; height: 9px; translate: -50% 0; border-radius: 50%;
+    background: rgb(var(--color-primary-400)); box-shadow: 0 0 0 4px var(--xh-bg, rgb(23, 24, 28)); }
+  .xh-classic .exp-heading-icon { display: none; }
+  html:not(.dark) .xh-classic :is(.exp-heading, .hbb-section > .max-w-prose > .text-3xl:first-child) { color: #0f172a; }
+  html:not(.dark) .xh-classic :is(.exp-heading, .hbb-section > .max-w-prose > .text-3xl:first-child)::before { background: linear-gradient(90deg, transparent, rgba(51, 65, 85, 0.35), transparent); }
+
+  /* Phones: bigger renders, and the card opens under the open city instead of beside it. */
+  @media (max-width: 760px) {
+    .xh-view { --w: 74vw; --gap: 1.25rem; --pad: 1.25rem; --fade: 1.25rem; }
+    .xh-city { width: calc(var(--iw) + var(--gap)); }
+    .xh-drawer { position: relative; top: auto; left: 0; width: var(--iw); margin-top: 0.9rem; filter: none; }
+    .xh-city:not(.is-open) .xh-drawer { display: none; }
+    .xh-card { border-radius: 14px; max-height: none; clip-path: none; transform: none; opacity: 1; animation: xh-down 0.6s var(--ease) both; }
+    .xh-nav { display: none; }
+    @keyframes xh-down { from { opacity: 0; transform: translateY(-0.75rem); } }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .xh-view, .xh-track, .xh-city, .xh-clip, .xh-wrap .xh-fig, .xh-stage img, .xh-card, .xh-entry, .xh-dot, .xh-live { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<script>
+  /* Opens a city on click (again, Escape, × or a click elsewhere closes it), sizes it and scrolls
+     the strip along with the opening so the city and its card end up centred. A mouse can drag the
+     strip; the arrows page through it and hide at either end. Plays the entrance once in view. */
+  (function () {
+    var wrap = document.currentScript.parentNode, view = wrap.querySelector('.xh-view'), track = wrap.querySelector('.xh-track');
+    var prev = wrap.querySelector('.xh-prev'), next = wrap.querySelector('.xh-next');
+    var open = null, raf = 0, drag = null, dragged = false, wide = window.matchMedia('(min-width: 761px)');
+    wrap.classList.add('js');
+
+    /* Open geometry: a stage (hs) tall enough for the card (from my down), the render ZOOM times
+       its height with its orange glow (centred across, data-glow down) placed at AT within the
+       visible frame, in its lower left but well clear of the edges; the frame as wide as the window leaves
+       beside the card. What spills above the strip fades out. */
+    var ZOOM = 2, AT = [0.36, 0.63], PROPS = ['--iw', '--ih', '--ix', '--ib', '--my', '--cmax'];
+    function size(city) {
+      view.style.removeProperty('--sh');
+      track.querySelectorAll('.xh-city').forEach(function (c) { PROPS.forEach(function (p) { c.style.removeProperty(p); }); });
+      if (!city || !wide.matches) return;
+      var cs = getComputedStyle(view), px = function (v) { return parseFloat(cs.getPropertyValue(v)); };
+      var w = px('--w'), R = px('--R'), lg = parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.9;
+      var card = city.querySelector('.xh-card'), img = city.querySelector('img'), ch = card.scrollHeight;
+      var low = w * R * 1.15, hs = Math.min(Math.max(low, (ch + 12 - lg) / 0.84), Math.max(low, innerHeight * 0.68));
+      var my = Math.max(hs * 0.05, Math.min(hs * 0.16, hs + lg - 12 - ch));
+      var iw = Math.min(hs / R, Math.max(w, track.clientWidth - 2 * px('--pad') - card.offsetWidth - 16));
+      var hd = hs * ZOOM, top = AT[1] * (hs + lg) - parseFloat(city.dataset.glow) * hd;
+      var set = { '--iw': iw, '--ih': hd, '--ix': AT[0] * iw - 0.5 * hd / R, '--ib': hs - top - hd, '--my': my, '--cmax': hs + lg - 12 - my };
+      for (var p in set) city.style.setProperty(p, set[p] + 'px');
+      view.style.setProperty('--sh', hs + 'px');
+      img.sizes = Math.ceil(hd / R) + 'px';
+    }
+
+    function edges() {
+      prev.hidden = track.scrollLeft < 4;
+      next.hidden = track.scrollLeft > track.scrollWidth - track.clientWidth - 4;
+    }
+    function follow(city) {
+      cancelAnimationFrame(raf);
+      var t0 = performance.now(), from = track.scrollLeft, drawer = city.querySelector('.xh-drawer'), last = -1;
+      function step(now) {
+        /* Keeps going past the 800 ms while the city is still widening, so it always lands centred. */
+        var grown = city.offsetWidth === last;
+        last = city.offsetWidth;
+        var p = Math.min(1, (now - t0) / 800), e = 1 - Math.pow(1 - p, 3);
+        var right = Math.max(drawer.offsetLeft + drawer.offsetWidth, city.querySelector('.xh-fig').offsetWidth);
+        var to = city.offsetLeft + right / 2 - track.clientWidth / 2;
+        if (!wide.matches) to = city.offsetLeft - parseFloat(getComputedStyle(track).paddingLeft);
+        track.scrollLeft = from + (to - from) * e;
+        if (p < 1 || !grown) raf = requestAnimationFrame(step); else edges();
+      }
+      raf = requestAnimationFrame(step);
+    }
+    function set(city) {
+      if (open) { open.classList.remove('is-open'); open.querySelector('.xh-fig').setAttribute('aria-expanded', 'false'); }
+      open = city;
+      if (city) { city.classList.add('is-open'); city.querySelector('.xh-fig').setAttribute('aria-expanded', 'true'); }
+      track.classList.toggle('has-open', !!city);
+      size(city);
+      if (city) follow(city);
+    }
+
+    track.addEventListener('click', function (e) {
+      if (dragged && e.detail) return;
+      var fig = e.target.closest('.xh-fig');
+      if (fig) set(fig.parentNode === open ? null : fig.parentNode);
+      else if (e.target.closest('.xh-x') || !e.target.closest('.xh-card')) set(null);
+    });
+    document.addEventListener('pointerdown', function (e) { if (open && !view.contains(e.target)) set(null); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && open) { var fig = open.querySelector('.xh-fig'); set(null); fig.focus(); }
+    });
+
+    track.addEventListener('pointerdown', function (e) {
+      dragged = false;
+      if (e.pointerType === 'mouse' && e.button === 0 && !e.target.closest('.xh-card')) drag = { x: e.clientX, s: track.scrollLeft };
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x;
+      if (!dragged && Math.abs(dx) > 5) { dragged = true; track.classList.add('is-drag'); cancelAnimationFrame(raf); }
+      if (dragged) track.scrollLeft = drag.s - dx;
+    });
+    window.addEventListener('pointerup', function () { drag = null; track.classList.remove('is-drag'); });
+
+    prev.addEventListener('click', function () { track.scrollBy({ left: -track.clientWidth * 0.6, behavior: 'smooth' }); });
+    next.addEventListener('click', function () { track.scrollBy({ left: track.clientWidth * 0.6, behavior: 'smooth' }); });
+    track.addEventListener('scroll', edges, { passive: true });
+    /* Once the open city has finished widening, one last nudge in case the scroll fell short. */
+    track.addEventListener('transitionend', function (e) {
+      if (e.target === open && e.propertyName === '--o' && !drag) follow(open);
+    });
+    window.addEventListener('resize', function () { size(open); edges(); });
+    wide.addEventListener('change', function () { size(open); edges(); });
+    edges();
+
+    if (!('IntersectionObserver' in window)) { wrap.classList.add('is-in'); return; }
+    var io = new IntersectionObserver(function (es) {
+      if (es[0].isIntersecting) { wrap.classList.add('is-in'); io.disconnect(); }
+    }, { threshold: 0.25 });
+    io.observe(track);
+  })();
+</script>
+</div>

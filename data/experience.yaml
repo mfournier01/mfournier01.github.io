@@ -1,0 +1,128 @@
+# Cities of the Experience page (layouts/shortcodes/experience-strip.html), in order
+# from left to right. `key` names the render assets/media/experience/<key>.webp.
+# `glow`: height of the orange glow in the render (fraction of its height; it is centred across),
+# which the open city zooms towards. Each city lists what I did there, most recent first;
+# every text field has en and fr.
+cities:
+  - key: mulhouse
+    glow: 0.47
+    name: { en: "Mulhouse", fr: "Mulhouse" }
+    stops:
+      - per: { en: "Until 2016", fr: "Jusqu’en 2016" }
+        title: { en: "Hometown and high school", fr: "Ville natale et lycée" }
+        org: { en: "Mulhouse, Alsace", fr: "Mulhouse, Alsace" }
+        text:
+          en: "Where it started: childhood and high-school years in Alsace, close to the point where France, Germany and Switzerland meet."
+          fr: "Là où tout a commencé : l’enfance et le lycée en Alsace, près du point de rencontre de la France, de l’Allemagne et de la Suisse."
+        tags: { en: ["Origins"], fr: ["Origines"] }
+
+  - key: besancon
+    glow: 0.469
+    name: { en: "Besançon", fr: "Besançon" }
+    stops:
+      - per: { en: "2016–2019", fr: "2016–2019" }
+        title: { en: "Classes préparatoires (PCSI / PC*)", fr: "Classes préparatoires (PCSI / PC*)" }
+        org: { en: "Lycée Victor Hugo", fr: "Lycée Victor Hugo" }
+        text:
+          en: "Three intense years of mathematics and physics in the French classes préparatoires, ending with the competitive entrance exams to the engineering schools."
+          fr: "Trois années intenses de mathématiques et de physique en classes préparatoires, qui se terminent par les concours d’entrée aux écoles d’ingénieurs."
+        tags: { en: ["Prépa"], fr: ["Prépa"] }
+
+  - key: grenoble
+    glow: 0.476
+    name: { en: "Grenoble", fr: "Grenoble" }
+    stops:
+      - per: { en: "2019–2022", fr: "2019–2022" }
+        title: { en: "Engineering degree and MSc in Physics and Engineering", fr: "Diplôme d’ingénieur et master en physique et ingénierie" }
+        org: { en: "Phelma · Grenoble INP – Université Grenoble Alpes", fr: "Phelma · Grenoble INP – Université Grenoble Alpes" }
+        url: "https://phelma.grenoble-inp.fr/"
+        text:
+          en: "Physics and engineering at Phelma, with a track in nuclear engineering and particle physics, an exchange at EPFL and internships in Germany."
+          fr: "Physique et ingénierie à Phelma, avec une filière en génie nucléaire et physique des particules, un échange à l’EPFL et des stages en Allemagne."
+        tags: { en: ["Engineering school", "Nuclear and particle physics"], fr: ["École d’ingénieurs", "Physique nucléaire et des particules"] }
+
+  - key: mainz
+    glow: 0.489
+    name: { en: "Mainz", fr: "Mayence" }
+    stops:
+      - per: { en: "2021", fr: "2021" }
+        title: { en: "Internship", fr: "Stage" }
+        org: { en: "Mainz, Germany", fr: "Mayence, Allemagne" }
+        text:
+          en: "A first stay in Germany, during my studies at Phelma."
+          fr: "Un premier séjour en Allemagne, pendant mes études à Phelma."
+        tags: { en: ["Internship"], fr: ["Stage"] }
+
+  - key: lausanne
+    glow: 0.452
+    name: { en: "Lausanne", fr: "Lausanne" }
+    stops:
+      - per: { en: "2021–2022", fr: "2021–2022" }
+        title: { en: "Erasmus exchange", fr: "Échange Erasmus" }
+        org: { en: "EPFL", fr: "EPFL" }
+        url: "https://www.epfl.ch/"
+        text:
+          en: "An exchange period at the École Polytechnique Fédérale de Lausanne, as part of the Phelma curriculum."
+          fr: "Une période d’échange à l’École Polytechnique Fédérale de Lausanne, dans le cadre du cursus de Phelma."
+        tags: { en: ["Erasmus"], fr: ["Erasmus"] }
+
+  - key: heidelberg
+    glow: 0.433
+    name: { en: "Heidelberg", fr: "Heidelberg" }
+    stops:
+      - per: { en: "Apr–Aug 2022", fr: "Avr.–août 2022" }
+        title: { en: "Master thesis internship", fr: "Stage de mémoire de master" }
+        org: { en: "Max-Planck-Institut für Astronomie (MPIA)", fr: "Max-Planck-Institut für Astronomie (MPIA)" }
+        url: "https://www.mpia.de/"
+        text:
+          en: "Properties of Magellanic Cloud analogues in the TNG50 cosmological simulation, with Annalisa Pillepich: my first research project in astrophysics."
+          fr: "Propriétés d’analogues des Nuages de Magellan dans la simulation cosmologique TNG50, avec Annalisa Pillepich : mon premier projet de recherche en astrophysique."
+        tags: { en: ["Internship", "Galaxies"], fr: ["Stage", "Galaxies"] }
+
+  - key: lyon
+    glow: 0.478
+    name: { en: "Lyon", fr: "Lyon" }
+    stops:
+      - per: { en: "Apr–Aug 2023", fr: "Avr.–août 2023" }
+        title: { en: "MSc thesis", fr: "Mémoire de master" }
+        org: { en: "École Normale Supérieure de Lyon", fr: "École Normale Supérieure de Lyon" }
+        url: "https://www.ens-lyon.fr/"
+        text:
+          en: "Cosmic-ray propagation in the Milky Way: magnetohydrodynamical simulations with RAMSES of high-energy cosmic rays emitted from the Galactic Centre, with Jérémy Fensch and Benoît Commerçon."
+          fr: "Propagation des rayons cosmiques dans la Voie lactée : simulations magnétohydrodynamiques avec RAMSES de rayons cosmiques de haute énergie émis depuis le centre galactique, avec Jérémy Fensch et Benoît Commerçon."
+        tags: { en: ["MSc thesis", "Cosmic rays"], fr: ["Mémoire de master", "Rayons cosmiques"] }
+
+  - key: hamburg
+    glow: 0.503
+    name: { en: "Hamburg", fr: "Hambourg" }
+    stops:
+      - per: { en: "2023–2026", fr: "2023–2026" }
+        title: { en: "PhD in Astrophysics, summa cum laude", fr: "Doctorat en astrophysique, summa cum laude" }
+        org: { en: "Universität Hamburg", fr: "Universität Hamburg" }
+        url: "https://www.uni-hamburg.de/"
+        text:
+          en: "Thesis: *Cold gas in a hot universe: Supermassive black hole feedback and multiphase condensation in the magnetized intracluster medium*, supervised by Marcus Brüggen and Philipp Grete."
+          fr: "Thèse : *Cold gas in a hot universe: Supermassive black hole feedback and multiphase condensation in the magnetized intracluster medium*, dirigée par Marcus Brüggen et Philipp Grete."
+        tags: { en: ["PhD", "Intracluster medium"], fr: ["Doctorat", "Milieu intra-amas"] }
+
+  - key: paris
+    glow: 0.485
+    name: { en: "Paris", fr: "Paris" }
+    stops:
+      - per: { en: "Since Oct 2026", fr: "Depuis oct. 2026" }
+        now: true
+        title: { en: "Postdoctoral researcher", fr: "Chercheur postdoctoral" }
+        org: { en: "Institut d’Astrophysique de Paris · CNRS and Sorbonne Université", fr: "Institut d’Astrophysique de Paris · CNRS et Sorbonne Université" }
+        url: "https://www.iap.fr/"
+        text:
+          en: "Back in Paris to keep studying the multiphase intracluster medium with magnetohydrodynamical simulations."
+          fr: "De retour à Paris pour continuer à étudier le milieu intra-amas multiphasé avec des simulations magnétohydrodynamiques."
+        tags: { en: ["Postdoc"], fr: ["Postdoc"] }
+      - per: { en: "2022–2023", fr: "2022–2023" }
+        title: { en: "MSc in Astronomy and Astrophysics", fr: "Master en astronomie et astrophysique" }
+        org: { en: "Observatoire de Paris · Université Paris Cité", fr: "Observatoire de Paris · Université Paris Cité" }
+        url: "https://www.obspm.fr/"
+        text:
+          en: "The master’s programme that turned the interest in astrophysics into a plan: a PhD on galaxies and gas."
+          fr: "Le master qui a transformé l’intérêt pour l’astrophysique en un projet : un doctorat sur les galaxies et le gaz."
+        tags: { en: ["MSc"], fr: ["Master"] }

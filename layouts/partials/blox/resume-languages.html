@@ -1,0 +1,40 @@
+{{/* Project override of the theme's Languages block: same layout, but each ring is drawn with
+     plain numbers (pathLength 100, dash = percent) instead of CSS calc() in SVG strokes, which
+     some browsers (Safari) ignore and then draw every ring full. Rounded ends, starts at 12 o'clock. */}}
+{{ $block := .wcBlock }}
+{{ $author := $block.content.username | default "admin" }}
+{{ $person_page_path := printf "/authors/%s" $author }}
+{{ $person_page := site.GetPage $person_page_path }}
+{{ if not $person_page }}
+  {{ errorf "Could not find an author page at `%s` for the Languages block." $person_page_path }}
+{{ end }}
+{{ $langs := $person_page.Params.languages }}
+
+<div class="flex flex-col items-center max-w-prose mx-auto gap-3 justify-center">
+
+  <div class="mb-6 text-3xl font-bold text-gray-900 dark:text-white">
+    {{ $block.content.title | markdownify | emojify }}
+  </div>
+
+  {{ with $block.content.text }}<p>{{ . | markdownify | emojify }}</p>{{ end }}
+
+  <div class="flex items-center flex-col lg:flex-row gap-x-8 gap-y-4">
+    {{ range $langs }}
+    {{ $p := math.Min 100 (math.Max 0 (float .percent)) }}
+    <div class="flex flex-col items-center">
+      <div class="relative flex items-center justify-center w-28 h-28">
+        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="50" fill="none" stroke-width="10" stroke="currentColor" class="text-gray-200 dark:text-gray-700" />
+          {{ if gt $p 0 }}
+          <circle cx="60" cy="60" r="50" fill="none" stroke-width="10" stroke="currentColor" class="text-primary-600 dark:text-primary-300"
+                  pathLength="100" stroke-dasharray="{{ $p }} 100" stroke-linecap="{{ if lt $p 100 }}round{{ else }}butt{{ end }}" transform="rotate(-90 60 60)" />
+          {{ end }}
+        </svg>
+        <span class="relative text-3xl">{{ .percent }}%</span>
+      </div>
+      <span class="text-1xl mt-1">{{ .name }}</span>
+    </div>
+    {{ end }}
+  </div>
+
+</div>

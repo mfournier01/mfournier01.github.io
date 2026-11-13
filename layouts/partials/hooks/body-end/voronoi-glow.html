@@ -1,0 +1,241 @@
+<canvas id="vg-canvas" aria-hidden="true"></canvas>
+<style>
+  /* Fixed Voronoi mesh behind every page: invisible at rest, lit around the mouse pointer
+     in proportion to its speed (script below). Pointer events pass through. */
+  #vg-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+</style>
+<script>
+(function () {
+  // Mouse only: no hover on touch screens, and nothing to do for reduced motion.
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var canvas = document.getElementById('vg-canvas');
+  // First in the page, so the section backgrounds and videos that also sit at z-index -1
+  // (e.g. the home hero) paint over it.
+  document.body.insertBefore(canvas, document.body.firstChild);
+  var ctx = canvas.getContext('2d');
+
+  // Things the mesh must stay behind even when they are see-through: cards, panels, media,
+  // the toolbar. Images are cut out by their own alpha (the city maps keep the mesh around
+  // their transparent corners); the rest by their rounded box.
+  var OCCLUDERS = '#site-header, .mf-card, .pc-card, .nt-card, .exh-card, .ot-item, .ot-stat, .pb-card, .pr-list, .glass-box, .bio-cv, .vz-media, .pg-photo, .exp-node, video, iframe, img, canvas:not(#vg-canvas), .exh-card-art svg';
+  var occ = [], occAt = 0;
+  function occluders() {
+    var now = performance.now();
+    if (now - occAt > 1500) { occAt = now; occ = Array.prototype.slice.call(document.querySelectorAll(OCCLUDERS)); }
+    return occ;
+  }
+  function cutOut(cx, cy, r) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = '#000';
+    var list = occluders();
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i], b = el.getBoundingClientRect();
+      if (!b.width || !b.height) continue;
+      var x0 = b.left * dpr, y0 = b.top * dpr, w = b.width * dpr, h = b.height * dpr;
+      if (x0 > cx + r || y0 > cy + r || x0 + w < cx - r || y0 + h < cy - r) continue;
+      var s = getComputedStyle(el);
+      if (s.visibility === 'hidden' || +s.opacity === 0) continue;
+      if (el.tagName === 'IMG' && el.complete && el.naturalWidth && s.objectFit !== 'cover') {
+        try { ctx.drawImage(el, x0, y0, w, h); continue; } catch (e) {}
+      }
+      var rad = (parseFloat(s.borderTopLeftRadius) || 0) * dpr;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x0, y0, w, h, Math.min(rad, w / 2, h / 2)); else ctx.rect(x0, y0, w, h);
+      ctx.fill();
+    }
+  }
+  var mesh = document.createElement('canvas');   // the mesh, drawn once per size
+  var mctx = mesh.getContext('2d');
+  var CELL = 74;          // mean distance between seeds, CSS px
+  var RADIUS = 190;       // radius of the lit sphere, CSS px
+  var V_FULL = 1.6;      // pointer speed (px/ms) that gives full brightness
+  var dpr = 1, W = 0, H = 0;
+
+  // Deterministic random numbers, so the mesh is the same on every page.
+  function rng(seed) { return function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
+
+  // Clip a convex polygon by the half plane closer to site a than to site b, pulled
+  // back towards a by `inset` px.
+  function clip(poly, ax, ay, bx, by, inset) {
+    var nx = bx - ax, ny = by - ay, nl = Math.hypot(nx, ny) || 1, d = (inset || 0) / nl;
+    var mx = (ax + bx) / 2 - nx * d, my = (ay + by) / 2 - ny * d, out = [];
+    for (var i = 0; i < poly.length; i++) {
+      var p = poly[i], q = poly[(i + 1) % poly.length];
+      var dp = (p[0] - mx) * nx + (p[1] - my) * ny, dq = (q[0] - mx) * nx + (q[1] - my) * ny;
+      if (dp <= 0) out.push(p);
+      if ((dp < 0 && dq > 0) || (dp > 0 && dq < 0)) {
+        var t = dp / (dp - dq); out.push([p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1])]);
+      }
+    }
+    return out;
+  }
+
+  // The mesh is one seamless tile (seeds wrap around its edges), repeated over the whole
+  // page and shifted by the scroll position, so it lives in the page's frame and scrolls.
+  var N = 14, T = N * CELL, pattern = null;
+
+  function build() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    mesh.width = mesh.height = Math.round(T * dpr);
+
+    var rand = rng(20261113), seeds = [];
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++)
+      seeds.push([(i + 0.15 + 0.7 * rand()) * CELL, (j + 0.15 + 0.7 * rand()) * CELL]);
+    function seed(i, j) {   // seed of cell (i, j) on the infinite periodic grid
+      var wi = ((i % N) + N) % N, wj = ((j % N) + N) % N, s = seeds[wj * N + wi];
+      return [s[0] + (i - wi) * CELL, s[1] + (j - wj) * CELL];
+    }
+    mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mctx.clearRect(0, 0, T, T);
+    // Wing-vein look: ink everywhere, then each cell is cut out as a slightly shrunk polygon
+    // with rounded corners and gently bowed sides. What is left between neighbours is the
+    // vein: filleted at the junctions and uneven in thickness, since each side bows on its own.
+    var hand = rng(7);
+    mctx.globalCompositeOperation = 'source-over';
+    mctx.fillStyle = '#fff';
+    mctx.fillRect(0, 0, T, T);
+    mctx.globalCompositeOperation = 'destination-out';
+    for (var jj = 0; jj < N; jj++) for (var ii = 0; ii < N; ii++) {
+      var a = seed(ii, jj);
+      var half = 0.7 + 0.6 * hand();                       // half the vein width on this side
+      var poly = [[a[0] - 3 * CELL, a[1] - 3 * CELL], [a[0] + 3 * CELL, a[1] - 3 * CELL], [a[0] + 3 * CELL, a[1] + 3 * CELL], [a[0] - 3 * CELL, a[1] + 3 * CELL]];
+      for (var dj = -2; dj <= 2; dj++) for (var di = -2; di <= 2; di++) {
+        if (!di && !dj) continue;
+        var b = seed(ii + di, jj + dj);
+        poly = clip(poly, a[0], a[1], b[0], b[1], half);
+      }
+      if (poly.length < 3) continue;
+      var m = poly.length, rad = 4 + 5 * hand(), pin = [], pout = [];
+      for (var q = 0; q < m; q++) {
+        var v = poly[q], pv = poly[(q + m - 1) % m], nv = poly[(q + 1) % m];
+        var lp = Math.hypot(pv[0] - v[0], pv[1] - v[1]), ln = Math.hypot(nv[0] - v[0], nv[1] - v[1]);
+        var rp = Math.min(rad, lp * 0.45) / (lp || 1), rn = Math.min(rad, ln * 0.45) / (ln || 1);
+        pin.push([v[0] + (pv[0] - v[0]) * rp, v[1] + (pv[1] - v[1]) * rp]);
+        pout.push([v[0] + (nv[0] - v[0]) * rn, v[1] + (nv[1] - v[1]) * rn]);
+      }
+      var path = new Path2D();
+      path.moveTo(pout[0][0], pout[0][1]);
+      for (var q2 = 0; q2 < m; q2++) {
+        var s0 = pout[q2], e1 = pin[(q2 + 1) % m], vv = poly[(q2 + 1) % m];
+        var ex = e1[0] - s0[0], ey = e1[1] - s0[1], el = Math.hypot(ex, ey) || 1;
+        var bow = (hand() - 0.5) * Math.min(5, 0.08 * el);   // the side sags in or out a little
+        path.quadraticCurveTo((s0[0] + e1[0]) / 2 - ey / el * bow, (s0[1] + e1[1]) / 2 + ex / el * bow, e1[0], e1[1]);
+        path.quadraticCurveTo(vv[0], vv[1], pout[(q2 + 1) % m][0], pout[(q2 + 1) % m][1]);
+      }
+      path.closePath();
+      // Cells that cross the tile's edge also appear on the opposite side.
+      for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) {
+        mctx.setTransform(dpr, 0, 0, dpr, ox * T * dpr, oy * T * dpr);
+        mctx.fill(path);
+      }
+    }
+    mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Grain: specks knocked out of the ink, like a printed or scanned drawing.
+    mctx.fillStyle = '#000';
+    for (var g = 0, ng = Math.round(T * T / 5); g < ng; g++) {
+      mctx.globalAlpha = 0.35 + 0.65 * hand();
+      mctx.fillRect(hand() * T, hand() * T, 0.5 + 1.3 * hand(), 0.5 + 1.3 * hand());
+    }
+    // Dust: faint specks inside the cells too, so the light catches a little texture
+    // between the veins, as in an old print.
+    mctx.globalCompositeOperation = 'source-over';
+    mctx.fillStyle = '#fff';
+    for (var d2 = 0, nd = Math.round(T * T / 40); d2 < nd; d2++) {
+      mctx.globalAlpha = 0.08 + 0.3 * hand();
+      var ds = 0.6 + 1.6 * hand();
+      mctx.fillRect(hand() * T, hand() * T, ds, ds);
+    }
+    mctx.globalAlpha = 1;
+    pattern = ctx.createPattern(mesh, 'repeat');
+  }
+
+  var x = -1e4, y = -1e4, lastX = 0, lastY = 0, lastT = 0, energy = 0, target = 0, running = false;
+
+  // Light on a dark page, deeper amber on a light one; judged from the page's actual
+  // background, since some pages (Explorers, Experience) stay dark in light mode.
+  var darkBg = true, bgChecked = 0;
+  function isDark() {
+    var now = performance.now();
+    if (now - bgChecked > 500) {
+      bgChecked = now;
+      var m = getComputedStyle(document.body).backgroundColor.match(/\d+(\.\d+)?/g);
+      darkBg = !m || (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) < 128;
+    }
+    return darkBg;
+  }
+  function colour() { return isDark() ? '255, 255, 255' : '30, 41, 59'; }
+
+  // The trail is a short list of light spots dropped along the (lagging) path, kept in page
+  // coordinates so it scrolls with the page. Each frame the light is redrawn from scratch,
+  // every spot weighted by its age, so it fades all the way to nothing (a buffer faded by
+  // multiplication would get stuck at a faint residue because of 8-bit rounding).
+  var light = document.createElement('canvas'), lctx = light.getContext('2d');
+  var LS = 0.25;          // the light is soft, so a quarter-resolution buffer is enough
+  var lx = null, ly = null, trail = [], tick = 0;
+  var LIFE = 70;          // frames a spot lives (~1.2 s)
+  var FOLLOW = 0.08;      // how fast the lit centre catches up with the mouse
+
+  function frame() {
+    tick++;
+    energy += (target - energy) * 0.05;   // ease slowly towards the current speed (~0.3 s)
+    target *= 0.975;                       // and fade gently once the mouse stops (~2 s)
+    if (lx === null) { lx = x; ly = y; }
+    lx += (x - lx) * FOLLOW; ly += (y - ly) * FOLLOW;
+    var lw = Math.max(1, Math.round(canvas.width * LS)), lh = Math.max(1, Math.round(canvas.height * LS));
+    if (light.width !== lw || light.height !== lh) { light.width = lw; light.height = lh; }
+
+    // Drop a new spot every other frame while there is any energy; forget old ones.
+    var peak = Math.min(1, energy) * (isDark() ? 0.07 : 0.05);
+    if (tick % 2 === 0 && peak > 0.002)
+      trail.push({ x: lx + window.scrollX, y: ly + window.scrollY, a: peak, r: RADIUS * (0.75 + 0.35 * energy), t: tick });
+    while (trail.length && tick - trail[0].t > LIFE) trail.shift();
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!trail.length && peak <= 0.002) { running = false; energy = target = 0; lx = ly = null; return; }
+
+    var c = colour(), k = dpr * LS;
+    lctx.setTransform(1, 0, 0, 1, 0, 0);
+    lctx.clearRect(0, 0, lw, lh);
+    for (var i = 0; i < trail.length; i++) {
+      var p = trail[i], w = 1 - (tick - p.t) / LIFE;
+      var a = p.a * w * w * 0.16;          // ~15 overlapping spots add up to about p.a
+      var cx = (p.x - window.scrollX) * k, cy = (p.y - window.scrollY) * k, r = p.r * k;
+      var g = lctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, 'rgba(' + c + ',' + a + ')');
+      g.addColorStop(0.4, 'rgba(' + c + ',' + (a * 0.6) + ')');
+      g.addColorStop(1, 'rgba(' + c + ',0)');
+      lctx.fillStyle = g;
+      lctx.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(light, 0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = 'destination-in';   // keep the light only on the mesh lines
+    pattern.setTransform(new DOMMatrix([1, 0, 0, 1, -window.scrollX * dpr, -window.scrollY * dpr]));
+    ctx.fillStyle = pattern;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    cutOut(canvas.width / 2, canvas.height / 2, canvas.width + canvas.height);   // whole view: the trail can be anywhere
+    ctx.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('pointermove', function (e) {
+    if (e.pointerType && e.pointerType !== 'mouse') return;
+    var t = e.timeStamp || performance.now(), dt = Math.max(8, t - lastT);
+    var v = Math.hypot(e.clientX - lastX, e.clientY - lastY) / dt;
+    if (t - lastT < 200) target = Math.max(target, Math.min(1, v / V_FULL));
+    lastX = x = e.clientX; lastY = y = e.clientY; lastT = t;
+    if (!running) { running = true; requestAnimationFrame(frame); }
+  }, { passive: true });
+
+  var rt;
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(build, 150); });
+  build();
+})();
+</script>
